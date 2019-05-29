@@ -1,6 +1,6 @@
 local indi_alerts = {};
 indi_alerts.drawing_layer = 102;
-indi_alerts.inverted_arrows = true;
+indi_alerts.inverted_arrows = false;
 
 function Init()
     indi_alerts:AddParameters(indicator.parameters);
@@ -45,7 +45,7 @@ function AsyncOperationFinished(cookie, success, message, message1, message2)
     indi_alerts:AsyncOperationFinished(cookie, success, message, message1, message2)
 end
 
-indi_alerts.Version = "1.8";
+indi_alerts.Version = "1.9";
 indi_alerts.last_id = 0;
 indi_alerts.FIRST = true;
 indi_alerts._alerts = {};
@@ -104,6 +104,10 @@ function indi_alerts:AddAlert(Label)
 
     indicator.parameters:addBoolean("ON" .. self.last_id , "Show " .. Label .." Alert" , "", true);
 
+    indicator.parameters:addString("drawing_mode" .. self.last_id, "Drawing mode", "", "arrows");
+    indicator.parameters:addStringAlternative("drawing_mode" .. self.last_id, "Arrows", "", "arrows");
+    indicator.parameters:addStringAlternative("drawing_mode" .. self.last_id, "Vertical lines", "", "vlines");
+
     indicator.parameters:addFile("Up" .. self.last_id, Label .. " Cross Over Sound", "", "");
     indicator.parameters:setFlag("Up" .. self.last_id, core.FLAG_SOUND);
     indicator.parameters:addInteger("UpSymbol" .. self.last_id, "Up Symbol", "", 217);
@@ -132,48 +136,81 @@ function indi_alerts:AddSingleAlert(Label)
 end
 
 indi_alerts.init = false;
+
+function indi_alerts:DrawAlert(context, alert, period)
+    if not alert.Alert:hasData(period) then
+        return;
+    end
+
+    if level.Alert[period] == 1 then
+        local x = context:positionOfBar(period);
+        if level.DrawingMode == "arrows" then
+            visible, y = context:pointOfPrice(level.AlertLevel[period]);
+            width, height = context:measureText(self.FONT_ID, level.UpSymbol, 0);
+            local x1 = x - width / 2;
+            local x2 = x + width / 2;
+            local y1, y2;
+            if self.inverted_arrows then
+                y1 = y;
+                y2 = y + height;
+            else
+                y1 = y - height;
+                y2 = y;
+            end
+            context:drawText(self.FONT_ID, level.UpSymbol, level.UpColor, -1, x1, y1, x2, y2, 0);
+        else
+            context:drawLine(level.UpLinePen, x, context:top(), x, context:bottom());
+        end
+    elseif level.Alert[period] == -1 then
+        local x = context:positionOfBar(period);
+        if level.DrawingMode == "arrows" then
+            visible, y = context:pointOfPrice(level.AlertLevel[period]);
+            width, height = context:measureText(self.FONT_ID, level.DownSymbol, 0);
+            local x1 = x - width / 2;
+            local x2 = x + width / 2;
+            local y1, y2;
+            if self.inverted_arrows then
+                y1 = y - height;
+                y2 = y;
+            else
+                y1 = y + height;
+                y2 = y;
+            end
+            context:drawText(self.FONT_ID, level.DownSymbol, level.DownColor, -1, x1, y1, x2, y2, 0);
+        else
+            context:drawLine(level.DownLinePen, x, context:top(), x, context:bottom());
+        end
+    end
+end
+indi_alerts.NextId = 1;
 function indi_alerts:Draw(stage, context)
     if stage ~= indi_alerts.drawing_layer then
         return;
     end
     if not self.init then
-        context:createFont(1, "Wingdings", context:pointsToPixels(self.Size), context:pointsToPixels(self.Size), 0);
+        local createFont = false;
+        for _, level in ipairs(self.Alerts) do
+            if level.DrawingMode == "vlines" then
+                level.UpLinePen = self.NextId;
+                self.NextId = self.NextId + 1;
+                level.DownLinePen = self.NextId;
+                self.NextId = self.NextId + 1;
+                context:createPen(level.UpLinePen, context.SOLID, 1, level.UpColor);
+                context:createPen(level.DownLinePen, context.SOLID, 1, level.DownColor);
+            else
+                createFont = true;
+            end
+        end
+        if createFont then
+            self.FONT_ID = self.NextId;
+            self.NextId = self.NextId + 1;
+            context:createFont(self.FONT_ID, "Wingdings", context:pointsToPixels(self.Size), context:pointsToPixels(self.Size), 0);
+        end
         self.init = true;
     end
     for period = math.max(context:firstBar(), self.source:first()), math.min(context:lastBar(), self.source:size()-1), 1 do
-        x, x1, x2= context:positionOfBar(period);
         for _, level in ipairs(self.Alerts) do
-            if level.Alert:hasData(period) then
-                if level.Alert[period] == 1 then
-                    visible, y = context:pointOfPrice(level.AlertLevel[period]);
-                    width, height = context:measureText(1, level.UpSymbol, 0);
-                    local x1 = x - width / 2;
-                    local x2 = x + width / 2;
-                    local y1, y2;
-                    if self.inverted_arrows then
-                        y1 = y;
-                        y2 = y + height;
-                    else
-                        y1 = y - height;
-                        y2 = y;
-                    end
-                    context:drawText(1, level.UpSymbol, level.UpColor, -1, x1, y1, x2, y2, 0);
-                elseif level.Alert[period] == -1 then
-                    visible, y = context:pointOfPrice(level.AlertLevel[period]);
-                    width, height = context:measureText(1, level.DownSymbol, 0);
-                    local x1 = x - width / 2;
-                    local x2 = x + width / 2;
-                    local y1, y2;
-                    if self.inverted_arrows then
-                        y1 = y - height;
-                        y2 = y;
-                    else
-                        y1 = y + height;
-                        y2 = y;
-                    end
-                    context:drawText(1, level.DownSymbol, level.DownColor, -1, x1, y1, x2, y2, 0);
-                end
-            end
+            self:DrawAlert(context, level, period);
         end
     end
 end
@@ -214,6 +251,7 @@ function indi_alerts:Prepare()
         alert.id = i;
         alert.Label = instance.parameters:getString("Label" .. i);
         alert.ON = on;
+        alert.DrawingMode = instance.parameters:getString("drawing_mode" .. i);
         alert.UpSymbol = string.char(instance.parameters:getInteger("UpSymbol" .. i));
         local down_symbol = instance.parameters:getInteger("DownSymbol" .. i);
         if down_symbol ~= nil then
@@ -261,7 +299,7 @@ function indi_alerts:Prepare()
             self.AlertLevel[period] = level;
             self.D = nil;
             if self.U ~= source:serial(period) and period == source:size() - 1 - shift and not indi_alerts.FIRST then
-                self.U=source:serial(period);
+                self.U = source:serial(period);
                 if not historical_period then
                     indi_alerts:SoundAlert(self.Up);
                     indi_alerts:EmailAlert(self.Label, text, period);
@@ -269,6 +307,13 @@ function indi_alerts:Prepare()
                     if indi_alerts.Show then
                         indi_alerts:Pop(self.Label, text);
                     end
+                end
+            end
+        end
+        function alert:GetLast(period)
+            for i = period, 0, -1 do
+                if self.Alert:hasData(i) and self.Alert[i] ~= 0 then
+                    return self.Alert[i], i, self.AlertLevel[i];
                 end
             end
         end
