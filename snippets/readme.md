@@ -35,3 +35,7 @@ Trading routines.
 ## averages
 
 Snippet for creation of averages and it's parameters.
+
+## CellsBuilder
+
+Draws a grid of strings using owner draw feature.
