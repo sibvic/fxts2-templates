@@ -31,3 +31,7 @@ Basic trading logic.
 ## trading
 
 Trading routines.
+
+## averages
+
+Snippet for creation of averages and it's parameters.
