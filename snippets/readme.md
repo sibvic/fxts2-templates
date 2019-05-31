@@ -39,3 +39,7 @@ Snippet for creation of averages and it's parameters.
 ## CellsBuilder
 
 Draws a grid of strings using owner draw feature.
+
+## sources
+
+Helps to load several history streams and controls it's loading.
