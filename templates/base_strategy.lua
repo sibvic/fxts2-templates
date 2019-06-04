@@ -451,6 +451,7 @@ function ReleaseInstance() for _, module in pairs(Modules) do if module.ReleaseI
 
 function DoCloseOnOpposite(side)
     if instance.parameters.close_on_opposite then
+        signaler:SendCommand("action=close"); --TODO: add side
         local it = trading:FindTrade():WhenSide(trading:getOppositeSide(side))
         if UseOwnPositionsOnly then
             it:WhenCustomID(custom_id);
@@ -462,6 +463,7 @@ end
 function DisabledAction(source, period) return false; end
 
 function CloseAll(source, period)
+    signaler:SendCommand("action=close");
     local closedCount = 0;
     if instance.parameters.allow_trade then
         local it = trading:FindTrade();
@@ -476,6 +478,7 @@ function CloseAll(source, period)
 end
 
 function CloseLong(source, period)
+    signaler:SendCommand("action=close"); --TODO: add side
     local closedCount = 0;
     if instance.parameters.allow_trade then
         local it = trading:FindTrade():WhenSide("B");
@@ -490,6 +493,7 @@ function CloseLong(source, period)
 end
 
 function CloseShort(source, period)
+    signaler:SendCommand("action=close"); --TODO: add side
     local closedCount = 0;
     if instance.parameters.allow_trade then
         local it = trading:FindTrade():WhenSide("S");
@@ -530,6 +534,14 @@ function IsPositionLimitHit(side, side_limit)
 end
 
 function GoLong(source, period, positions, log)
+    for _, position in ipairs(positions) do
+        local command = string.format("action=create symbol=%s side=%s quantity=%s"
+            , source.close:instrument()
+            , "buy"
+            , tostring(position.Amount));
+        signaler:SendCommand(command);
+    end
+   
     if instance.parameters.allow_trade then
         DoCloseOnOpposite("B");
         if IsPositionLimitHit("B", instance.parameters.no_of_buy_position) then
@@ -549,6 +561,13 @@ function GoLong(source, period, positions, log)
 end
 
 function GoShort(source, period, positions, log)
+    for _, position in ipairs(positions) do
+        local command = string.format("action=create symbol=%s side=%s quantity=%s"
+            , source.close:instrument()
+            , "sell"
+            , tostring(position.Amount));
+        signaler:SendCommand(command);
+    end
     if instance.parameters.allow_trade then
         DoCloseOnOpposite("S");
         if IsPositionLimitHit("S", instance.parameters.no_of_sell_position) then
@@ -627,6 +646,7 @@ function ExtAsyncOperationFinished(cookie, success, message, message1, message2)
         local now = core.host:execute("convertTime", core.TZ_EST, ToTime, core.host:execute("getServerTime"));
         now = now - math.floor(now);
         if InRange(now, exit_time, exit_time + (instance.parameters.mandatory_closing_valid_interval / 86400.0)) then
+            signaler:SendCommand("action=close");
             local it = trading:FindTrade();
             if UseOwnPositionsOnly then
                 it:WhenCustomID(custom_id);

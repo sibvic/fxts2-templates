@@ -1,7 +1,7 @@
 signaler = {};
 signaler.Name = "Signaler";
 signaler.Debug = false;
-signaler.Version = "1.5";
+signaler.Version = "1.6";
 
 signaler._show_alert = nil;
 signaler._sound_file = nil;
@@ -11,6 +11,7 @@ signaler._ids_start = nil;
 signaler._advanced_alert_timer = nil;
 signaler._tz = nil;
 signaler._alerts = {};
+signaler._commands = {};
 
 function signaler:trace(str) if not self.Debug then return; end core.host:trace(self.Name .. ": " .. str); end
 function signaler:OnNewModule(module) end
@@ -81,21 +82,30 @@ function signaler:ArrayToJSON(arr)
 end
 
 function signaler:AsyncOperationFinished(cookie, success, message, message1, message2)
-    if cookie == self._advanced_alert_timer and #self._alerts > 0 and (self.last_req == nil or not self.last_req:loading()) then
-        if self._advanced_alert_key == nil then
-            return;
+    if cookie == self._advanced_alert_timer and (self.last_req == nil or not self.last_req:loading()) then
+        if #self._alerts > 0 then
+            local data = self:ArrayToJSON(self._alerts);
+            self._alerts = {};
+            
+            self.last_req = http_lua.createRequest();
+            local query = string.format('{"Key":"%s","StrategyName":"%s","Platform":"FXTS2","Notifications":%s}',
+                self._advanced_alert_key, string.gsub(self.StrategyName or "", '"', '\\"'), data);
+            self.last_req:setRequestHeader("Content-Type", "application/json");
+            self.last_req:setRequestHeader("Content-Length", tostring(string.len(query)));
+
+            self.last_req:start("http://profitrobots.com/api/v1/notification", "POST", query);
+        elseif #self._commands > 0 then
+            local data = self:ArrayToJSON(self._commands);
+            self._commands = {};
+            
+            self.last_req = http_lua.createRequest();
+            local query = string.format('{"Key":"%s","StrategyName":"%s","Platform":"FXTS2","Notifications":%s}',
+                self._external_executer_key, string.gsub(self.StrategyName or "", '"', '\\"'), data);
+            self.last_req:setRequestHeader("Content-Type", "application/json");
+            self.last_req:setRequestHeader("Content-Length", tostring(string.len(query)));
+
+            self.last_req:start("http://profitrobots.com/api/v1/notification", "POST", query);
         end
-
-        local data = self:ArrayToJSON(self._alerts);
-        self._alerts = {};
-        
-        self.last_req = http_lua.createRequest();
-        local query = string.format('{"Key":"%s","StrategyName":"%s","Platform":"FXTS2","Notifications":%s}',
-            self._advanced_alert_key, string.gsub(self.StrategyName or "", '"', '\\"'), data);
-        self.last_req:setRequestHeader("Content-Type", "application/json");
-        self.last_req:setRequestHeader("Content-Length", tostring(string.len(query)));
-
-        self.last_req:start("http://profitrobots.com/api/v1/notification", "POST", query);
     end
 end
 
@@ -156,6 +166,17 @@ function signaler:Signal(message, source)
     end
 end
 
+function signaler:SendCommand(command)
+    if self._external_executer_key == nil or core.host.Trading:getTradingProperty("isSimulation") or command == "" then
+        return;
+    end
+    local command = 
+    {
+        Text = command
+    };
+    self._commands[#self._commands + 1] = command;
+end
+
 function signaler:AlertTelegram(message, instrument, timeframe)
     if core.host.Trading:getTradingProperty("isSimulation") then
         return;
@@ -190,7 +211,9 @@ function signaler:Init(parameters)
     parameters:addBoolean("signaler_debug_alert", "Print Into Log", "", false);
     parameters:addBoolean("use_advanced_alert", "Send Advanced Alert", "Telegram/Discord/other platform (like MT4)", false)
 	parameters:addString("advanced_alert_key", "Advanced Alert Key",
-		"You can get a key via @profit_robots_bot Telegram Bot. Visit ProfitRobots.com for discord/other platform keys", "")
+        "You can get a key via @profit_robots_bot Telegram Bot. Visit ProfitRobots.com for discord/other platform keys", "");
+    parameters:addBoolean("use_external_executer", "Send Command To Another Platform", "Like MT4/MT5/FXTS2", false)
+    parameters:addString("external_executer_key", "Platform Key", "You can get a key on ProfitRobots.com", "");
     if DDEAlertsSupport then
         parameters:addBoolean("signaler_dde_export", "DDE Export", "You can export the alert into the Excel or any other application with DDE support (=Service Name|DDE Topic!Alerts)", false);
         parameters:addString("signaler_dde_service", "Service Name", "The service name must be unique amoung all running instances of the strategy", "TS2ALERTS");
@@ -241,6 +264,11 @@ function signaler:Prepare(name_only)
 
     if instance.parameters.advanced_alert_key ~= "" and instance.parameters.use_advanced_alert then
         self._advanced_alert_key = instance.parameters.advanced_alert_key;
+    end
+    if instance.parameters.external_executer_key ~= "" and instance.parameters.use_external_executer then
+        self._external_executer_key = instance.parameters.external_executer_key;
+    end
+    if self.external_executer_key ~= nil or self._advanced_alert_key ~= nil then
         require("http_lua");
         self._advanced_alert_timer = self._ids_start + 1;
         core.host:execute("setTimer", self._advanced_alert_timer, 1);
