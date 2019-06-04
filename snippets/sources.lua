@@ -1,3 +1,4 @@
+-- Sources v1.1
 local sources = {}
 sources.last_id = 1
 sources.ids = {}
@@ -11,6 +12,7 @@ function sources:Request(id, source, tf)
 	self.ids[id] = ids
 
 	self.items[id] = core.host:execute("getSyncHistory", source:instrument(), tf, source:isBid(), 100, ids.loaded_id, ids.loading_id)
+	return self.items[id];
 end
 function sources:AsyncOperationFinished(cookie, successful, message, message1, message2)
 	for index, ids in pairs(self.ids) do
