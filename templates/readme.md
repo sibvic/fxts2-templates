@@ -4,6 +4,8 @@
 
 Base strategy template. It supports execution of orders on other platforms.
 
+[Description of template parameters](https://github.com/sibvic/fxts2-templates/wiki/base_strategy-Template-parameters)
+
 You can setup the template by changing variables in "CUSTOMIZATION SECTION" and "USER DEFINED SECTION".
 
 ### STRATEGY_NAME

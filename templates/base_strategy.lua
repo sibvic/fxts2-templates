@@ -292,6 +292,7 @@ function CreatePositionStrategy(source, side, id)
     position_strategy.Side = side;
     position_strategy.Source = source;
     position_strategy.Amount = instance.parameters:getInteger("amount" .. id);
+    position_strategy.Amount_Type = instance.parameters:getString("amount_type" .. id);
     if SetCustomStop == nil then
         position_strategy.Stop = instance.parameters:getDouble("stop" .. id);
         if position_strategy.StopType == "atr" then
@@ -340,8 +341,14 @@ function CreatePositionStrategy(source, side, id)
         end
         command:SetSide(self.Side)
             :SetAccountID(instance.parameters.account)
-            :SetAmount(self.Amount)
             :SetCustomID(custom_id);
+        if self.Amount_Type == "lots" then
+            command:SetAmount(self.Amount)
+        elseif self.Amount_Type == "risk_equity" then
+            command:SetRiskPercentOfEquityAmount(self.Amount)
+        elseif self.Amount_Type == "equity" then
+            command:SetPercentOfEquityAmount(self.Amount)
+        end
         local default_stop = SetCustomStop == nil or not SetCustomStop(self, command, period);
         local default_limit = SetCustomLimit == nil or not SetCustomLimit(self, command, period);
         if default_stop then
