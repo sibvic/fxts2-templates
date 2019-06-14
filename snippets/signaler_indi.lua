@@ -45,7 +45,7 @@ function AsyncOperationFinished(cookie, success, message, message1, message2)
     indi_alerts:AsyncOperationFinished(cookie, success, message, message1, message2)
 end
 
-indi_alerts.Version = "1.9";
+indi_alerts.Version = "1.10";
 indi_alerts.last_id = 0;
 indi_alerts.FIRST = true;
 indi_alerts._alerts = {};
@@ -157,11 +157,11 @@ function indi_alerts:DrawAlert(context, alert, period)
                 y1 = y - height;
                 y2 = y;
             end
-            context:drawText(self.FONT_ID, alert.UpSymbol, alert.UpColor, -1, x1, y1, x2, y2, 0);
+			context:drawText(self.FONT_ID, alert.UpSymbol, alert.UpColor, -1, x1, y1, x2, y2, 0);
         else
             context:drawLine(alert.UpLinePen, x, context:top(), x, context:bottom());
         end
-    elseif alert.Alert[period] == -1 then
+	elseif alert.Alert[period] == -1 then
         local x = context:positionOfBar(period);
         if alert.DrawingMode == "arrows" then
             visible, y = context:pointOfPrice(alert.AlertLevel[period]);
@@ -173,8 +173,8 @@ function indi_alerts:DrawAlert(context, alert, period)
                 y1 = y - height;
                 y2 = y;
             else
-                y1 = y + height;
-                y2 = y;
+                y1 = y;
+                y2 = y + height;
             end
             context:drawText(self.FONT_ID, alert.DownSymbol, alert.DownColor, -1, x1, y1, x2, y2, 0);
         else
@@ -201,9 +201,9 @@ function indi_alerts:Draw(stage, context)
                 createFont = true;
             end
         end
-        if createFont then
+        if createFont and self.FONT_ID == nil then
             self.FONT_ID = self.NextId;
-            self.NextId = self.NextId + 1;
+			self.NextId = self.NextId + 1;
             context:createFont(self.FONT_ID, "Wingdings", context:pointsToPixels(self.Size), context:pointsToPixels(self.Size), 0);
         end
         self.init = true;
