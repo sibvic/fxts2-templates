@@ -142,11 +142,11 @@ function indi_alerts:DrawAlert(context, alert, period)
         return;
     end
 
-    if level.Alert[period] == 1 then
+    if alert.Alert[period] == 1 then
         local x = context:positionOfBar(period);
-        if level.DrawingMode == "arrows" then
-            visible, y = context:pointOfPrice(level.AlertLevel[period]);
-            width, height = context:measureText(self.FONT_ID, level.UpSymbol, 0);
+        if alert.DrawingMode == "arrows" then
+            visible, y = context:pointOfPrice(alert.AlertLevel[period]);
+            width, height = context:measureText(self.FONT_ID, alert.UpSymbol, 0);
             local x1 = x - width / 2;
             local x2 = x + width / 2;
             local y1, y2;
@@ -157,15 +157,15 @@ function indi_alerts:DrawAlert(context, alert, period)
                 y1 = y - height;
                 y2 = y;
             end
-            context:drawText(self.FONT_ID, level.UpSymbol, level.UpColor, -1, x1, y1, x2, y2, 0);
+            context:drawText(self.FONT_ID, alert.UpSymbol, alert.UpColor, -1, x1, y1, x2, y2, 0);
         else
-            context:drawLine(level.UpLinePen, x, context:top(), x, context:bottom());
+            context:drawLine(alert.UpLinePen, x, context:top(), x, context:bottom());
         end
-    elseif level.Alert[period] == -1 then
+    elseif alert.Alert[period] == -1 then
         local x = context:positionOfBar(period);
-        if level.DrawingMode == "arrows" then
-            visible, y = context:pointOfPrice(level.AlertLevel[period]);
-            width, height = context:measureText(self.FONT_ID, level.DownSymbol, 0);
+        if alert.DrawingMode == "arrows" then
+            visible, y = context:pointOfPrice(alert.AlertLevel[period]);
+            width, height = context:measureText(self.FONT_ID, alert.DownSymbol, 0);
             local x1 = x - width / 2;
             local x2 = x + width / 2;
             local y1, y2;
@@ -176,9 +176,9 @@ function indi_alerts:DrawAlert(context, alert, period)
                 y1 = y + height;
                 y2 = y;
             end
-            context:drawText(self.FONT_ID, level.DownSymbol, level.DownColor, -1, x1, y1, x2, y2, 0);
+            context:drawText(self.FONT_ID, alert.DownSymbol, alert.DownColor, -1, x1, y1, x2, y2, 0);
         else
-            context:drawLine(level.DownLinePen, x, context:top(), x, context:bottom());
+            context:drawLine(alert.DownLinePen, x, context:top(), x, context:bottom());
         end
     end
 end
