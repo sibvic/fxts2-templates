@@ -458,7 +458,7 @@ function ReleaseInstance() for _, module in pairs(Modules) do if module.ReleaseI
 
 function DoCloseOnOpposite(side)
     if instance.parameters.close_on_opposite then
-        signaler:SendCommand("action=close"); --TODO: add side
+        signaler:SendCommand("action=close side=" .. trading:getOppositeSide(side));
         local it = trading:FindTrade():WhenSide(trading:getOppositeSide(side))
         if UseOwnPositionsOnly then
             it:WhenCustomID(custom_id);
@@ -485,7 +485,7 @@ function CloseAll(source, period)
 end
 
 function CloseLong(source, period)
-    signaler:SendCommand("action=close"); --TODO: add side
+    signaler:SendCommand("action=close side=B");
     local closedCount = 0;
     if instance.parameters.allow_trade then
         local it = trading:FindTrade():WhenSide("B");
@@ -500,7 +500,7 @@ function CloseLong(source, period)
 end
 
 function CloseShort(source, period)
-    signaler:SendCommand("action=close"); --TODO: add side
+    signaler:SendCommand("action=close side=S");
     local closedCount = 0;
     if instance.parameters.allow_trade then
         local it = trading:FindTrade():WhenSide("S");
