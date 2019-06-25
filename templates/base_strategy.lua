@@ -206,39 +206,32 @@ local custom_id;
 local OpenTime, CloseTime, exit_time;
 local last_serial;
 
-function CreateBuyPositions()
+function CreatePositions(side)
     local positions = {};
-    if instance.parameters.allow_side == "sell" then
-        return positions;
-    end
-
     if PositionsCount == 1 then
-        positions[#positions + 1] = CreatePositionStrategy(trading_logic.MainSource, "B", "");
+        positions[#positions + 1] = CreatePositionStrategy(trading_logic.MainSource, side, "");
         return positions;
     end
     for i = 1, PositionsCount do
         if instance.parameters:getBoolean("use_position_" .. i) then
-            positions[#positions + 1] = CreatePositionStrategy(trading_logic.MainSource, "B", "_" .. i);
+            positions[#positions + 1] = CreatePositionStrategy(trading_logic.MainSource, side, "_" .. i);
         end
     end
     return positions;
 end
 
+function CreateBuyPositions()
+    if instance.parameters.allow_side == "sell" then
+        return {};
+    end
+    return CreatePositions("B");
+end
+
 function CreateSellPositions()
-    local positions = {};
     if instance.parameters.allow_side == "buy" then
-        return positions;
+        return {};
     end
-    if PositionsCount == 1 then
-        positions[#positions + 1] = CreatePositionStrategy(trading_logic.MainSource, "S", "");
-        return positions;
-    end
-    for i = 1, PositionsCount do
-        if instance.parameters:getBoolean("use_position_" .. i) then
-            positions[#positions + 1] = CreatePositionStrategy(trading_logic.MainSource, "S", "_" .. i);
-        end
-    end
-    return positions;
+    return CreatePositions("S");
 end
 
 local add_log;
