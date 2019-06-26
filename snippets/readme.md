@@ -120,6 +120,21 @@ Snippet for creation of averages and it's parameters.
 
 Draws a grid of strings using owner draw feature.
 
+Example:
+
+    local title = "Title";
+    local title_w, title_h = context:measureText(FONT_ID, title, 0);
+    CellsBuilder:Clear(context);
+    for i, level in ipairs(levels) do
+        CellsBuilder:Add(FONT_ID, tostring(level.name), text_color, 1, i, context.LEFT);
+        local text = tostring(level.value);
+        CellsBuilder:Add(FONT_ID, text, text_color, 2, i, context.LEFT);
+    end
+
+    local width = math.max(title_w, CellsBuilder:GetTotalWidth());
+    context:drawText(FONT_ID, title, text_color, -1, context:right() - width, context:top(), context:right(), context:top() + title_h, 0);
+    CellsBuilder:Draw(context:right() - width, context:top() + title_h * 1.2);
+
 ## sources
 
 Helps to load several history streams and controls it's loading.
