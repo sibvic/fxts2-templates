@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.24";
+trading.Version = "4.25";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -259,6 +259,22 @@ function trading:ChangeOrder(order, rate, trailing)
     return res;
 end
 
+function trading:IsLimitOrder(order)
+    local order_type = order.Type;
+    if order_type == "L" or order_type == "LT" or order_type == "LTE" then
+        return true;
+    end
+    return order.ContingencyType == 3 and order_type == "LE";
+end
+
+function trading:IsStopOrder(order) 
+    local order_type = order.Type;
+    if order_type == "S" or order_type == "ST" or order_type == "STE" then
+        return true;
+    end
+    return order.ContingencyType == 3 and order_type == "SE";
+end
+
 function trading:IsLimitOrderType(order_type) return order_type == "L" or order_type == "LE" or order_type == "LT" or order_type == "LTE"; end
 
 function trading:IsStopOrderType(order_type) return order_type == "S" or order_type == "SE" or order_type == "ST" or order_type == "STE"; end
@@ -284,7 +300,7 @@ function trading:FindLimitOrder(trade)
         local enum = core.host:findTable("orders"):enumerator();
         local row = enum:next();
         while (row ~= nil) do
-            if row.ContingencyType == 3 and self:IsLimitOrderType(row.Type) and self._used_limit_orders[row.OrderID] ~= true then
+            if self:IsLimitOrder(row) and self._used_limit_orders[row.OrderID] ~= true then
                 self._used_limit_orders[row.OrderID] = true;
                 return row;
             end
@@ -315,7 +331,7 @@ function trading:FindStopOrder(trade)
         local enum = core.host:findTable("orders"):enumerator();
         local row = enum:next();
         while (row ~= nil) do
-            if row.ContingencyType == 3 and self:IsStopOrderType(row.Type) and self._used_stop_orders[row.OrderID] ~= true then
+            if self:IsStopOrder(row) and self._used_stop_orders[row.OrderID] ~= true then
                 self._used_stop_orders[row.OrderID] = true;
                 return row;
             end
