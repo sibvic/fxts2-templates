@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.23";
+trading.Version = "4.24";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -1105,8 +1105,7 @@ function trading:JsonToObject(json)
                 result[name] = true;
             else
                 if string.sub(value, 1, 1) == "\"" then
-                    result[name] = value;
-                    value:sub(2, value:len() - 1);
+                    result[name] = value:sub(2, value:len() - 1);
                 elseif string.sub(value, 1, 1) == "{" then
                     result[name] = trading:JsonToObject(value);
                 else
