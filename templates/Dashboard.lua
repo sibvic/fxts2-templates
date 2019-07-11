@@ -1,4 +1,4 @@
--- Dashboard template v.1.1
+-- Dashboard template v.1.2
 
 local timeframes_list = {"m1", "m5", "m15", "m30", "H1", "H2", "H3", "H4", "H6", "H8", "D1", "W1", "M1"};
 local Modules = {};
@@ -68,11 +68,20 @@ function Init()
         AddTimeFrame(i, timeframes_list[i], true);
     end
 
+    indicator.parameters:addGroup("Styling");
     indicator.parameters:addColor("up_color", "Up color", "", core.rgb(0, 255, 0));
     indicator.parameters:addColor("dn_color", "Down color", "", core.rgb(255, 0, 0));
     indicator.parameters:addColor("text_color", "Text color", "", core.rgb(0, 0, 0));
     indicator.parameters:addColor("background_color", "Background color", "", core.rgb(255, 255, 255));
     indicator.parameters:addColor("signal_background_color", "Active signal background color", "", core.rgb(250, 250, 210));
+    indicator.parameters:addInteger("load_quota", "Loading quota", "Prevents freeze. Use 0 to disable", 0);
+    indicator.parameters:addDouble("cells_gap", "Gap coefficient", "", 1.2);
+    indicator.parameters:addColor("grid_color", "Grid color", "", core.rgb(128, 128, 128));
+    indicator.parameters:addBoolean("draw_grid", "Draw grid", "", false);
+    indicator.parameters:addString("grid_mode", "Grid mode", "", "h")
+    indicator.parameters:addStringAlternative("grid_mode", "Horizontal", "", "h")
+    indicator.parameters:addStringAlternative("grid_mode", "Vertical", "", "v")
+    indicator.parameters:addGroup("Alerts");
     signaler:Init(indicator.parameters);
 end
 
@@ -128,34 +137,6 @@ function PrepareInstrument(instrument)
 end
 
 local timer_handle;
-
-function Prepare(nameOnly)
-    signaler:Prepare(nameOnly);
-    instance:name(indi_name);
-    if nameOnly then
-        return;
-    end
-    text_color = instance.parameters.text_color;
-
-    if instance.parameters.all_instruments then
-        local enum = core.host:findTable("offers"):enumerator();
-        local row = enum:next();
-        while (row ~= nil) do
-            PrepareInstrument(row.Instrument);
-            row = enum:next();
-        end
-    else
-        for i = 1, 20, 1 do
-            if instance.parameters:getBoolean("use_pair" .. i) then
-                PrepareInstrument(instance.parameters:getString("Pair" .. i));
-            end
-        end
-    end
-    timer_handle = core.host:execute("setTimer", TIMER_ID, 1);
-    core.host:execute("setStatus", "Loading");
-    instance:ownerDrawn(true);
-end
-
 -- Cells builder v.1.3
 local CellsBuilder = {};
 CellsBuilder.GapCoeff = 1.2;
@@ -164,7 +145,7 @@ function CellsBuilder:Clear(context)
     self.RowHeights = {};
     self.Context = context;
 end
-function CellsBuilder:Add(font, text, color, column, row, mode, backgound)
+function CellsBuilder:Add(font, text, color, column, row, mode, backgound, grid_pen, grid_top, grid_bottom)
     if self.Columns[column] == nil then
         self.Columns[column] = {};
         self.Columns[column].Rows = {};
@@ -181,6 +162,9 @@ function CellsBuilder:Add(font, text, color, column, row, mode, backgound)
     cell.Height = h;
     cell.Mode = mode;
     cell.Background = backgound;
+    cell.GridPen = grid_pen;
+    cell.DrawGridTop = grid_top;
+    cell.DrawGridBottom = grid_bottom;
     self.Columns[column].Rows[row] = cell;
     if self.Columns[column].MaxRowIndex < row then
         self.Columns[column].MaxRowIndex = row;
@@ -209,6 +193,8 @@ function CellsBuilder:GetTotalHeight()
     return height;
 end
 function CellsBuilder:Draw(x, y)
+    local max_height = self:GetTotalHeight();
+    local max_width = self:GetTotalWidth();
     local total_width = 0;
     for columnIndex, column in ipairs(self.Columns) do
         local total_height = 0;
@@ -219,13 +205,27 @@ function CellsBuilder:Draw(x, y)
                 if cell.Background ~= nil then
                     background = cell.Background;
                 end
+                local x_start = x + total_width;
+                local y_start = y + total_height;
+                local x_end = x + total_width + column.MaxWidth * self.GapCoeff;
+                local y_end = y + total_height + self.RowHeights[i] * self.GapCoeff;
                 self.Context:drawText(cell.Font, cell.Text, 
                     cell.Color, background, 
-                    x + total_width, 
-                    y + total_height, 
-                    x + total_width + column.MaxWidth, 
-                    y + total_height + cell.Height,
+                    x_start + column.MaxWidth * (self.GapCoeff - 1) / 2, 
+                    y_start + self.RowHeights[i] * (self.GapCoeff - 1) / 2, 
+                    x_end, 
+                    y_end,
                     cell.Mode);
+                if cell.GridPen ~= nil then
+                    if cell.DrawGridTop then
+                        self.Context:drawLine(cell.GridPen, x_start, y_start, x_end, y_start); -- top
+                    end
+                    if cell.DrawGridBottom then
+                        self.Context:drawLine(cell.GridPen, x_start, y_end, x_end, y_end); -- bottom
+                    end
+                    self.Context:drawLine(cell.GridPen, x_start, y_start, x_start, y_end); -- left
+                    self.Context:drawLine(cell.GridPen, x_end, y_start, x_end, y_end); -- right
+                end
             end
             if self.RowHeights[i] ~= nil then
                 total_height = total_height + self.RowHeights[i] * self.GapCoeff;
@@ -233,6 +233,34 @@ function CellsBuilder:Draw(x, y)
         end
         total_width = total_width + column.MaxWidth * self.GapCoeff;
     end
+end
+
+function Prepare(nameOnly)
+    signaler:Prepare(nameOnly);
+    instance:name(indi_name);
+    if nameOnly then
+        return;
+    end
+    text_color = instance.parameters.text_color;
+
+    if instance.parameters.all_instruments then
+        local enum = core.host:findTable("offers"):enumerator();
+        local row = enum:next();
+        while (row ~= nil) do
+            PrepareInstrument(row.Instrument);
+            row = enum:next();
+        end
+    else
+        for i = 1, 20, 1 do
+            if instance.parameters:getBoolean("use_pair" .. i) then
+                PrepareInstrument(instance.parameters:getString("Pair" .. i));
+            end
+        end
+    end
+    timer_handle = core.host:execute("setTimer", TIMER_ID, 1);
+    core.host:execute("setStatus", "Loading");
+    instance:ownerDrawn(true);
+    CellsBuilder.GapCoeff = instance.parameters.cells_gap;
 end
 
 function FormatTime(time)
@@ -255,6 +283,9 @@ local FONT = 1;
 local FONT_TEXT = 2;
 local BG_PEN = 3;
 local BG_BRUSH = 4;
+local GRID_PEN = 5;
+
+local draw_grid, grid_mode;
 function Draw(stage, context) 
     if stage ~= 2 then
         return;
@@ -264,15 +295,30 @@ function Draw(stage, context)
         context:createFont(FONT_TEXT, "Arial", 0, context:pointsToPixels(8), 0)
         context:createPen(BG_PEN, context.SOLID, 1, instance.parameters.background_color);
         context:createSolidBrush(BG_BRUSH, instance.parameters.background_color);
+        draw_grid = instance.parameters.draw_grid;
+        grid_mode = instance.parameters.grid_mode;
+        if draw_grid then
+            context:createPen(GRID_PEN, context.SOLID, 1, instance.parameters.grid_color);
+        else
+            GRID_PEN = nil;
+        end
         init = true;
     end
     local title_w, title_h = context:measureText(FONT_TEXT, indi_name, 0);
     CellsBuilder:Clear(context);
     for i = 1, #timeframes do
-        CellsBuilder:Add(FONT_TEXT, timeframes[i], text_color, 1, (i + 1) * 2, context.LEFT);
+        if grid_mode == "h" then
+            CellsBuilder:Add(FONT_TEXT, timeframes[i], text_color, 1, (i + 1) * 2, context.LEFT);
+        else
+            CellsBuilder:Add(FONT_TEXT, timeframes[i], text_color, i + 1, 1, context.LEFT);
+        end
     end
     for i = 1, #instruments do
-        CellsBuilder:Add(FONT_TEXT, instruments[i], text_color, i + 1, 1, context.CENTER);
+        if grid_mode == "h" then
+            CellsBuilder:Add(FONT_TEXT, instruments[i], text_color, i + 1, 1, context.CENTER);
+        else
+            CellsBuilder:Add(FONT_TEXT, instruments[i], text_color, 1, (i + 1) * 2, context.CENTER);
+        end
     end
     for _, symbol in ipairs(symbols) do
         if not symbol.Loading then
@@ -281,21 +327,29 @@ function Draw(stage, context)
                 symbol.Updated = true;
             end
             local signal, time = GetLastSignal(symbol.Indicator, symbol.Source);
-            local row = (symbol.TimeframeIndex + 1) * 2;
-            local column = symbol.SymbolIndex + 1;
+            local row;
+            local column;
+            if grid_mode == "h" then
+                row = (symbol.TimeframeIndex + 1) * 2;
+                column = symbol.SymbolIndex + 1;
+            else
+                column = symbol.TimeframeIndex + 1;
+                row = (symbol.SymbolIndex + 1) * 2;
+            end
             if signal == 0 then
-                CellsBuilder:Add(FONT_TEXT, "-", text_color, column, row, context.CENTER);
-                CellsBuilder:Add(FONT_TEXT, "-", text_color, column, row + 1, context.CENTER);
-            elseif signal == 1 then
-                local is_current_bar = symbol.Source:date(NOW) <= time;
+                CellsBuilder:Add(FONT_TEXT, "-", text_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
+                CellsBuilder:Add(FONT_TEXT, "-", text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
+            elseif signal > 0 then
+                local is_current_bar = symbol.Source:date(NOW - 3) <= time;
                 local backgound = -1;
                 if is_current_bar then
                     backgound = instance.parameters.signal_background_color;
                 end
-                CellsBuilder:Add(FONT, "\233", instance.parameters.up_color, column, row, context.CENTER, backgound);
-                CellsBuilder:Add(FONT_TEXT, FormatTime(time), text_color, column, row + 1, context.CENTER);
+                local pattern_name = GetPatternName(signal);
+                CellsBuilder:Add(FONT_TEXT, pattern_name, instance.parameters.up_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
+                CellsBuilder:Add(FONT_TEXT, FormatTime(time), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
                 if is_current_bar and symbol.last_alert ~= time then
-                    signaler:Signal(symbol.Pair .. ", " .. symbol.TF .. ": Open Long");
+                    signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. pattern_name);
                     symbol.last_alert = time;
                 end
             else
@@ -304,10 +358,11 @@ function Draw(stage, context)
                 if is_current_bar then
                     backgound = instance.parameters.signal_background_color;
                 end
-                CellsBuilder:Add(FONT, "\234", instance.parameters.dn_color, column, row, context.CENTER, backgound);
-                CellsBuilder:Add(FONT_TEXT, FormatTime(time), text_color, column, row + 1, context.CENTER);
+                local pattern_name = GetPatternName(signal);
+                CellsBuilder:Add(FONT_TEXT, pattern_name, instance.parameters.dn_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
+                CellsBuilder:Add(FONT_TEXT, FormatTime(time), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
                 if is_current_bar and symbol.last_alert ~= time then
-                    signaler:Signal(symbol.Pair .. ", " .. symbol.TF .. ": Open Short");
+                    signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. pattern_name);
                     symbol.last_alert = time;
                 end
             end
@@ -328,8 +383,6 @@ function Update(period, mode)
     end
 end
 
-local MAX_LOADING = 10;
-
 function AsyncOperationFinished(cookie, success, message, message1, message2)
     for _, module in pairs(Modules) do if module.AsyncOperationFinished ~= nil then module:AsyncOperationFinished(cookie, success, message, message1, message2); end end
     if cookie == TIMER_ID then
@@ -341,7 +394,7 @@ function AsyncOperationFinished(cookie, success, message, message1, message2)
             elseif symbol.Loading then
                 loading_count = loading_count + 1;
             end
-            if loading_count == MAX_LOADING then
+            if loading_count == instance.parameters.load_quota and instance.parameters.load_quota > 0 then
                 return;
             end
         end
