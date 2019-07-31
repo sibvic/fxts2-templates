@@ -1,4 +1,4 @@
--- Dashboard template v.1.2
+-- Dashboard template v.1.3
 
 local timeframes_list = {"m1", "m5", "m15", "m30", "H1", "H2", "H3", "H4", "H6", "H8", "D1", "W1", "M1"};
 local Modules = {};
@@ -31,6 +31,16 @@ function CreateIndicator(source)
 end
 
 function CreateParameters()
+end
+
+function GetPatternName(signal)
+    if signal == 1 then
+        return "B";3
+    elseif signal == -1 then
+        return "S";
+    end
+
+    return "-";
 end
 
 function GetLastSignal(indi, source)
