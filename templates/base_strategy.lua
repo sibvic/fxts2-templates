@@ -94,15 +94,15 @@ function CreateCustomActions()
         exitShortAction.Execute = CloseShort;
         enterLongAction.Execute = GoLong;
         enterShortAction.Execute = GoShort;
-        enterLongAction.ExecuteData = CreateBuyPositions();
-        enterShortAction.ExecuteData = CreateSellPositions();
+        enterLongAction.ExecuteData = CreateBuyPositions(trading_logic.MainSource);
+        enterShortAction.ExecuteData = CreateSellPositions(trading_logic.MainSource);
     else
         exitLongAction.Execute = CloseShort;
         exitShortAction.Execute = CloseLong;
         enterLongAction.Execute = GoShort;
         enterShortAction.Execute = GoLong;
-        enterLongAction.ExecuteData = CreateSellPositions();
-        enterShortAction.ExecuteData = CreateBuyPositions();
+        enterLongAction.ExecuteData = CreateSellPositions(trading_logic.MainSource);
+        enterShortAction.ExecuteData = CreateBuyPositions(trading_logic.MainSource);
     end
     ExitActions[#ExitActions + 1] = exitLongAction;
     ExitActions[#ExitActions + 1] = exitShortAction;
@@ -158,10 +158,10 @@ function CreateAction(id)
         action.Execute = DisabledAction;
     elseif actionType == "SELL" then
         action.Execute = GoShort;
-        action.ExecuteData = CreateSellPositions();
+        action.ExecuteData = CreateSellPositions(trading_logic.MainSource);
     elseif actionType == "BUY" then
         action.Execute = GoLong;
-        action.ExecuteData = CreateBuyPositions();
+        action.ExecuteData = CreateBuyPositions(trading_logic.MainSource);
     elseif actionType == "CLOSE" then
         action.Execute = CloseAll;
     end
@@ -186,32 +186,32 @@ local custom_id;
 local OpenTime, CloseTime, exit_time;
 local last_serial;
 
-function CreatePositions(side)
+function CreatePositions(side, source)
     local positions = {};
     if PositionsCount == 1 then
-        positions[#positions + 1] = CreatePositionStrategy(trading_logic.MainSource, side, "");
+        positions[#positions + 1] = CreatePositionStrategy(source, side, "");
         return positions;
     end
     for i = 1, PositionsCount do
         if instance.parameters:getBoolean("use_position_" .. i) then
-            positions[#positions + 1] = CreatePositionStrategy(trading_logic.MainSource, side, "_" .. i);
+            positions[#positions + 1] = CreatePositionStrategy(source, side, "_" .. i);
         end
     end
     return positions;
 end
 
-function CreateBuyPositions()
+function CreateBuyPositions(source)
     if instance.parameters.allow_side == "sell" then
         return {};
     end
-    return CreatePositions("B");
+    return CreatePositions("B", source);
 end
 
-function CreateSellPositions()
+function CreateSellPositions(source)
     if instance.parameters.allow_side == "buy" then
         return {};
     end
-    return CreatePositions("S");
+    return CreatePositions("S", source);
 end
 
 local add_log;
