@@ -27,7 +27,7 @@ function AddAverages(id, name, default)
     strategy.parameters:addStringAlternative(id, "VAMA", "", "VAMA");
 end
 
-function CreateAverates(method, source, period)
+function CreateAverages(method, source, period)
     if method == "MVA" or method == "EMA" or method == "ARSI" 
         or method == "KAMA" or method == "LWMA" or method == "SMMA"
         or method == "VIDYA"
