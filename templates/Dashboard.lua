@@ -35,7 +35,7 @@ end
 
 function GetPatternName(signal)
     if signal == 1 then
-        return "B";3
+        return "B";
     elseif signal == -1 then
         return "S";
     end
