@@ -339,6 +339,9 @@ function CreatePositionStrategy(source, side, id)
             end
         end
         local result = command:Execute();
+        if not result.Success then
+            return result;
+        end
         if default_stop then
             if self.StopType == "atr" then
                 self.StopATR:update(core.UpdateLast);
@@ -373,6 +376,7 @@ function CreatePositionStrategy(source, side, id)
                 end
             end
         end
+        return result;
     end
     function position_strategy:CreateTrailingLimit(result)
         if self.TrailingLimitType == "Unfavorable" then
