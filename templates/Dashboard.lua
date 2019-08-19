@@ -110,7 +110,7 @@ function AddTimeFrame(id, FRAME, DEFAULT)
     indicator.parameters:addBoolean("Use" .. id, "Show " .. FRAME, "", DEFAULT); 
 end
 
-local symbols = {};
+local items = {};
 local instruments = {};
 local timeframes = {};
 
@@ -138,7 +138,7 @@ function PrepareInstrument(instrument)
                 assert(self.Indicator:getTextOutputCount() > 0, "Selected indicator doesn't have any text outputs. The dashboard works with text outputs only!");
             end
             last_id = last_id + 2;
-            symbols[#symbols + 1] = symbol;
+            items[#items + 1] = symbol;
             timeframes[timeframe_index] = timeframes_list[ii];
             timeframe_index = timeframe_index + 1;
         end
@@ -330,7 +330,7 @@ function Draw(stage, context)
             CellsBuilder:Add(FONT_TEXT, instruments[i], text_color, 1, (i + 1) * 2, context.CENTER);
         end
     end
-    for _, symbol in ipairs(symbols) do
+    for _, symbol in ipairs(items) do
         if not symbol.Loading then
             if symbol.Updated == nil then
                 symbol.Indicator:update(core.UpdateLast);
@@ -386,7 +386,7 @@ end
 
 function Update(period, mode)
     for _, module in pairs(Modules) do if module.ExtUpdate ~= nil then module:ExtUpdate(nil, nil, nil); end end
-    for _, symbol in ipairs(symbols) do
+    for _, symbol in ipairs(items) do
         if symbol.Indicator ~= nil then
             symbol.Indicator:update(core.UpdateLast);
         end
@@ -397,7 +397,7 @@ function AsyncOperationFinished(cookie, success, message, message1, message2)
     for _, module in pairs(Modules) do if module.AsyncOperationFinished ~= nil then module:AsyncOperationFinished(cookie, success, message, message1, message2); end end
     if cookie == TIMER_ID then
         local loading_count = 0;
-        for _, symbol in ipairs(symbols) do
+        for _, symbol in ipairs(items) do
             if symbol.Source == nil then
                 symbol:DoLoad();
                 loading_count = loading_count + 1;
@@ -411,7 +411,7 @@ function AsyncOperationFinished(cookie, success, message, message1, message2)
         core.host:execute("setStatus", "");
         core.host:execute("killTimer", timer_handle);
     else
-        for _, symbol in ipairs(symbols) do
+        for _, symbol in ipairs(items) do
             if cookie == symbol.LoadingId then
                 symbol.Loading = true;
                 return;
@@ -422,3 +422,4 @@ function AsyncOperationFinished(cookie, success, message, message1, message2)
         end
     end
 end
+
