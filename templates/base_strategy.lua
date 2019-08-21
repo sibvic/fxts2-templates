@@ -339,7 +339,7 @@ function CreatePositionStrategy(source, side, id)
             end
         end
         local result = command:Execute();
-        if not result.Success then
+        if result.Finished and not result.Success then
             return result;
         end
         if default_stop then
