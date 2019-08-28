@@ -1,6 +1,7 @@
 local indi_alerts = {};
-indi_alerts.drawing_layer = 102;
+indi_alerts.Version = "1.11";
 indi_alerts.inverted_arrows = false;
+local alert_stages = {102, 2};
 
 function Init()
     indi_alerts:AddParameters(indicator.parameters);
@@ -10,11 +11,8 @@ end
 function Prepare(onlyName)
     indi_alerts:Prepare();
     indi_alerts.source = instance.source;
-    if indi_alerts.drawing_layer >= 100 then
-        instance:drawOnMainChart(true);
-    else
-        instance:ownerDrawn(true);
-    end
+    instance:drawOnMainChart(true);
+    instance:ownerDrawn(true);
 end
 
 function Draw(stage, context) indi_alerts:Draw(stage, context, source); end
@@ -45,7 +43,6 @@ function AsyncOperationFinished(cookie, success, message, message1, message2)
     indi_alerts:AsyncOperationFinished(cookie, success, message, message1, message2)
 end
 
-indi_alerts.Version = "1.10";
 indi_alerts.last_id = 0;
 indi_alerts.FIRST = true;
 indi_alerts._alerts = {};
@@ -98,27 +95,27 @@ function indi_alerts:ToJSON(item)
     return json:ToString();
 end
 function indi_alerts:ArrayToJSON(arr) local str = "["; for i, t in ipairs(self._alerts) do local json = self:ToJSON(t); if str == "[" then str = str .. json; else str = str .. "," .. json; end end return str .. "]"; end
-function indi_alerts:AddAlert(Label)
+function indi_alerts:AddAlert(label)
     self.last_id = self.last_id + 1;
-    indicator.parameters:addGroup(Label .. " Alert");
+    indicator.parameters:addGroup(label .. " Alert");
 
-    indicator.parameters:addBoolean("ON" .. self.last_id , "Show " .. Label .." Alert" , "", true);
+    indicator.parameters:addBoolean("ON" .. self.last_id , "Show " .. label .." Alert" , "", true);
 
     indicator.parameters:addString("drawing_mode" .. self.last_id, "Drawing mode", "", "arrows");
     indicator.parameters:addStringAlternative("drawing_mode" .. self.last_id, "Arrows", "", "arrows");
     indicator.parameters:addStringAlternative("drawing_mode" .. self.last_id, "Vertical lines", "", "vlines");
 
-    indicator.parameters:addFile("Up" .. self.last_id, Label .. " Cross Over Sound", "", "");
+    indicator.parameters:addFile("Up" .. self.last_id, label .. " Cross Over Sound", "", "");
     indicator.parameters:setFlag("Up" .. self.last_id, core.FLAG_SOUND);
     indicator.parameters:addInteger("UpSymbol" .. self.last_id, "Up Symbol", "", 217);
     indicator.parameters:addColor("UpColor" .. self.last_id, "Up Color", "", core.rgb(0, 255, 0));
     
-    indicator.parameters:addFile("Down" .. self.last_id, Label .. " Cross Under Sound", "", "");
+    indicator.parameters:addFile("Down" .. self.last_id, label .. " Cross Under Sound", "", "");
     indicator.parameters:setFlag("Down" .. self.last_id, core.FLAG_SOUND);
     indicator.parameters:addInteger("DownSymbol" .. self.last_id, "Down Symbol", "", 218);
     indicator.parameters:addColor("DownColor" .. self.last_id, "Down Color", "", core.rgb(255, 0, 0));
 
-    indicator.parameters:addString("Label" .. self.last_id, "Label", "", Label);
+    indicator.parameters:addString("Label" .. self.last_id, "Label", "", label);
 end
 
 function indi_alerts:AddSingleAlert(Label)
@@ -135,8 +132,6 @@ function indi_alerts:AddSingleAlert(Label)
     indicator.parameters:addString("Label" .. self.last_id, "Label", "", Label);
 end
 
-indi_alerts.init = false;
-
 function indi_alerts:DrawAlert(context, alert, period)
     if not alert.Alert:hasData(period) then
         return;
@@ -146,7 +141,7 @@ function indi_alerts:DrawAlert(context, alert, period)
         local x = context:positionOfBar(period);
         if alert.DrawingMode == "arrows" then
             visible, y = context:pointOfPrice(alert.AlertLevel[period]);
-            width, height = context:measureText(self.FONT_ID, alert.UpSymbol, 0);
+            width, height = context:measureText(self._stages[alert.Stage].FONT_ID, alert.UpSymbol, 0);
             local x1 = x - width / 2;
             local x2 = x + width / 2;
             local y1, y2;
@@ -157,7 +152,7 @@ function indi_alerts:DrawAlert(context, alert, period)
                 y1 = y - height;
                 y2 = y;
             end
-			context:drawText(self.FONT_ID, alert.UpSymbol, alert.UpColor, -1, x1, y1, x2, y2, 0);
+			context:drawText(self._stages[alert.Stage].FONT_ID, alert.UpSymbol, alert.UpColor, -1, x1, y1, x2, y2, 0);
         else
             context:drawLine(alert.UpLinePen, x, context:top(), x, context:bottom());
         end
@@ -165,7 +160,7 @@ function indi_alerts:DrawAlert(context, alert, period)
         local x = context:positionOfBar(period);
         if alert.DrawingMode == "arrows" then
             visible, y = context:pointOfPrice(alert.AlertLevel[period]);
-            width, height = context:measureText(self.FONT_ID, alert.DownSymbol, 0);
+            width, height = context:measureText(self._stages[alert.Stage].FONT_ID, alert.DownSymbol, 0);
             local x1 = x - width / 2;
             local x2 = x + width / 2;
             local y1, y2;
@@ -176,41 +171,43 @@ function indi_alerts:DrawAlert(context, alert, period)
                 y1 = y;
                 y2 = y + height;
             end
-            context:drawText(self.FONT_ID, alert.DownSymbol, alert.DownColor, -1, x1, y1, x2, y2, 0);
+            context:drawText(self._stages[alert.Stage].FONT_ID, alert.DownSymbol, alert.DownColor, -1, x1, y1, x2, y2, 0);
         else
             context:drawLine(alert.DownLinePen, x, context:top(), x, context:bottom());
         end
     end
 end
 indi_alerts.NextId = 1;
+indi_alerts._stages = {};
 function indi_alerts:Draw(stage, context)
-    if stage ~= indi_alerts.drawing_layer then
-        return;
-    end
-    if not self.init then
-        local createFont = false;
+    if self._stages[stage] == nil then
+        self._stages[stage] = {};
+        self._stages[stage].createFont = false;
         for _, level in ipairs(self.Alerts) do
-            if level.DrawingMode == "vlines" then
-                level.UpLinePen = self.NextId;
-                self.NextId = self.NextId + 1;
-                level.DownLinePen = self.NextId;
-                self.NextId = self.NextId + 1;
-                context:createPen(level.UpLinePen, context.SOLID, 1, level.UpColor);
-                context:createPen(level.DownLinePen, context.SOLID, 1, level.DownColor);
-            else
-                createFont = true;
+            if level.Stage == stage then
+                if level.DrawingMode == "vlines" then
+                    level.UpLinePen = self.NextId;
+                    self.NextId = self.NextId + 1;
+                    level.DownLinePen = self.NextId;
+                    self.NextId = self.NextId + 1;
+                    context:createPen(level.UpLinePen, context.SOLID, 1, level.UpColor);
+                    context:createPen(level.DownLinePen, context.SOLID, 1, level.DownColor);
+                else
+                    self._stages[stage].createFont = true;
+                end
             end
         end
-        if createFont and self.FONT_ID == nil then
-            self.FONT_ID = self.NextId;
+        if self._stages[stage].createFont and self._stages[stage].FONT_ID == nil then
+            self._stages[stage].FONT_ID = self.NextId;
 			self.NextId = self.NextId + 1;
-            context:createFont(self.FONT_ID, "Wingdings", context:pointsToPixels(self.Size), context:pointsToPixels(self.Size), 0);
+            context:createFont(self._stages[stage].FONT_ID, "Wingdings", context:pointsToPixels(self.Size), context:pointsToPixels(self.Size), 0);
         end
-        self.init = true;
     end
     for period = math.max(context:firstBar(), self.source:first()), math.min(context:lastBar(), self.source:size()-1), 1 do
         for _, level in ipairs(self.Alerts) do
-            self:DrawAlert(context, level, period);
+            if level.Stage == stage then
+                self:DrawAlert(context, level, period);
+            end
         end
     end
 end
@@ -249,6 +246,7 @@ function indi_alerts:Prepare()
         end 
         local alert = {};
         alert.id = i;
+        alert.Stage = alert_stages[i];
         alert.Label = instance.parameters:getString("Label" .. i);
         alert.ON = on;
         alert.DrawingMode = instance.parameters:getString("drawing_mode" .. i);
