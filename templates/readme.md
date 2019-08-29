@@ -188,3 +188,7 @@ GetSignal should return 1 (green)/-1 (red)/other (gray) value.
 ## trailing_stop
 
 Strategy template for a custom trailing stop.
+
+## stop_limit_targets
+
+Draws lines for the stop/limit targets.
