@@ -1,7 +1,7 @@
 local indi_alerts = {};
 indi_alerts.Version = "1.11";
 indi_alerts.inverted_arrows = false;
-local alert_stages = {102, 2};
+local alert_stages = { 102, 2 };
 
 function Init()
     indi_alerts:AddParameters(indicator.parameters);
