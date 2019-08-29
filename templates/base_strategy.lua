@@ -44,11 +44,11 @@ end
 -- Entry rate for the entry orders
 -- Return nil for market orders
 function GetEntryRate(source, bs, period) return nil; end
-function SetCustomStop(position_desc, command, period) return false; end
-function SetCustomLimit(position_desc, command, period) return false; end
+function SetCustomStop(position_desc, command, period, periods_from_last) return false; end
+function SetCustomLimit(position_desc, command, period, periods_from_last) return false; end
 function SaveCustomStopParameters(position_strategy, id) end
 function SaveCustomLimitParameters(position_strategy, id) end
-function CreateCustomBreakeven(position_desc, result, period) return false; end
+function CreateCustomBreakeven(position_desc, result, period, periods_from_last) return false; end
 
 function CreateCustomActions()
     -- local action1, isEntry1 = CreateAction(1);
@@ -300,7 +300,7 @@ function CreatePositionStrategy(source, side, id)
         end
     end
 
-    function position_strategy:Open(period)
+    function position_strategy:Open(period, periods_from_last)
         local rate = nil;
         if GetEntryRate ~= nil then
             rate = GetEntryRate(self.Source, self.Side, period);
@@ -322,8 +322,8 @@ function CreatePositionStrategy(source, side, id)
         elseif self.Amount_Type == "equity" then
             command:SetPercentOfEquityAmount(self.Amount)
         end
-        local default_stop = SetCustomStop == nil or not SetCustomStop(self, command, period);
-        local default_limit = SetCustomLimit == nil or not SetCustomLimit(self, command, period);
+        local default_stop = SetCustomStop == nil or not SetCustomStop(self, command, period, periods_from_last);
+        local default_limit = SetCustomLimit == nil or not SetCustomLimit(self, command, period, periods_from_last);
         if default_stop then
             local stop_value;
             if self.StopType == "pips" then
@@ -361,7 +361,7 @@ function CreatePositionStrategy(source, side, id)
             end
             self:CreateTrailingLimit(result);
         end
-        local default_breakeven = CreateCustomBreakeven == nil or not CreateCustomBreakeven(self, result, period);
+        local default_breakeven = CreateCustomBreakeven == nil or not CreateCustomBreakeven(self, result, period, periods_from_last);
         if default_breakeven then
             if self.UseBreakeven then
                 local controller = breakeven:CreateController()
@@ -536,7 +536,7 @@ function GoLong(source, period, positions, log)
             return;
         end
         for _, position in ipairs(positions) do
-            position:Open(period);
+            position:Open(period, source:size() - period - 1);
         end
     end
     local message = "Buy " .. source.close:instrument()
@@ -562,7 +562,7 @@ function GoShort(source, period, positions, log)
             return;
         end
         for _, position in ipairs(positions) do
-            position:Open(period);
+            position:Open(period, source:size() - period - 1);
         end
     end
     local message = "Sell " .. source.close:instrument()
