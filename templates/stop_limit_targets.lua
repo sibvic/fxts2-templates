@@ -279,9 +279,9 @@ function Update(period, mode)
         position[period] = position[period - 1]
     end
 
-    if position[period] ~= -1 and IsUpCondition(period) then
+    if position[period] ~= -1 and IsDownCondition(period) then
         position[period] = -1
-    elseif position[period] ~= 1 and IsDownCondition(period) then
+    elseif position[period] ~= 1 and IsUpCondition(period) then
         position[period] = 1
     end
 
