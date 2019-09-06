@@ -75,7 +75,7 @@ function Init()
     
     indicator.parameters:addGroup("Time Frame Selector");
     for i = 1, #timeframes_list do
-        AddTimeFrame(i, timeframes_list[i], true);
+        AddTimeFrame(i, timeframes_list[i], "both");
     end
 
     indicator.parameters:addGroup("Styling");
@@ -107,7 +107,12 @@ function Add(id)
 end
 
 function AddTimeFrame(id, FRAME, DEFAULT)
-    indicator.parameters:addBoolean("Use" .. id, "Show " .. FRAME, "", DEFAULT); 
+    local paramId = "Use" .. id;
+    indicator.parameters:addString(paramId, FRAME, "", DEFAULT); 
+    indicator.parameters:addStringAlternative(paramId, "Do not use", "", "disabled");
+    indicator.parameters:addStringAlternative(paramId, "Display + Alert", "", "both");
+    indicator.parameters:addStringAlternative(paramId, "Display only", "", "display");
+    indicator.parameters:addStringAlternative(paramId, "Alert only", "", "alert");
 end
 
 local items = {};
@@ -121,9 +126,10 @@ local last_id = 1;
 function PrepareInstrument(instrument)
     local timeframe_index = 1;
     for ii = 1, #timeframes_list do
-        use = instance.parameters:getBoolean("Use" .. ii);
-        if use then
+        use = instance.parameters:getString("Use" .. ii);
+        if use ~= "no" then
             local symbol = {};
+            symbol.Mode = use;
             symbol.Pair = instrument;
             symbol.Point = core.host:findTable("offers"):find("Instrument", symbol.Pair).PointSize;
             symbol.TF = timeframes_list[ii];
@@ -131,16 +137,19 @@ function PrepareInstrument(instrument)
             symbol.LoadedId = last_id + 2;
             symbol.Loading = true;
             symbol.SymbolIndex = #instruments + 1;
-            symbol.TimeframeIndex = timeframe_index;
+            if use == "both" or use == "display" then
+                symbol.TimeframeIndex = timeframe_index;
+            end
             function symbol:DoLoad()
                 self.Source = core.host:execute("getSyncHistory", self.Pair, self.TF, instance.source:isBid(), 300, self.LoadedId, self.LoadingId);
                 self.Indicator = CreateIndicator(self.Source);
-                assert(self.Indicator:getTextOutputCount() > 0, "Selected indicator doesn't have any text outputs. The dashboard works with text outputs only!");
             end
             last_id = last_id + 2;
             items[#items + 1] = symbol;
-            timeframes[timeframe_index] = timeframes_list[ii];
-            timeframe_index = timeframe_index + 1;
+            if use == "both" or use == "display" then
+                timeframes[timeframe_index] = timeframes_list[ii];
+                timeframe_index = timeframe_index + 1;
+            end
         end
     end
     instruments[#instruments + 1] = instrument;
@@ -339,39 +348,47 @@ function Draw(stage, context)
             local signal, time = GetLastSignal(symbol.Indicator, symbol.Source);
             local row;
             local column;
-            if grid_mode == "h" then
-                row = (symbol.TimeframeIndex + 1) * 2;
-                column = symbol.SymbolIndex + 1;
-            else
-                column = symbol.TimeframeIndex + 1;
-                row = (symbol.SymbolIndex + 1) * 2;
+            if symbol.Mode == "both" or symbol.Mode == "display" then
+                if grid_mode == "h" then
+                    row = (symbol.TimeframeIndex + 1) * 2;
+                    column = symbol.SymbolIndex + 1;
+                else
+                    column = symbol.TimeframeIndex + 1;
+                    row = (symbol.SymbolIndex + 1) * 2;
+                end
             end
             if signal == 0 then
-                CellsBuilder:Add(FONT_TEXT, "-", text_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
-                CellsBuilder:Add(FONT_TEXT, "-", text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
-            elseif signal > 0 then
-                local is_current_bar = symbol.Source:date(NOW - 3) <= time;
-                local backgound = -1;
-                if is_current_bar then
-                    backgound = instance.parameters.signal_background_color;
+                if symbol.Mode == "both" or symbol.Mode == "display" then
+                    CellsBuilder:Add(FONT_TEXT, "-", text_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
+                    CellsBuilder:Add(FONT_TEXT, "-", text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
                 end
+            elseif signal == 1 then
+                local is_current_bar = symbol.Source:date(NOW) <= time;
                 local pattern_name = GetPatternName(signal);
-                CellsBuilder:Add(FONT_TEXT, pattern_name, instance.parameters.up_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
-                CellsBuilder:Add(FONT_TEXT, FormatTime(time), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
-                if is_current_bar and symbol.last_alert ~= time then
+                if symbol.Mode == "both" or symbol.Mode == "display" then
+                    local backgound = -1;
+                    if is_current_bar then
+                        backgound = instance.parameters.signal_background_color;
+                    end
+                    CellsBuilder:Add(FONT_TEXT, pattern_name, instance.parameters.up_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
+                    CellsBuilder:Add(FONT_TEXT, FormatTime(time), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
+                end
+                if is_current_bar and symbol.last_alert ~= time and (symbol.Mode == "both" or symbol.Mode == "alert") then
                     signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. pattern_name);
                     symbol.last_alert = time;
                 end
             else
                 local is_current_bar = symbol.Source:date(NOW) <= time;
-                local backgound = -1;
-                if is_current_bar then
-                    backgound = instance.parameters.signal_background_color;
-                end
                 local pattern_name = GetPatternName(signal);
-                CellsBuilder:Add(FONT_TEXT, pattern_name, instance.parameters.dn_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
-                CellsBuilder:Add(FONT_TEXT, FormatTime(time), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
-                if is_current_bar and symbol.last_alert ~= time then
+                if symbol.Mode == "both" or symbol.Mode == "display" then
+                    local backgound = -1;
+                    if is_current_bar then
+                        backgound = instance.parameters.signal_background_color;
+                    end
+                    CellsBuilder:Add(FONT_TEXT, pattern_name, instance.parameters.dn_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
+                    CellsBuilder:Add(FONT_TEXT, FormatTime(time), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
+                end
+                if is_current_bar and symbol.last_alert ~= time and (symbol.Mode == "both" or symbol.Mode == "alert") then
                     signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. pattern_name);
                     symbol.last_alert = time;
                 end
