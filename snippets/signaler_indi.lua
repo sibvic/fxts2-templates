@@ -1,7 +1,17 @@
 local indi_alerts = {};
-indi_alerts.Version = "1.11";
+indi_alerts.Version = "1.12";
 indi_alerts.inverted_arrows = false;
-local alert_stages = { 102, 2 };
+local alerts = 
+{ 
+    {
+        Stage = 102,
+        UpCondition = function (period)
+        end,
+        DownCondition = function (period)
+        end,
+        OnChange = true
+    }
+};
 
 function Init()
     indi_alerts:AddParameters(indicator.parameters);
@@ -28,12 +38,10 @@ function Activate(alert, period, historical_period)
         if indi_alerts.FIRST then indi_alerts.FIRST = false; end
         return;
     end
-    if alert.id == 1 then
-        if (condition_buy) then
-            alert:UpAlert(source, period, alert.Label .. ". Bull pattern", source.high[period], historical_period);
-        elseif (condition_sell) then
-            alert:DownAlert(source, period, alert.Label .. ". Bear pattern", source.low[period], historical_period);
-        end
+    if alert.UpCondition(period) and (not alert.OnChange or not alert.UpCondition(period - 1)) then
+        alert:UpAlert(source, period, alert.Label .. ". Bull pattern", source.high[period], historical_period);
+    elseif alert.DownCondition(period) and (not alert.OnChange or not alert.DownCondition(period - 1)) then
+        alert:DownAlert(source, period, alert.Label .. ". Bear pattern", source.low[period], historical_period);
     end
 
     if indi_alerts.FIRST then indi_alerts.FIRST = false; end
@@ -246,7 +254,10 @@ function indi_alerts:Prepare()
         end 
         local alert = {};
         alert.id = i;
-        alert.Stage = alert_stages[i];
+        alert.UpCondition = alerts[i].UpCondition;
+        alert.DownCondition = alerts[i].DownCondition;
+        alert.OnChange = alerts[i].OnChange;
+        alert.Stage = alerts[i].Stage;
         alert.Label = instance.parameters:getString("Label" .. i);
         alert.ON = on;
         alert.DrawingMode = instance.parameters:getString("drawing_mode" .. i);

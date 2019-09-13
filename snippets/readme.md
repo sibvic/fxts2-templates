@@ -4,6 +4,27 @@
 
 Shows signals of the indicator on the chart and sends an alert when running live.
 
+You need to define alerts at the top of the file:
+
+    local alerts = 
+    { 
+        {
+            Stage = 102,
+            UpCondition = function (period)
+            end,
+            DownCondition = function (period)
+            end,
+            OnChange = true
+        }
+    };
+
+Stage: drawing stage. For example, 102: main chart for the oscillator, 2 - chart where the indicator was placed. You can find more information in the Indicore help.
+
+OnChange: 
+
+- when set to true: every condition will be called 2 times: for period and for period - 1. The arrow will be drawn when period returns true and period - 1 return false.
+- when set to false: the arrow will be drawn every time condition returns true.
+
 ## Signaler
 
 Sends an alert in the next ways: message dialog, popup (indicators only), sound alert, email, log, external receiver (Telegram/Discord/other trading platforms), DDE (like Excel). It can send commands to execute orders to other platforms (MT4/MT5/FXTS2).
