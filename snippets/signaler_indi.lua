@@ -1,5 +1,5 @@
 local indi_alerts = {};
-indi_alerts.Version = "1.12";
+indi_alerts.Version = "1.13";
 indi_alerts.inverted_arrows = false;
 local alerts = 
 { 
@@ -9,13 +9,16 @@ local alerts =
         end,
         DownCondition = function (period)
         end,
-        OnChange = true
+        OnChange = true,
+        Name = "Alert Name"
     }
 };
 
 function Init()
     indi_alerts:AddParameters(indicator.parameters);
-    indi_alerts:AddAlert("Alert Name");
+    for i,alert in ipairs(alerts) do
+        indi_alerts:AddAlert(alert.Name);
+    end
 end
 
 function Prepare(onlyName)
