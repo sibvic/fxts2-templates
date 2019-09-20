@@ -61,18 +61,21 @@ function CreateCustomActions()
     -- end
     local exitLongAction = {};
     exitLongAction.ActOnSwitch = false;
+    exitLongAction.Cache = {};
     exitLongAction.IsPass = function (source, period, periodFromLast, data)
         return false; -- TODO: implement
     end
 
     local exitShortAction = {};
     exitShortAction.ActOnSwitch = false;
+    exitShortAction.Cache = {};
     exitShortAction.IsPass = function (source, period, periodFromLast, data)
         return false; -- TODO: implement
     end
 
     local enterLongAction = {};
     enterLongAction.ActOnSwitch = true;
+    enterLongAction.Cache = {};
     enterLongAction.GetLog = function (source, period, periodFromLast, data)
         return "";
     end
@@ -82,6 +85,7 @@ function CreateCustomActions()
 
     local enterShortAction = {};
     enterShortAction.ActOnSwitch = true;
+    enterShortAction.Cache = {};
     enterShortAction.GetLog = function (source, period, periodFromLast, data)
         return "";
     end
@@ -588,14 +592,16 @@ function EntryFunction(source, period)
 
     local periodFromLast = source:size() - period - 1;
     for _, action in ipairs(EntryActions) do
-        if action.IsPass(source, period, periodFromLast, action.Data) 
-            and (not action.ActOnSwitch or not action.IsPass(source, period - 1, periodFromLast - 1, action.Data)) 
-        then
+        local isPass = action.IsPass(source, period, periodFromLast, action.Data);
+        action.Cache[source:date(period)] = isPass;
+        if isPass and (not action.ActOnSwitch or not action.Cache[source:date(period - 1)]) then
             local log = nil;
             if add_log and action.GetLog ~= nil then
                 log = action.GetLog(source, period, periodFromLast, action.Data);
             end
             action.Execute(source, period, action.ExecuteData, log);
+        elseif add_log then
+            terminal:alertMessage("", 0, action.GetLog(source, period, periodFromLast, action.Data), source:date(period));
         end
     end
 end
@@ -613,16 +619,18 @@ function ExitFunction(source, period)
         end
     end
 
-    local periodFromLast = period - source:size();
+    local periodFromLast = source:size() - period - 1;
     for _, action in ipairs(ExitActions) do
-        if action.IsPass(source, period, periodFromLast, action.Data) 
-            and (not action.ActOnSwitch or not action.IsPass(source, period - 1, periodFromLast - 1, action.Data)) 
-        then
+        local isPass = action.IsPass(source, period, periodFromLast, action.Data);
+        action.Cache[source:date(period)] = isPass;
+        if isPass and (not action.ActOnSwitch or not action.Cache[source:date(period - 1)]) then
             local log = nil;
             if add_log and action.GetLog ~= nil then
                 log = action.GetLog(source, period, periodFromLast, action.Data);
             end
             action.Execute(source, period, action.ExecuteData, log);
+        elseif add_log and action.GetLog ~= nil then
+            terminal:alertMessage("", 0, action.GetLog(source, period, periodFromLast, action.Data), source:date(period));
         end
     end
 end
