@@ -25,12 +25,16 @@ function trading_logic:Init(parameters)
         parameters:addString("timeframe", "Trading Time frame", "", "m5");
         parameters:setFlag("timeframe", core.FLAG_PERIODS);
     end
-    parameters:addString("entry_execution_type", "Entry Execution Type", "Once per bar close or on every tick", "EndOfTurn");
-    parameters:addStringAlternative("entry_execution_type", "End of Turn", "", "EndOfTurn");
-    parameters:addStringAlternative("entry_execution_type", "Live", "", "Live");
-    parameters:addString("exit_execution_type", "Exit Execution Type", "Once per bar close or on every tick", "Live");
-    parameters:addStringAlternative("exit_execution_type", "End of Turn", "", "EndOfTurn");
-    parameters:addStringAlternative("exit_execution_type", "Live", "", "Live");
+    if ENFORCE_entry_execution_type == nil then
+        parameters:addString("entry_execution_type", "Entry Execution Type", "Once per bar close or on every tick", "EndOfTurn");
+        parameters:addStringAlternative("entry_execution_type", "End of Turn", "", "EndOfTurn");
+        parameters:addStringAlternative("entry_execution_type", "Live", "", "Live");
+    end
+    if ENFORCE_exit_execution_type == nil then
+        parameters:addString("exit_execution_type", "Exit Execution Type", "Once per bar close or on every tick", "Live");
+        parameters:addStringAlternative("exit_execution_type", "End of Turn", "", "EndOfTurn");
+        parameters:addStringAlternative("exit_execution_type", "Live", "", "Live");
+    end
 end
 function trading_logic:GetLastPeriod(source_period, source, target)
     if source_period < 0 or target:size() < 2 then
@@ -81,10 +85,10 @@ function trading_logic:Prepare(name_only)
     end
     self.MainSource, self._trading_source_id = self:SubscribeHistory(nil, instance.parameters.timeframe, instance.parameters.is_bid);
     self._exit_source_id = self._trading_source_id;
-    if instance.parameters.entry_execution_type == "Live" then
+    if instance.parameters.entry_execution_type == "Live" or ENFORCE_entry_execution_type == "Live" then
         _, self._trading_source_id = self:SubscribeHistory(nil, "t1", instance.parameters.is_bid);
     end
-    if instance.parameters.exit_execution_type == "Live" then
+    if instance.parameters.exit_execution_type == "Live" or ENFORCE_exit_execution_type == "Live" then
         _, self._exit_source_id = self:SubscribeHistory(nil, "t1", instance.parameters.is_bid);
     end
     if self.RequestBidAsk then

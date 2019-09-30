@@ -19,6 +19,10 @@ local RequestBidAsk = false;
 
 local ENFORCE_POSITION_CAP = false;
 
+-- Enforce execution type. When set to Live/EndOfTurn the execution type parameters will be hiden
+local ENFORCE_entry_execution_type = nil; -- Live/EndOfTurn
+local ENFORCE_exit_execution_type = nil; -- Live/EndOfTurn
+
 local STRATEGY_NAME = "Strategy Name";
 local STRATEGY_VERSION = "1";
 -- END OF CUSTOMIZATION SECTION
@@ -112,6 +116,10 @@ function CreateCustomActions()
     ExitActions[#ExitActions + 1] = exitShortAction;
     EntryActions[#EntryActions + 1] = enterLongAction;
     EntryActions[#EntryActions + 1] = enterShortAction;
+end
+
+function GetSignalSerial(source, period)
+    return source:serial(period);
 end
 -- END OF USER DEFINED SECTION
 
@@ -548,7 +556,7 @@ function GoLong(source, period, positions, log)
         message = message .. "\r\nSignal info: " .. log;
     end
     signaler:Signal(message, source);
-    last_serial = source:serial(period);
+    last_serial = GetSignalSerial(source, period);
 end
 
 function GoShort(source, period, positions, log)
@@ -574,7 +582,7 @@ function GoShort(source, period, positions, log)
         message = message .. "\nSignal info: " .. log;
     end
     signaler:Signal(message, source);
-    last_serial = source:serial(period);
+    last_serial = GetSignalSerial(source, period);
 end
 
 function EntryFunction(source, period)
