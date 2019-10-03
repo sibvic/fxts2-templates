@@ -67,19 +67,62 @@ function CreateZigZag(stream, Depth, Deviation, Backstep, ZigC, ZagC)
     zz.Peak = instance:addInternalStream(0, 0)
     zz.HighMap = instance:addInternalStream(0, 0)
     zz.LowMap = instance:addInternalStream(0, 0)
+    function zz:ClearStreams(period)
+        self.SearchMode:setNoData(period);
+        self.Peak:setNoData(period);
+        self.out:setNoData(period);
+    end
+    function zz:RemoveLast()
+        local index = 1;
+        local bookmark = self.out:getBookmark(index);
+        if bookmark == -1 then
+            return;
+        end
+        self:ClearStreams(bookmark);
+        while (bookmark ~= -1) do
+            local nextBookmark = self.out:getBookmark(index + 1);
+            self.out:setBookmark(index, nextBookmark);
+            bookmark = nextBookmark;
+            index = index + 1;
+        end
+        self.TotalPeaks = self.TotalPeaks - 1;
+    end
+    function zz:DrawLine()
+        local period = self.out:getBookmark(1);
+        local last = self.out:getBookmark(2);
+        if last == -1 then
+            return;
+        end
+        if self.SearchMode[period] == -1 then
+            core.drawLine(self.out, core.range(last, period), self.Peak[last], last, self.Peak[period], period, ZagC)
+            self.out:setColor(last, ZigC)
+        else
+            core.drawLine(self.out, core.range(last, period), self.Peak[last], last, self.Peak[period], period, ZigC)
+            self.out:setColor(last, ZagC)
+        end
+    end
     function zz:RegisterPeak(period, mode, peak)
         local index = 1;
         local bookmark = self.out:getBookmark(index);
+        if (bookmark == period) then
+            if mode ~= self.SearchMode[period] then
+                self:RemoveLast();
+                self:ReplaceLastPeak(period, mode, peak);
+            end
+            return;
+        end
         while (bookmark ~= -1) do
             local nextBookmark = self.out:getBookmark(index + 1);
             self.out:setBookmark(index + 1, bookmark)
             bookmark = nextBookmark;
             index = index + 1;
         end
+        
         self.TotalPeaks = index - 1;
         self.out:setBookmark(1, period)
         self.SearchMode[period] = mode
         self.Peak[period] = peak
+        self:DrawLine();
     end
     function zz:EnumPeaks()
         local enum = {};
@@ -99,9 +142,14 @@ function CreateZigZag(stream, Depth, Deviation, Backstep, ZigC, ZagC)
         return enum;
     end
     function zz:ReplaceLastPeak(period, mode, peak)
+        local last = self.out:getBookmark(1);
+        if last ~= -1 then
+            self:ClearStreams(last);
+        end
         self.out:setBookmark(1, period)
         self.SearchMode[period] = mode
         self.Peak[period] = peak
+        self:DrawLine();
     end
     function zz:Clear()
         self.lastlow = nil
@@ -170,15 +218,9 @@ function CreateZigZag(stream, Depth, Deviation, Backstep, ZigC, ZagC)
             elseif self.SearchMode[last_peak_i] == searchPeak then
                 if (self.LowMap[i] ~= 0 and self.LowMap[i] < self.Peak[last_peak_i]) then
                     last_peak_i = i
-                    if prev_peak ~= -1 then
-                        core.drawLine(self.out, core.range(prev_peak, i), self.Peak[prev_peak], prev_peak, self.LowMap[i], i, ZagC)
-                        self.out:setColor(prev_peak, ZigC)
-                    end
                     self:ReplaceLastPeak(i, searchPeak, self.LowMap[i])
                 end
                 if self.HighMap[i] ~= 0 and self.LowMap[i] == 0 then
-                    core.drawLine(self.out, core.range(last_peak_i, i), self.Peak[last_peak_i], last_peak_i, self.HighMap[i], i, ZigC)
-                    self.out:setColor(last_peak_i, ZagC)
                     prev_peak = last_peak_i
                     last_peak_i = i
                     self:RegisterPeak(i, searchLawn, self.HighMap[i])
@@ -186,20 +228,9 @@ function CreateZigZag(stream, Depth, Deviation, Backstep, ZigC, ZagC)
             elseif self.SearchMode[last_peak_i] == searchLawn then
                 if (self.HighMap[i] ~= 0 and self.HighMap[i] > self.Peak[last_peak_i]) then
                     last_peak_i = i
-                    if prev_peak ~= -1 then
-                        core.drawLine(self.out, core.range(prev_peak, i), self.Peak[prev_peak], prev_peak, self.HighMap[i], i, ZigC)
-                        self.out:setColor(prev_peak, ZagC)
-                    end
                     self:ReplaceLastPeak(i, searchLawn, self.HighMap[i])
                 end
                 if self.LowMap[i] ~= 0 and self.HighMap[i] == 0 then
-                    if self.Peak[last_peak_i] > self.LowMap[i] then
-                        core.drawLine(self.out, core.range(last_peak_i, i), self.Peak[last_peak_i], last_peak_i, self.LowMap[i], i, ZagC)
-                        self.out:setColor(last_peak_i, ZigC)
-                    else
-                        core.drawLine(self.out, core.range(last_peak_i, i), self.Peak[last_peak_i], last_peak_i, self.LowMap[i], i, ZigC)
-                        self.out:setColor(last_peak_i, ZagC)
-                    end
                     prev_peak = last_peak_i
                     last_peak_i = i
                     self:RegisterPeak(i, searchPeak, self.LowMap[i])
