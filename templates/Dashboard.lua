@@ -1,11 +1,11 @@
--- Dashboard template v.1.3
+-- Dashboard template v.1.4
 
 local timeframes_list = {"m1", "m5", "m15", "m30", "H1", "H2", "H3", "H4", "H6", "H8", "D1", "W1", "M1"};
 local Modules = {};
 
 -- USER DEFINITIONS SECTION
-local indi_name = "Williams's Highs and Lows Dashboard";
-local indi_id = "DOUBLE OBOS INDICATOR WITH CCI FILTER";
+local indi_name = "Dashboard";
+local indi_id = "INDICATOR";
 local indi_version = "1";
 
 function CreateIndicator(source)
@@ -13,20 +13,8 @@ function CreateIndicator(source)
     assert(indi ~= nil, "Please download and install " .. indi_id .. ".lua indicator");
     local p = indi:parameters();
     p:setBoolean("UpDown", true);
-    p:setBoolean("Show1", instance.parameters.Show1);
-    p:setBoolean("Show2", instance.parameters.Show2);
     p:setInteger("PERIOD1", instance.parameters.PERIOD1);
-    p:setInteger("PERIOD2", instance.parameters.PERIOD2);
-    p:setInteger("Lookback", instance.parameters.Lookback);
-    p:setInteger("TradeLength", instance.parameters.TradeLength);
-    p:setInteger("OB_level", instance.parameters.OB_level);
-    p:setInteger("OS_level", instance.parameters.OS_level);
-    p:setBoolean("UseFilter", instance.parameters.UseFilter);
-    p:setInteger("CCIPeriod", instance.parameters.CCIPeriod);
-    p:setInteger("CCILookback", instance.parameters.CCILookback);
     p:setDouble("BuyLevel", instance.parameters.BuyLevel);
-    p:setDouble("SellLevel", instance.parameters.SellLevel);
-    p:setBoolean("show_output", true);
     return indi:createInstance(source, p);
 end
 
@@ -77,6 +65,10 @@ function Init()
     for i = 1, #timeframes_list do
         AddTimeFrame(i, timeframes_list[i], "both");
     end
+    indicator.parameters:addGroup("DDE");
+    indicator.parameters:addBoolean("dde_export_values", "Export DDE", "", false);
+    indicator.parameters:addString("dde_service", "Service Name", "The service name must be unique amoung all running instances of the strategy", "DASHBOARD");
+    indicator.parameters:addString("dde_topic", "DDE Topic", "value = instrument_timeframe. Ex: EURUSD_m1", "Values");
 
     indicator.parameters:addGroup("Styling");
     indicator.parameters:addColor("up_color", "Up color", "", core.rgb(0, 255, 0));
@@ -123,6 +115,7 @@ local text_color;
 local TIMER_ID = 1;
 local last_id = 1;
 
+local dde_server, dde_topic;
 function PrepareInstrument(instrument)
     local timeframe_index = 1;
     for ii = 1, #timeframes_list do
@@ -143,6 +136,9 @@ function PrepareInstrument(instrument)
             function symbol:DoLoad()
                 self.Source = core.host:execute("getSyncHistory", self.Pair, self.TF, instance.source:isBid(), 300, self.LoadedId, self.LoadingId);
                 self.Indicator = CreateIndicator(self.Source);
+            end
+            if instance.parameters.dde_export_values then
+                symbol.dde = dde_server:addValue(dde_topic, string.gsub(instrument, "/", "") .. "_" .. symbol.TF);
             end
             last_id = last_id + 2;
             items[#items + 1] = symbol;
@@ -262,6 +258,14 @@ function Prepare(nameOnly)
     end
     text_color = instance.parameters.text_color;
 
+    if instance.parameters.dde_export_values then
+        if ddeserver_lua == nil then
+            require("ddeserver_lua");
+        end
+        dde_server = ddeserver_lua.new(instance.parameters.dde_service);
+        dde_topic = dde_server:addTopic(instance.parameters.dde_topic);
+    end
+
     if instance.parameters.all_instruments then
         local enum = core.host:findTable("offers"):enumerator();
         local row = enum:next();
@@ -305,6 +309,36 @@ local BG_BRUSH = 4;
 local GRID_PEN = 5;
 
 local draw_grid, grid_mode;
+
+function GetTableIndex(symbol)
+    if grid_mode == "h" then
+        return (symbol.TimeframeIndex + 1) * 2, symbol.SymbolIndex + 1;
+    end
+
+    return symbol.TimeframeIndex + 1, (symbol.SymbolIndex + 1) * 2;
+end
+
+function DrawSignal(symbol, context)
+    if (symbol.Mode ~= "both" and symbol.Mode ~= "display") or symbol.Text == nil then
+        return;
+    end
+    local row, column = GetTableIndex(symbol);
+    if symbol.Signal == 0 then
+        CellsBuilder:Add(FONT_TEXT, symbol.Text, text_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
+        CellsBuilder:Add(FONT_TEXT, symbol.Text, text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
+        return;
+    end
+
+    local backgound = -1;
+    if symbol.Source:date(NOW) <= symbol.SignalTime then
+        backgound = instance.parameters.signal_background_color;
+    end
+    local color = symbol.Signal == 1 and instance.parameters.up_color or instance.parameters.dn_color;
+    CellsBuilder:Add(FONT_TEXT, symbol.Text, color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
+    CellsBuilder:Add(FONT_TEXT, FormatTime(symbol.SignalTime), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
+    CellsBuilder:Add(FONT_TEXT, symbol.Text, instance.parameters.dn_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
+    CellsBuilder:Add(FONT_TEXT, FormatTime(symbol.SignalTime), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
+end
 function Draw(stage, context) 
     if stage ~= 2 then
         return;
@@ -340,60 +374,7 @@ function Draw(stage, context)
         end
     end
     for _, symbol in ipairs(items) do
-        if not symbol.Loading then
-            if symbol.Updated == nil then
-                symbol.Indicator:update(core.UpdateLast);
-                symbol.Updated = true;
-            end
-            local signal, time = GetLastSignal(symbol.Indicator, symbol.Source);
-            local row;
-            local column;
-            if symbol.Mode == "both" or symbol.Mode == "display" then
-                if grid_mode == "h" then
-                    row = (symbol.TimeframeIndex + 1) * 2;
-                    column = symbol.SymbolIndex + 1;
-                else
-                    column = symbol.TimeframeIndex + 1;
-                    row = (symbol.SymbolIndex + 1) * 2;
-                end
-            end
-            if signal == 0 then
-                if symbol.Mode == "both" or symbol.Mode == "display" then
-                    CellsBuilder:Add(FONT_TEXT, "-", text_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
-                    CellsBuilder:Add(FONT_TEXT, "-", text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
-                end
-            elseif signal == 1 then
-                local is_current_bar = symbol.Source:date(NOW) <= time;
-                local pattern_name = GetPatternName(signal);
-                if symbol.Mode == "both" or symbol.Mode == "display" then
-                    local backgound = -1;
-                    if is_current_bar then
-                        backgound = instance.parameters.signal_background_color;
-                    end
-                    CellsBuilder:Add(FONT_TEXT, pattern_name, instance.parameters.up_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
-                    CellsBuilder:Add(FONT_TEXT, FormatTime(time), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
-                end
-                if is_current_bar and symbol.last_alert ~= time and (symbol.Mode == "both" or symbol.Mode == "alert") then
-                    signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. pattern_name);
-                    symbol.last_alert = time;
-                end
-            else
-                local is_current_bar = symbol.Source:date(NOW) <= time;
-                local pattern_name = GetPatternName(signal);
-                if symbol.Mode == "both" or symbol.Mode == "display" then
-                    local backgound = -1;
-                    if is_current_bar then
-                        backgound = instance.parameters.signal_background_color;
-                    end
-                    CellsBuilder:Add(FONT_TEXT, pattern_name, instance.parameters.dn_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
-                    CellsBuilder:Add(FONT_TEXT, FormatTime(time), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
-                end
-                if is_current_bar and symbol.last_alert ~= time and (symbol.Mode == "both" or symbol.Mode == "alert") then
-                    signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. pattern_name);
-                    symbol.last_alert = time;
-                end
-            end
-        end
+        DrawSignal(symbol, context);
     end
     local width = math.max(title_w, CellsBuilder:GetTotalWidth());
     context:drawRectangle(BG_PEN, BG_BRUSH, context:right() - width, context:top(), context:right(), context:top() + title_h * 1.2 + CellsBuilder:GetTotalHeight());
@@ -404,29 +385,56 @@ end
 function Update(period, mode)
     for _, module in pairs(Modules) do if module.ExtUpdate ~= nil then module:ExtUpdate(nil, nil, nil); end end
     for _, symbol in ipairs(items) do
-        if symbol.Indicator ~= nil then
+        if symbol.Indicator ~= nil and not symbol.Loading then
             symbol.Indicator:update(core.UpdateLast);
         end
     end
 end
 
+function UpdateData()
+    for _, symbol in ipairs(items) do
+        if symbol.Indicator ~= nil and not symbol.Loading then
+            local signal, time = GetLastSignal(symbol.Indicator, symbol.Source);
+            symbol.Signal = signal;
+            symbol.SignalTime = time;
+            if signal == 0 then
+                symbol.Text = "-";
+            else
+                local is_current_bar = symbol.Source:date(NOW) <= time;
+                symbol.Text = GetPatternName(symbol.Signal);
+                if is_current_bar and symbol.last_alert ~= time and (symbol.Mode == "both" or symbol.Mode == "alert") then
+                    signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. pattern_name);
+                    symbol.last_alert = time;
+                end
+            end
+            if symbol.dde ~= nil then
+                dde_server:set(dde_topic, symbol.dde, symbol.Text);
+            end
+        end
+    end
+end
+
+local loading_finished = false;
 function AsyncOperationFinished(cookie, success, message, message1, message2)
     for _, module in pairs(Modules) do if module.AsyncOperationFinished ~= nil then module:AsyncOperationFinished(cookie, success, message, message1, message2); end end
     if cookie == TIMER_ID then
-        local loading_count = 0;
-        for _, symbol in ipairs(items) do
-            if symbol.Source == nil then
-                symbol:DoLoad();
-                loading_count = loading_count + 1;
-            elseif symbol.Loading then
-                loading_count = loading_count + 1;
+        UpdateData();
+        if not loading_finished then
+            local loading_count = 0;
+            for _, symbol in ipairs(items) do
+                if symbol.Source == nil then
+                    symbol:DoLoad();
+                    loading_count = loading_count + 1;
+                elseif symbol.Loading then
+                    loading_count = loading_count + 1;
+                end
+                if loading_count == instance.parameters.load_quota and instance.parameters.load_quota > 0 then
+                    return;
+                end
             end
-            if loading_count == instance.parameters.load_quota and instance.parameters.load_quota > 0 then
-                return;
-            end
+            core.host:execute("setStatus", "");
+            loading_finished = true;
         end
-        core.host:execute("setStatus", "");
-        core.host:execute("killTimer", timer_handle);
     else
         for _, symbol in ipairs(items) do
             if cookie == symbol.LoadingId then
