@@ -1,7 +1,7 @@
 breakeven = {};
 -- public fields
 breakeven.Name = "Breakeven";
-breakeven.Version = "1.17";
+breakeven.Version = "1.18";
 breakeven.Debug = false;
 --private fields
 breakeven._moved_stops = {};
@@ -538,6 +538,42 @@ function breakeven:ActionOnTrade(action)
         end
         self._action(trade, self);
         self._executed = true;
+        return true;
+    end
+    self._controllers[#self._controllers + 1] = controller;
+    return controller;
+end
+
+function breakeven:CreateOnCandleClose()
+    local controller = self:CreateBaseController();
+    controller._trailing = 0;
+    function controller:SetSource(source)
+        self._source = source;
+        return self;
+    end
+    function controller:SetBarsToLive(bars_to_live)
+        self._bars_to_live = bars_to_live;
+        return self;
+    end
+    function controller:DoBreakeven()
+        if self._executed then
+            return true;
+        end
+        local trade = self:GetTrade();
+        if trade == nil then
+            return true;
+        end
+        if not trade:refresh() then
+            self._executed = true;
+            return false;
+        end
+        local index = core.findDate(self._source, trade.Time, false);
+        if self._source:size() - 1 - index >= self._bars_to_live then
+            core.host:trace("closing trade");
+            self._command = self._parent._trading:Close(trade);
+            self._executed = true;
+            return false;
+        end
         return true;
     end
     self._controllers[#self._controllers + 1] = controller;
