@@ -1,9 +1,9 @@
--- Sources v1.1
+-- Sources v1.2
 local sources = {}
 sources.last_id = 1
 sources.ids = {}
 sources.items = {}
-function sources:Request(id, source, tf)
+function sources:Request(id, source, tf, isBid)
 	local ids = {}
 	ids.loading_id = self.last_id
 	ids.loaded_id = self.last_id + 1
@@ -11,7 +11,11 @@ function sources:Request(id, source, tf)
 	self.last_id = self.last_id + 2
 	self.ids[id] = ids
 
-	self.items[id] = core.host:execute("getSyncHistory", source:instrument(), tf, source:isBid(), 100, ids.loaded_id, ids.loading_id)
+	if isBid == nil then
+		isBid = source:isBid()
+	end
+
+	self.items[id] = core.host:execute("getSyncHistory", source:instrument(), tf, isBid, 100, ids.loaded_id, ids.loading_id)
 	return self.items[id];
 end
 function sources:AsyncOperationFinished(cookie, successful, message, message1, message2)
