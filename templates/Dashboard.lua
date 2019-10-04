@@ -1,4 +1,4 @@
--- Dashboard template v.1.4
+-- Dashboard template v.1.5
 
 local timeframes_list = {"m1", "m5", "m15", "m30", "H1", "H2", "H3", "H4", "H6", "H8", "D1", "W1", "M1"};
 local Modules = {};
@@ -333,7 +333,7 @@ function DrawSignal(symbol, context)
     if symbol.Source:date(NOW) <= symbol.SignalTime then
         backgound = instance.parameters.signal_background_color;
     end
-    local color = symbol.Signal == 1 and instance.parameters.up_color or instance.parameters.dn_color;
+    local color = symbol.Signal > 0 and instance.parameters.up_color or instance.parameters.dn_color;
     CellsBuilder:Add(FONT_TEXT, symbol.Text, color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
     CellsBuilder:Add(FONT_TEXT, FormatTime(symbol.SignalTime), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
     CellsBuilder:Add(FONT_TEXT, symbol.Text, instance.parameters.dn_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
@@ -384,16 +384,12 @@ end
 
 function Update(period, mode)
     for _, module in pairs(Modules) do if module.ExtUpdate ~= nil then module:ExtUpdate(nil, nil, nil); end end
-    for _, symbol in ipairs(items) do
-        if symbol.Indicator ~= nil and not symbol.Loading then
-            symbol.Indicator:update(core.UpdateLast);
-        end
-    end
 end
 
 function UpdateData()
     for _, symbol in ipairs(items) do
         if symbol.Indicator ~= nil and not symbol.Loading then
+            symbol.Indicator:update(core.UpdateLast);
             local signal, time = GetLastSignal(symbol.Indicator, symbol.Source);
             symbol.Signal = signal;
             symbol.SignalTime = time;
@@ -410,6 +406,9 @@ function UpdateData()
             if symbol.dde ~= nil then
                 dde_server:set(dde_topic, symbol.dde, symbol.Text);
             end
+		else
+            symbol.Text = "...";
+            symbol.Signal = 0;
         end
     end
 end
