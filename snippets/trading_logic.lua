@@ -1,7 +1,7 @@
 trading_logic = {};
 -- public fields
 trading_logic.Name = "Trading logic";
-trading_logic.Version = "1.6";
+trading_logic.Version = "1.7";
 trading_logic.Debug = false;
 trading_logic.DoTrading = nil;
 trading_logic.DoExit = nil;
@@ -23,7 +23,7 @@ function trading_logic:Init(parameters)
         parameters:addBoolean("is_bid", "Price Type", "", true);
         parameters:setFlag("is_bid", core.FLAG_BIDASK);
         parameters:addString("timeframe", "Trading Time frame", "", "m5");
-        parameters:setFlag("timeframe", core.FLAG_PERIODS);
+        parameters:setFlag("timeframe", core.FLAG_BARPERIODS_EDIT);
     end
     if ENFORCE_entry_execution_type == nil then
         parameters:addString("entry_execution_type", "Entry Execution Type", "Once per bar close or on every tick", "EndOfTurn");
