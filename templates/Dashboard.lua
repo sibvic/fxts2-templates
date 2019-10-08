@@ -336,8 +336,6 @@ function DrawSignal(symbol, context)
     local color = symbol.Signal > 0 and instance.parameters.up_color or instance.parameters.dn_color;
     CellsBuilder:Add(FONT_TEXT, symbol.Text, color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
     CellsBuilder:Add(FONT_TEXT, FormatTime(symbol.SignalTime), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
-    CellsBuilder:Add(FONT_TEXT, symbol.Text, instance.parameters.dn_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
-    CellsBuilder:Add(FONT_TEXT, FormatTime(symbol.SignalTime), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
 end
 function Draw(stage, context) 
     if stage ~= 2 then
@@ -399,7 +397,7 @@ function UpdateData()
                 local is_current_bar = symbol.Source:date(NOW) <= time;
                 symbol.Text = GetPatternName(symbol.Signal);
                 if is_current_bar and symbol.last_alert ~= time and (symbol.Mode == "both" or symbol.Mode == "alert") then
-                    signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. pattern_name);
+                    signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. symbol.Text);
                     symbol.last_alert = time;
                 end
             end
@@ -447,3 +445,4 @@ function AsyncOperationFinished(cookie, success, message, message1, message2)
     end
 end
 
+-- include signaler.lua
