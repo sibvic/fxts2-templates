@@ -1,7 +1,7 @@
 trading_logic = {};
 -- public fields
 trading_logic.Name = "Trading logic";
-trading_logic.Version = "1.7";
+trading_logic.Version = "1.8";
 trading_logic.Debug = false;
 trading_logic.DoTrading = nil;
 trading_logic.DoExit = nil;
@@ -22,13 +22,17 @@ function trading_logic:Init(parameters)
     if not CustomTimeframeDefined then
         parameters:addBoolean("is_bid", "Price Type", "", true);
         parameters:setFlag("is_bid", core.FLAG_BIDASK);
-        parameters:addString("timeframe", "Trading Time frame", "", "m5");
+        parameters:addString("timeframe", "Entry Time frame", "", "m5");
         parameters:setFlag("timeframe", core.FLAG_BARPERIODS_EDIT);
     end
     if ENFORCE_entry_execution_type == nil then
         parameters:addString("entry_execution_type", "Entry Execution Type", "Once per bar close or on every tick", "EndOfTurn");
         parameters:addStringAlternative("entry_execution_type", "End of Turn", "", "EndOfTurn");
         parameters:addStringAlternative("entry_execution_type", "Live", "", "Live");
+    end
+    if not CustomTimeframeDefined then
+        parameters:addString("exit_timeframe", "Exit Time frame", "", "m5");
+        parameters:setFlag("exit_timeframe", core.FLAG_BARPERIODS_EDIT);
     end
     if ENFORCE_exit_execution_type == nil then
         parameters:addString("exit_execution_type", "Exit Execution Type", "Once per bar close or on every tick", "Live");
@@ -84,7 +88,7 @@ function trading_logic:Prepare(name_only)
         return;
     end
     self.MainSource, self._trading_source_id = self:SubscribeHistory(nil, instance.parameters.timeframe, instance.parameters.is_bid);
-    self._exit_source_id = self._trading_source_id;
+    self.ExitSource, self._exit_source_id = self:SubscribeHistory(nil, instance.parameters.exit_timeframe, instance.parameters.is_bid);
     if instance.parameters.entry_execution_type == "Live" or ENFORCE_entry_execution_type == "Live" then
         _, self._trading_source_id = self:SubscribeHistory(nil, "t1", instance.parameters.is_bid);
     end
@@ -114,13 +118,13 @@ function trading_logic:ExtUpdate(id, source, period)
     end
     if id == self._exit_source_id and self.DoExit ~= nil then
         local period2 = period;
-        if source ~= self.MainSource then
-            period2 = core.findDate(self.MainSource, source:date(period), false);
+        if source ~= self.ExitSource then
+            period2 = core.findDate(self.ExitSource, source:date(period), false);
             if period2 == -1 then
                 return;
             end
         end
-        self.DoExit(self.MainSource, period2);
+        self.DoExit(self.ExitSource, period2);
     end
 end
 trading_logic:RegisterModule(Modules);

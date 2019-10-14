@@ -39,7 +39,8 @@ local CustomTimeframeDefined = false;
 function CreateParameters() end
 function CreateStopParameters(params, id) return false; end
 function CreateLimitParameters(params, id) return false; end
-function CreateIndicators(source) end
+function CreateEntryIndicators(source) end
+function CreateExitIndicators(source) end
 
 function UpdateIndicators()
     --indi:update(core.UpdateLast);
@@ -237,7 +238,8 @@ function Prepare(name_only)
     instance:name(profile:id() .. "(" .. instance.bid:name() ..  ")");
     if name_only then return ; end
 
-    CreateIndicators(trading_logic.MainSource);
+    CreateEntryIndicators(trading_logic.MainSource);
+    CreateExitIndicators(trading_logic.ExitSource);
     CreateCustomActions();
 
     local valid;
