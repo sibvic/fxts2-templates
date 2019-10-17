@@ -1,4 +1,4 @@
--- Dashboard template v.1.5
+-- Dashboard template v.1.6
 
 local timeframes_list = {"m1", "m5", "m15", "m30", "H1", "H2", "H3", "H4", "H6", "H8", "D1", "W1", "M1"};
 local Modules = {};
@@ -8,14 +8,18 @@ local indi_name = "Dashboard";
 local indi_id = "INDICATOR";
 local indi_version = "1";
 
-function CreateIndicator(source)
+function CreateIndicators(source)
+    local indicators = {};
+
     local indi = core.indicators:findIndicator(indi_id);
     assert(indi ~= nil, "Please download and install " .. indi_id .. ".lua indicator");
     local p = indi:parameters();
     p:setBoolean("UpDown", true);
     p:setInteger("PERIOD1", instance.parameters.PERIOD1);
     p:setDouble("BuyLevel", instance.parameters.BuyLevel);
-    return indi:createInstance(source, p);
+    indicators[#indicators + 1] = indi:createInstance(source, p);
+
+    return indicators;
 end
 
 function CreateParameters()
@@ -135,7 +139,7 @@ function PrepareInstrument(instrument)
             end
             function symbol:DoLoad()
                 self.Source = core.host:execute("getSyncHistory", self.Pair, self.TF, instance.source:isBid(), 300, self.LoadedId, self.LoadingId);
-                self.Indicator = CreateIndicator(self.Source);
+                self.Indicators = CreateIndicators(self.Source);
             end
             if instance.parameters.dde_export_values then
                 symbol.dde = dde_server:addValue(dde_topic, string.gsub(instrument, "/", "") .. "_" .. symbol.TF);
@@ -386,9 +390,11 @@ end
 
 function UpdateData()
     for _, symbol in ipairs(items) do
-        if symbol.Indicator ~= nil and not symbol.Loading then
-            symbol.Indicator:update(core.UpdateLast);
-            local signal, time = GetLastSignal(symbol.Indicator, symbol.Source);
+        if symbol.Indicators ~= nil and not symbol.Loading then
+            for i, indicator in ipairs(symbol.Indicators) do
+                indicator:update(core.UpdateLast);
+            end
+            local signal, time = GetLastSignal(symbol.Indicators, symbol.Source);
             symbol.Signal = signal;
             symbol.SignalTime = time;
             if signal == 0 then
