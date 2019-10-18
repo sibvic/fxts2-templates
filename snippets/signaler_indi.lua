@@ -1,5 +1,5 @@
 local indi_alerts = {};
-indi_alerts.Version = "1.13";
+indi_alerts.Version = "1.14";
 indi_alerts.inverted_arrows = false;
 local alerts = 
 { 
@@ -293,8 +293,8 @@ function indi_alerts:Prepare()
             self.Alert[period] = -1;
             self.AlertLevel[period] = level;
             self.U = nil;
-            if self.D ~= source:serial(period) and period == source:size() - 1 - shift and not indi_alerts.FIRST then
-                self.D = source:serial(period);
+            if self.D ~= source:date(period) and period == source:size() - 1 - shift and not indi_alerts.FIRST then
+                self.D = source:date(period);
                 if not historical_period then
                     indi_alerts:SoundAlert(self.Down);
                     indi_alerts:EmailAlert(self.Label, text, period);
@@ -310,8 +310,8 @@ function indi_alerts:Prepare()
             self.Alert[period] = 1;
             self.AlertLevel[period] = level;
             self.D = nil;
-            if self.U ~= source:serial(period) and period == source:size() - 1 - shift and not indi_alerts.FIRST then
-                self.U = source:serial(period);
+            if self.U ~= source:date(period) and period == source:size() - 1 - shift and not indi_alerts.FIRST then
+                self.U = source:date(period);
                 if not historical_period then
                     indi_alerts:SoundAlert(self.Up);
                     indi_alerts:EmailAlert(self.Label, text, period);
