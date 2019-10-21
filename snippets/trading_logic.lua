@@ -1,7 +1,7 @@
 trading_logic = {};
 -- public fields
 trading_logic.Name = "Trading logic";
-trading_logic.Version = "1.8";
+trading_logic.Version = "1.9";
 trading_logic.Debug = false;
 trading_logic.DoTrading = nil;
 trading_logic.DoExit = nil;
@@ -22,6 +22,7 @@ function trading_logic:Init(parameters)
     if not CustomTimeframeDefined then
         parameters:addBoolean("is_bid", "Price Type", "", true);
         parameters:setFlag("is_bid", core.FLAG_BIDASK);
+        parameters:addBoolean("ha_as_source", "Use HA as source", "", false);
         parameters:addString("timeframe", "Entry Time frame", "", "m5");
         parameters:setFlag("timeframe", core.FLAG_BARPERIODS_EDIT);
     end
@@ -87,8 +88,23 @@ function trading_logic:Prepare(name_only)
     if name_only then
         return;
     end
-    self.MainSource, self._trading_source_id = self:SubscribeHistory(nil, instance.parameters.timeframe, instance.parameters.is_bid);
-    self.ExitSource, self._exit_source_id = self:SubscribeHistory(nil, instance.parameters.exit_timeframe, instance.parameters.is_bid);
+    if instance.parameters.ha_as_source then
+        local MainSource, mainId = self:SubscribeHistory(nil, instance.parameters.timeframe, instance.parameters.is_bid);
+        local ExitSource, exitId = self:SubscribeHistory(nil, instance.parameters.exit_timeframe, instance.parameters.is_bid);
+        
+        local mainHA = core.indicators:create("HA", MainSource);
+        self.MainSourceHA = mainHA;
+        self.MainSource = mainHA:getCandleOutput(0);
+        self._trading_source_id = mainId;
+        
+        local exitHA = core.indicators:create("HA", ExitSource);
+        self.ExitSourceHA = exitHA;
+        self.ExitSource = exitHA:getCandleOutput(0);
+        self._exit_source_id = exitId;
+    else
+        self.MainSource, self._trading_source_id = self:SubscribeHistory(nil, instance.parameters.timeframe, instance.parameters.is_bid);
+        self.ExitSource, self._exit_source_id = self:SubscribeHistory(nil, instance.parameters.exit_timeframe, instance.parameters.is_bid);
+    end
     if instance.parameters.entry_execution_type == "Live" or ENFORCE_entry_execution_type == "Live" then
         _, self._trading_source_id = self:SubscribeHistory(nil, "t1", instance.parameters.is_bid);
     end
@@ -106,6 +122,12 @@ function trading_logic:Prepare(name_only)
     end
 end
 function trading_logic:ExtUpdate(id, source, period)
+    if self.MainSourceHA ~= nil then
+        self.MainSourceHA:update(core.UpdateLast);
+    end
+    if self.ExitSourceHA ~= nil then
+        self.ExitSourceHA:update(core.UpdateLast);
+    end
     if id == self._trading_source_id and self.DoTrading ~= nil then
         local period2 = period;
         if source ~= self.MainSource then
