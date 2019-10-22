@@ -1,7 +1,7 @@
 trading_logic = {};
 -- public fields
 trading_logic.Name = "Trading logic";
-trading_logic.Version = "1.9";
+trading_logic.Version = "1.10";
 trading_logic.Debug = false;
 trading_logic.DoTrading = nil;
 trading_logic.DoExit = nil;
@@ -35,7 +35,7 @@ function trading_logic:Init(parameters)
         parameters:addString("exit_timeframe", "Exit Time frame", "", "m5");
         parameters:setFlag("exit_timeframe", core.FLAG_BARPERIODS_EDIT);
     end
-    if ENFORCE_exit_execution_type == nil then
+    if ENFORCE_exit_execution_type == nil and not DISABLE_EXIT then
         parameters:addString("exit_execution_type", "Exit Execution Type", "Once per bar close or on every tick", "Live");
         parameters:addStringAlternative("exit_execution_type", "End of Turn", "", "EndOfTurn");
         parameters:addStringAlternative("exit_execution_type", "Live", "", "Live");

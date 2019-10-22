@@ -22,6 +22,7 @@ local ENFORCE_POSITION_CAP = false;
 -- Enforce execution type. When set to Live/EndOfTurn the execution type parameters will be hiden
 local ENFORCE_entry_execution_type = nil; -- Live/EndOfTurn
 local ENFORCE_exit_execution_type = nil; -- Live/EndOfTurn
+local DISABLE_EXIT = false;
 
 local STRATEGY_NAME = "Strategy Name";
 local STRATEGY_VERSION = "1";
@@ -64,18 +65,29 @@ function CreateCustomActions()
     -- else
     --     ExitActions[#ExitActions + 1] = action1;
     -- end
-    local exitLongAction = {};
-    exitLongAction.ActOnSwitch = false;
-    exitLongAction.Cache = {};
-    exitLongAction.IsPass = function (source, period, periodFromLast, data)
-        return false; -- TODO: implement
-    end
+    if not DISABLE_EXIT then
+        local exitLongAction = {};
+        exitLongAction.ActOnSwitch = false;
+        exitLongAction.Cache = {};
+        exitLongAction.IsPass = function (source, period, periodFromLast, data)
+            return false; -- TODO: implement
+        end
 
-    local exitShortAction = {};
-    exitShortAction.ActOnSwitch = false;
-    exitShortAction.Cache = {};
-    exitShortAction.IsPass = function (source, period, periodFromLast, data)
-        return false; -- TODO: implement
+        local exitShortAction = {};
+        exitShortAction.ActOnSwitch = false;
+        exitShortAction.Cache = {};
+        exitShortAction.IsPass = function (source, period, periodFromLast, data)
+            return false; -- TODO: implement
+        end
+        if instance.parameters.Direction == "direct" then
+            exitLongAction.Execute = CloseLong;
+            exitShortAction.Execute = CloseShort;
+        else
+            exitLongAction.Execute = CloseShort;
+            exitShortAction.Execute = CloseLong;
+        end
+        ExitActions[#ExitActions + 1] = exitLongAction;
+        ExitActions[#ExitActions + 1] = exitShortAction;
     end
 
     local enterLongAction = {};
@@ -99,22 +111,16 @@ function CreateCustomActions()
     end
 
     if instance.parameters.Direction == "direct" then
-        exitLongAction.Execute = CloseLong;
-        exitShortAction.Execute = CloseShort;
         enterLongAction.Execute = GoLong;
         enterShortAction.Execute = GoShort;
         enterLongAction.ExecuteData = CreateBuyPositions(trading_logic.MainSource);
         enterShortAction.ExecuteData = CreateSellPositions(trading_logic.MainSource);
     else
-        exitLongAction.Execute = CloseShort;
-        exitShortAction.Execute = CloseLong;
         enterLongAction.Execute = GoShort;
         enterShortAction.Execute = GoLong;
         enterLongAction.ExecuteData = CreateSellPositions(trading_logic.MainSource);
         enterShortAction.ExecuteData = CreateBuyPositions(trading_logic.MainSource);
     end
-    ExitActions[#ExitActions + 1] = exitLongAction;
-    ExitActions[#ExitActions + 1] = exitShortAction;
     EntryActions[#EntryActions + 1] = enterLongAction;
     EntryActions[#EntryActions + 1] = enterShortAction;
 end
