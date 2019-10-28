@@ -1,5 +1,5 @@
 local indi_alerts = {};
-indi_alerts.Version = "1.14";
+indi_alerts.Version = "2.0";
 indi_alerts.inverted_arrows = false;
 local alerts = 
 { 
@@ -8,6 +8,19 @@ local alerts =
         UpCondition = function (period)
         end,
         DownCondition = function (period)
+        end,
+        FormatMessage = function(source, period, level, label, isUp)
+            return string.format(
+                "Label: %s\013\010" ..
+                "Instrument: %s\013\010" ..
+                "Time Frame: %s\013\010" ..
+                "Price: %s\013\010" .. 
+                "Date: %s", 
+                isUp and (label .. " Bull pattern") or (label .. " Bear pattern"), 
+                source:instrument(), 
+                source:barSize(), 
+                win32.formatNumber(source.close[NOW], false, source:getPrecision()), 
+                core.formatDate(core.now()));
         end,
         OnChange = true,
         Name = "Alert Name"
@@ -42,9 +55,9 @@ function Activate(alert, period, historical_period)
         return;
     end
     if alert.UpCondition(period) and (not alert.OnChange or not alert.UpCondition(period - 1)) then
-        alert:UpAlert(source, period, alert.Label .. ". Bull pattern", source.high[period], historical_period);
+        alert:UpAlert(source, period, source.high[period], historical_period);
     elseif alert.DownCondition(period) and (not alert.OnChange or not alert.DownCondition(period - 1)) then
-        alert:DownAlert(source, period, alert.Label .. ". Bear pattern", source.low[period], historical_period);
+        alert:DownAlert(source, period, source.low[period], historical_period);
     end
 
     if indi_alerts.FIRST then indi_alerts.FIRST = false; end
@@ -258,6 +271,7 @@ function indi_alerts:Prepare()
         local alert = {};
         alert.id = i;
         alert.UpCondition = alerts[i].UpCondition;
+        alert.FormatMessage = alerts[i].FormatMessage;
         alert.DownCondition = alerts[i].DownCondition;
         alert.OnChange = alerts[i].OnChange;
         alert.Stage = alerts[i].Stage;
@@ -288,7 +302,8 @@ function indi_alerts:Prepare()
             alert.Alert = instance:addInternalStream(0, 0);
         end
         alert.AlertLevel = instance:addInternalStream(0, 0);
-        function alert:DownAlert(source, period, text, level, historical_period)
+        function alert:DownAlert(source, period, level, historical_period)
+            local text = self.FormatMessage(source, period, level, self.Label, false);
             shift = indi_alerts.Live ~= "Live" and 1 or 0;
             self.Alert[period] = -1;
             self.AlertLevel[period] = level;
@@ -305,7 +320,8 @@ function indi_alerts:Prepare()
                 end
             end
         end
-        function alert:UpAlert(source, period, text, level, historical_period)
+        function alert:UpAlert(source, period, level, historical_period)
+            local text = self.FormatMessage(source, period, level, self.Label, true);
             shift = indi_alerts.Live ~= "Live" and 1 or 0;
             self.Alert[period] = 1;
             self.AlertLevel[period] = level;
