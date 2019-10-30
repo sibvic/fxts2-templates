@@ -30,6 +30,7 @@ function trading:AddPositionParameters(parameters, id)
         parameters:addStringAlternative("stop_type" .. id, "No stop", "", "no");
         parameters:addStringAlternative("stop_type" .. id, "In Pips", "", "pips");
         parameters:addStringAlternative("stop_type" .. id, "ATR", "", "atr");
+        parameters:addStringAlternative("stop_type" .. id, "High/low", "", "highlow");
         parameters:addDouble("stop" .. id, "Stop Value", "In pips or ATR period", 30);
         parameters:addDouble("atr_stop_mult" .. id, "ATR Stop Multiplicator", "", 2.0);
         parameters:addBoolean("use_trailing" .. id, "Trailing stop order", "", false);
@@ -43,6 +44,7 @@ function trading:AddPositionParameters(parameters, id)
         parameters:addStringAlternative("limit_type" .. id, "In Pips", "", "pips");
         parameters:addStringAlternative("limit_type" .. id, "ATR", "", "atr");
         parameters:addStringAlternative("limit_type" .. id, "Multiplicator of stop", "", "stop");
+        parameters:addStringAlternative("limit_type" .. id, "High/low", "", "highlow");
         parameters:addDouble("limit" .. id, "Limit Value", "In pips or ATR period", 30);
         parameters:addDouble("atr_limit_mult" .. id, "ATR Limit Multiplicator", "", 2.0);
         parameters:addString("TRAILING_LIMIT_TYPE" .. id, "Trailing Limit", "", "Off");
