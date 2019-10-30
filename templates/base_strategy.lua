@@ -350,6 +350,14 @@ function CreatePositionStrategy(source, side, id)
             if self.StopType == "pips" then
                 stop_value = self.Stop;
                 command = command:SetPipStop(nil, self.Stop, self.Trailing);
+            elseif self.StopType == "highlow" then
+                if self.Side == "B" then
+                    stop_value = (self.Source.close[period] - self.Source.low[period]) / self.Source:pipSize() + self.Stop;
+                    command = command:SetPipStop(nil, stop_value, self.Trailing);
+                else
+                    stop_value = (self.Source.high[period] - self.Source.close[period]) / self.Source:pipSize() + self.Stop;
+                    command = command:SetPipStop(nil, stop_value, self.Trailing);
+                end
             end
         end
         if default_limit then
@@ -357,6 +365,12 @@ function CreatePositionStrategy(source, side, id)
                 command = command:SetPipLimit(nil, self.Limit);
             elseif self.LimitType == "stop" then
                 command = command:SetPipLimit(nil, stop_value * self.Limit);
+            elseif self.LimitType == "highlow" then
+                if self.Side == "B" then
+                    command = command:SetPipLimit(nil, (self.Source.high[period] - self.Source.close[period]) / self.Source:pipSize() + self.Limit);
+                else
+                    command = command:SetPipLimit(nil, (self.Source.close[period] - self.Source.low[period]) / self.Source:pipSize() + self.Limit);
+                end
             end
         end
         local result = command:Execute();
