@@ -23,6 +23,7 @@ local ENFORCE_POSITION_CAP = false;
 local ENFORCE_entry_execution_type = nil; -- Live/EndOfTurn
 local ENFORCE_exit_execution_type = nil; -- Live/EndOfTurn
 local DISABLE_EXIT = false;
+local DISABLE_HA_SOURCE = false;
 
 local STRATEGY_NAME = "Strategy Name";
 local STRATEGY_VERSION = "1";
