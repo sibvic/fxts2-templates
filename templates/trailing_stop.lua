@@ -9,7 +9,7 @@ function Init()
     -- ADD PARAMS
     
     strategy.parameters:addString("TF", "Time frame", "", "m1");
-    strategy.parameters:setFlag("TF", core.FLAG_PERIODS);
+    strategy.parameters:setFlag("TF", core.FLAG_BARPERIODS);
     
     strategy.parameters:addGroup("Trade");
     strategy.parameters:addBoolean("all_trades", "All trades", "", false);
@@ -37,6 +37,7 @@ local AllowTrade;
 local ExecutionType;
 local TF;
 local Indicator;
+local commands = {};
 
 function Prepare(nameOnly)
     for _, module in pairs(Modules) do module:Prepare(nameOnly); end
@@ -50,8 +51,6 @@ function Prepare(nameOnly)
         assert(trade ~= nil, "Trade can not be found")
     end
         
-    assert(TF ~= "t1", "The time frame must not be tick");
-
     name = profile:id() .. ", " .. instance.bid:name() ;
     instance:name(name);
    
