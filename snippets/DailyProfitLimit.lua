@@ -1,7 +1,7 @@
 DailyProfitLimit = {};
 -- public fields
 DailyProfitLimit.Name = "Daily Profit Limit";
-DailyProfitLimit.Version = "1.1";
+DailyProfitLimit.Version = "1.2";
 DailyProfitLimit.Debug = false;
 --private fields
 DailyProfitLimit._ids_start = nil;
@@ -30,7 +30,7 @@ function DailyProfitLimit:AsyncOperationFinished(cookie, success, message, messa
         local close_trade = success;
         if close_trade then
             local closed_trade = core.host:findTable("closed trades"):find("TradeID", trade_id);
-            if closed_trade ~= nil and closed_trade.OQTXT == CustomID then
+            if closed_trade ~= nil and closed_trade.OQTXT == custom_id then
                 self:UpdateDayPL();
                 self.state.day_pl = self.state.day_pl + closed_trade.GrossPL;
             end
@@ -53,7 +53,7 @@ function DailyProfitLimit:ExtUpdate(id, source, period)
             self.Signaler:Signal("Daily profit target reached");
         end
         trading:FindTrade()
-            :WhenCustomID(CustomID)
+            :WhenCustomID(custom_id)
             :Do(
                 function (trade) 
                     trading:Close(trade);
@@ -75,7 +75,7 @@ function DailyProfitLimit:UpdateDayPL()
         local enum = core.host:findTable("trades"):enumerator();
         local row = enum:next();
         while row ~= nil do
-            if row.QTXT == CustomID then
+            if row.QTXT == custom_id then
                 self.state[row.TradeID] = row.GrossPL;
             end
             row = enum:next();
@@ -88,7 +88,7 @@ function DailyProfitLimit:GetDayPL()
     local enum = core.host:findTable("trades"):enumerator();
     local row = enum:next();
     while row ~= nil do
-        if row.QTXT == CustomID then
+        if row.QTXT == custom_id then
             local pl_start = self.state[row.TradeID];
             if pl_start == nil then
                 pl_start = 0;
