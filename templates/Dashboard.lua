@@ -26,19 +26,9 @@ end
 function CreateParameters()
 end
 
-function GetPatternName(signal)
-    if signal == 1 then
-        return "B";
-    elseif signal == -1 then
-        return "S";
-    end
-
-    return "-";
-end
-
 function GetLastSignal(indi, source)
-    local up = indi:getTextOutput(0);
-    local down = indi:getTextOutput(1);
+    local up = indi[1]:getTextOutput(0);
+    local down = indi[1]:getTextOutput(1);
     for i = 0, up:size() - 1 do
         if up:hasData(NOW - i) then
             return 1, source:date(NOW - i), "B";
