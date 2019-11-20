@@ -1,4 +1,4 @@
--- Dashboard template v.1.6
+-- Light dashboard template v.1.0
 
 local timeframes_list = {"m1", "m5", "m15", "m30", "H1", "H2", "H3", "H4", "H6", "H8", "D1", "W1", "M1"};
 local timeframes_modes = {"disabled", "disabled", "disabled", "disabled", "display", "disabled", "disabled", "disabled", "disabled", "disabled", "display", "display", "display"};
@@ -26,28 +26,18 @@ end
 function CreateParameters()
 end
 
-function GetPatternName(signal)
-    if signal == 1 then
-        return "B";
-    elseif signal == -1 then
-        return "S";
-    end
-
-    return "-";
-end
-
 function GetLastSignal(indi, source)
     local up = indi:getTextOutput(0);
     local down = indi:getTextOutput(1);
     for i = 0, up:size() - 1 do
         if up:hasData(NOW - i) then
-            return 1, source:date(NOW - i), "B";
+            return 1, "B";
         end
         if down:hasData(NOW - i) then
-            return -1, source:date(NOW - i), "S";
+            return -1, "S";
         end
     end
-    return 0, nil, "-";
+    return 0, "-";
 end
 -- ENF OF USER DEFINITIONS SECTION
 
@@ -70,10 +60,6 @@ function Init()
     for i = 1, #timeframes_list do
         AddTimeFrame(i, timeframes_list[i], timeframes_modes[i]);
     end
-    indicator.parameters:addGroup("DDE");
-    indicator.parameters:addBoolean("dde_export_values", "Export DDE", "", false);
-    indicator.parameters:addString("dde_service", "Service Name", "The service name must be unique amoung all running instances of the strategy", "DASHBOARD");
-    indicator.parameters:addString("dde_topic", "DDE Topic", "value = instrument_timeframe. Ex: EURUSD_m1", "Values");
 
     indicator.parameters:addGroup("Styling");
     indicator.parameters:addColor("up_color", "Up color", "", core.rgb(0, 255, 0));
@@ -88,8 +74,6 @@ function Init()
     indicator.parameters:addString("grid_mode", "Grid mode", "", "v")
     indicator.parameters:addStringAlternative("grid_mode", "Horizontal", "", "h")
     indicator.parameters:addStringAlternative("grid_mode", "Vertical", "", "v")
-    indicator.parameters:addGroup("Alerts");
-    signaler:Init(indicator.parameters);
 end
 
 function Add(id)
@@ -107,9 +91,7 @@ function AddTimeFrame(id, FRAME, DEFAULT)
     local paramId = "Use" .. id;
     indicator.parameters:addString(paramId, FRAME, "", DEFAULT); 
     indicator.parameters:addStringAlternative(paramId, "Do not use", "", "disabled");
-    indicator.parameters:addStringAlternative(paramId, "Display + Alert", "", "both");
     indicator.parameters:addStringAlternative(paramId, "Display only", "", "display");
-    indicator.parameters:addStringAlternative(paramId, "Alert only", "", "alert");
 end
 
 local items = {};
@@ -256,7 +238,6 @@ function CellsBuilder:Draw(x, y)
 end
 
 function Prepare(nameOnly)
-    signaler:Prepare(nameOnly);
     instance:name(indi_name);
     if nameOnly then
         return;
@@ -291,21 +272,6 @@ function Prepare(nameOnly)
     CellsBuilder.GapCoeff = instance.parameters.cells_gap;
 end
 
-function FormatTime(time)
-    local diff = core.host:execute("getServerTime") - time;
-    if (diff > 1) then
-        return math.floor(diff) .. " d.";
-    end
-    local diff_date = core.dateToTable(diff);
-    if (diff_date.hour > 0) then
-        return diff_date.hour .. " h.";
-    end
-    if (diff_date.min > 0) then
-        return diff_date.min .. " min.";
-    end
-    return "now";
-end
-
 local init = false;
 local FONT = 1;
 local FONT_TEXT = 2;
@@ -317,10 +283,10 @@ local draw_grid, grid_mode;
 
 function GetTableIndex(symbol)
     if grid_mode == "h" then
-        return (symbol.TimeframeIndex + 1) * 2, symbol.SymbolIndex + 1;
+        return (symbol.TimeframeIndex + 1), symbol.SymbolIndex + 1;
     end
 
-    return (symbol.SymbolIndex + 1) * 2, symbol.TimeframeIndex + 1;
+    return (symbol.SymbolIndex + 1), symbol.TimeframeIndex + 1;
 end
 
 function DrawSignal(symbol, context)
@@ -330,17 +296,12 @@ function DrawSignal(symbol, context)
     local row, column = GetTableIndex(symbol);
     if symbol.Signal == 0 or symbol.Signal == nil then
         CellsBuilder:Add(FONT_TEXT, symbol.Text, text_color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
-        CellsBuilder:Add(FONT_TEXT, symbol.Text, text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
         return;
     end
 
     local backgound = -1;
-    if symbol.Source:date(NOW) <= symbol.SignalTime then
-        backgound = instance.parameters.signal_background_color;
-    end
     local color = symbol.Signal > 0 and instance.parameters.up_color or instance.parameters.dn_color;
     CellsBuilder:Add(FONT_TEXT, symbol.Text, color, column, row, context.CENTER, backgound, GRID_PEN, true, false);
-    CellsBuilder:Add(FONT_TEXT, FormatTime(symbol.SignalTime), text_color, column, row + 1, context.CENTER, backgound, GRID_PEN, false, true);
 end
 function Draw(stage, context) 
     if stage ~= 2 then
@@ -364,7 +325,7 @@ function Draw(stage, context)
     CellsBuilder:Clear(context);
     for i = 1, #timeframes do
         if grid_mode == "h" then
-            CellsBuilder:Add(FONT_TEXT, timeframes[i], text_color, 1, (i + 1) * 2, context.LEFT);
+            CellsBuilder:Add(FONT_TEXT, timeframes[i], text_color, 1, (i + 1), context.LEFT);
         else
             CellsBuilder:Add(FONT_TEXT, timeframes[i], text_color, i + 1, 1, context.LEFT);
         end
@@ -373,7 +334,7 @@ function Draw(stage, context)
         if grid_mode == "h" then
             CellsBuilder:Add(FONT_TEXT, instruments[i], text_color, i + 1, 1, context.CENTER);
         else
-            CellsBuilder:Add(FONT_TEXT, instruments[i], text_color, 1, (i + 1) * 2, context.CENTER);
+            CellsBuilder:Add(FONT_TEXT, instruments[i], text_color, 1, (i + 1), context.CENTER);
         end
     end
     for _, symbol in ipairs(items) do
@@ -395,23 +356,11 @@ function UpdateData()
             for i, indicator in ipairs(symbol.Indicators) do
                 indicator:update(core.UpdateLast);
             end
-            local signal, time, label = GetLastSignal(symbol.Indicators, symbol.Source);
+            local signal, label = GetLastSignal(symbol.Indicators, symbol.Source);
             symbol.Signal = signal;
-            symbol.SignalTime = time;
             symbol.Text = label;
-            if signal ~= 0 then
-                local is_current_bar = symbol.Source:date(NOW) <= time;
-                if is_current_bar and symbol.last_alert ~= time and (symbol.Mode == "both" or symbol.Mode == "alert") then
-                    signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. symbol.Text);
-                    symbol.last_alert = time;
-                end
-            end
-            if symbol.dde ~= nil then
-                dde_server:set(dde_topic, symbol.dde, symbol.Text);
-            end
 		else
             symbol.Text = "...";
-            symbol.Signal = 0;
         end
     end
 end
@@ -449,5 +398,3 @@ function AsyncOperationFinished(cookie, success, message, message1, message2)
         end
     end
 end
-
--- include signaler.lua

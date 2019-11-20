@@ -179,6 +179,10 @@ Template for divergence indicators.
 
 Template of dashboard/scanner indicator.
 
+## Dashboard_light
+
+Light version of dashboard/scanner indicator. Only basic information are drawn. Optimized for the performance.
+
 ## Heatmap
 
 Template of a heatmap. Shows green/red/gray rectangle for each condition for each bar. Add your conditions to "conditions". Each condition should implement function GetSignal(period) and function Update(period, mode).
