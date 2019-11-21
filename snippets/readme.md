@@ -37,6 +37,10 @@ New module template.
 
 Implements breakeven logic.
 
+### PartialClose
+
+Create a controller for a partial close on profit.
+
 ## DailyProfitLimit
 
 Stops trading when the daily profit limit is hit.
