@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.25";
+trading.Version = "4.26";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -796,7 +796,7 @@ function trading:EntryOrder(instrument)
     function builder:_GetBaseUnitSize() if self._base_size == nil then self._base_size = core.host:execute("getTradingProperty", "baseUnitSize", self.Instrument, self.valuemap.AcctID); end return self._base_size; end
 
     function builder:SetAccountID(accountID) self.valuemap.AcctID = accountID; return self; end
-    function builder:SetAmount(amount) self.valuemap.Quantity = amount * self:_GetBaseUnitSize(); return self; end
+    function builder:SetAmount(amount) self.amount = amount; return self; end
     function builder:SetRiskPercentOfEquityAmount(percent) self._RiskPercentOfEquityAmount = percent; return self; end
     function builder:SetPercentOfEquityAmount(percent) self._PercentOfEquityAmount = percent; return self; end
     function builder:UpdateOrderType()
@@ -828,6 +828,7 @@ function trading:EntryOrder(instrument)
     function builder:GetValueMap() return self.valuemap; end
     function builder:AddMetadata(id, val) if self._metadata == nil then self._metadata = {}; end self._metadata[id] = val; return self; end
     function builder:Execute()
+        self.valuemap.Quantity = self.amount * self:_GetBaseUnitSize();
         local desc = string.format("Creating %s %s for %s at %f", self.valuemap.BuySell, self.valuemap.OrderType, self.Instrument, self.valuemap.Rate);
         if self._metadata ~= nil then
             self._metadata.CustomID = self.valuemap.CustomID;
