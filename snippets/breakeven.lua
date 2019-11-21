@@ -580,6 +580,44 @@ function breakeven:CreateOnCandleClose()
     return controller;
 end
 
+function breakeven:PartialClose()
+    local controller = self:CreateBaseController();
+    controller._trailing = 0;
+    function controller:SetWhen(when)
+        self._when = when;
+        return self;
+    end
+    function controller:SetPartialClose(amountPercent)
+        self._close_percent = amountPercent;
+        return self;
+    end
+    function controller:DoPartialClose()
+        
+    end
+    function controller:DoBreakeven()
+        if self._close_percent == nil then
+            return true;
+        end
+        local trade = self:GetTrade();
+        if trade == nil then
+            return true;
+        end
+        if not trade:refresh() then
+            self._close_percent = nil;
+            return false;
+        end
+        if trade.PL >= self._when then
+            local base_size = core.host:execute("getTradingProperty", "baseUnitSize", trade.Instrument, trade.AccountID);
+            local to_close = breakeven:round(trade.Lot * self._close_percent / 100.0 / base_size) * base_size;
+            trading:ParialClose(trade, to_close);
+            self._close_percent = nil;
+        end
+        return true;
+    end
+    self._controllers[#self._controllers + 1] = controller;
+    return controller;
+end
+
 function breakeven:CreateController()
     local controller = self:CreateBaseController();
     controller._trailing = 0;
