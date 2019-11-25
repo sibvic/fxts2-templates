@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.26";
+trading.Version = "4.27";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -26,27 +26,37 @@ function trading:AddPositionParameters(parameters, id)
         parameters:addStringAlternative("amount_type" .. id, "Risk % of Equity", "", "risk_equity");
     end
     if CreateStopParameters == nil or not CreateStopParameters(parameters, id) then
+        parameters:addGroup("  Stop parameters");
         parameters:addString("stop_type" .. id, "Stop Order", "", "no");
         parameters:addStringAlternative("stop_type" .. id, "No stop", "", "no");
         parameters:addStringAlternative("stop_type" .. id, "In Pips", "", "pips");
-        parameters:addStringAlternative("stop_type" .. id, "ATR", "", "atr");
+        if not DISABLE_ATR_STOP_LIMIT then
+            parameters:addStringAlternative("stop_type" .. id, "ATR", "", "atr");
+        end
         parameters:addStringAlternative("stop_type" .. id, "High/low", "", "highlow");
         parameters:addDouble("stop" .. id, "Stop Value", "In pips or ATR period", 30);
-        parameters:addDouble("atr_stop_mult" .. id, "ATR Stop Multiplicator", "", 2.0);
+        if not DISABLE_ATR_STOP_LIMIT then
+            parameters:addDouble("atr_stop_mult" .. id, "ATR Stop Multiplicator", "", 2.0);
+        end
         parameters:addBoolean("use_trailing" .. id, "Trailing stop order", "", false);
         parameters:addInteger("trailing" .. id, "Trailing in pips", "Use 1 for dynamic and 10 or greater for the fixed trailing", 1);
     end
     if CreateLimitParameters ~= nil then
         CreateLimitParameters(parameters, id);
     else
+        parameters:addGroup("  Limit parameters");
         parameters:addString("limit_type" .. id, "Limit Order", "", "no");
         parameters:addStringAlternative("limit_type" .. id, "No limit", "", "no");
         parameters:addStringAlternative("limit_type" .. id, "In Pips", "", "pips");
-        parameters:addStringAlternative("limit_type" .. id, "ATR", "", "atr");
+        if not DISABLE_ATR_STOP_LIMIT then
+            parameters:addStringAlternative("limit_type" .. id, "ATR", "", "atr");
+        end
         parameters:addStringAlternative("limit_type" .. id, "Multiplicator of stop", "", "stop");
         parameters:addStringAlternative("limit_type" .. id, "High/low", "", "highlow");
         parameters:addDouble("limit" .. id, "Limit Value", "In pips or ATR period", 30);
-        parameters:addDouble("atr_limit_mult" .. id, "ATR Limit Multiplicator", "", 2.0);
+        if not DISABLE_ATR_STOP_LIMIT then
+            parameters:addDouble("atr_limit_mult" .. id, "ATR Limit Multiplicator", "", 2.0);
+        end
         parameters:addString("TRAILING_LIMIT_TYPE" .. id, "Trailing Limit", "", "Off");
         parameters:addStringAlternative("TRAILING_LIMIT_TYPE" .. id, "Off", "", "Off");
         parameters:addStringAlternative("TRAILING_LIMIT_TYPE" .. id, "Favorable", "moves limit up for long/buy positions, vice versa for short/sell", "Favorable");
@@ -55,6 +65,7 @@ function trading:AddPositionParameters(parameters, id)
         parameters:addDouble("TRAILING_LIMIT_STEP" .. id, "Trailing Limit Step in Pips", "", 10);
     end
     if self.AddBreakevenParameters then
+        parameters:addGroup("  Breakeven parameters");
         parameters:addBoolean("use_breakeven" .. id, "Use Breakeven", "", false);
         parameters:addDouble("breakeven_when" .. id, "Breakeven Activation Value, in pips", "", 10);
         parameters:addDouble("breakeven_to" .. id, "Breakeven To, in pips", "", 0);
@@ -593,6 +604,20 @@ function trading:FindClosedTrade()
             and (row.AccountID == self.AccountID or not self.AccountID)
             and (trading:GetCustomID(row.QTXT) == self.CustomID or not self.CustomID)
             and (row.OpenOrderReqID == self.OpenOrderReqID or not self.OpenOrderReqID);
+    end
+    function search:Do(action)
+        local enum = core.host:findTable("closed trades"):enumerator();
+        local row = enum:next();
+        local count = 0
+        while (row ~= nil) do
+            if self:PassFilter(row) then
+                if action(row) then
+                    count = count + 1;
+                end
+            end
+            row = enum:next();
+        end
+        return count;
     end
     function search:Any()
         local enum = core.host:findTable("closed trades"):enumerator();

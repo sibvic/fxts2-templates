@@ -1,7 +1,7 @@
 trading_logic = {};
 -- public fields
 trading_logic.Name = "Trading logic";
-trading_logic.Version = "1.11";
+trading_logic.Version = "1.12";
 trading_logic.Debug = false;
 trading_logic.DoTrading = nil;
 trading_logic.DoExit = nil;
@@ -33,7 +33,7 @@ function trading_logic:Init(parameters)
         parameters:addStringAlternative("entry_execution_type", "End of Turn", "", "EndOfTurn");
         parameters:addStringAlternative("entry_execution_type", "Live", "", "Live");
     end
-    if not CustomTimeframeDefined and not DISABLE_EXIT then
+    if not CustomTimeframeDefined and not DISABLE_EXIT and EXIT_TIMEFRAME_IN_PARAMS then
         parameters:addString("exit_timeframe", "Exit Time frame", "", "m5");
         parameters:setFlag("exit_timeframe", core.FLAG_BARPERIODS_EDIT);
     end

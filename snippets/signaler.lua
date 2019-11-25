@@ -1,7 +1,7 @@
 signaler = {};
 signaler.Name = "Signaler";
 signaler.Debug = false;
-signaler.Version = "1.6";
+signaler.Version = "1.7";
 
 signaler._show_alert = nil;
 signaler._sound_file = nil;
@@ -209,16 +209,20 @@ function signaler:Init(parameters)
         parameters:addBoolean("signaler_show_popup", "Show Popup", "", false);
     end
     parameters:addBoolean("signaler_debug_alert", "Print Into Log", "", false);
-    parameters:addBoolean("use_advanced_alert", "Send Advanced Alert", "Telegram/Discord/other platform (like MT4)", false)
-	parameters:addString("advanced_alert_key", "Advanced Alert Key",
-        "You can get a key via @profit_robots_bot Telegram Bot. Visit ProfitRobots.com for discord/other platform keys", "");
-    parameters:addBoolean("use_external_executer", "Send Command To Another Platform", "Like MT4/MT5/FXTS2", false)
-    parameters:addString("external_executer_key", "Platform Key", "You can get a key on ProfitRobots.com", "");
     if DDEAlertsSupport then
         parameters:addBoolean("signaler_dde_export", "DDE Export", "You can export the alert into the Excel or any other application with DDE support (=Service Name|DDE Topic!Alerts)", false);
         parameters:addString("signaler_dde_service", "Service Name", "The service name must be unique amoung all running instances of the strategy", "TS2ALERTS");
         parameters:addString("signaler_dde_topic", "DDE Topic", "", "");
     end
+
+    parameters:addGroup("  Telegram/Discord/Other platforms");
+    parameters:addBoolean("use_advanced_alert", "Send Advanced Alert", "Telegram/Discord/other platform (like MT4)", false)
+	parameters:addString("advanced_alert_key", "Advanced Alert Key",
+        "You can get a key via @profit_robots_bot Telegram Bot. Visit ProfitRobots.com for discord/other platform keys", "");
+
+    parameters:addGroup("  Trade coping");
+    parameters:addBoolean("use_external_executer", "Send Command To Another Platform", "Like MT4/MT5/FXTS2", false)
+    parameters:addString("external_executer_key", "Platform Key", "You can get a key on ProfitRobots.com", "");
 end
 
 function signaler:Prepare(name_only)

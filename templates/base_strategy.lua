@@ -8,6 +8,9 @@ local IncludeTradingTime = true;
 -- If set to false the strategy may close positions created by the user and other strategies
 local UseOwnPositionsOnly = true;
 
+-- ATR stop/limit support
+local DISABLE_ATR_STOP_LIMIT = true;
+
 -- Support of alerts export using DDE
 local DDEAlertsSupport = true;
 
@@ -22,6 +25,7 @@ local ENFORCE_POSITION_CAP = false;
 -- Enforce execution type. When set to Live/EndOfTurn the execution type parameters will be hiden
 local ENFORCE_entry_execution_type = nil; -- Live/EndOfTurn
 local ENFORCE_exit_execution_type = nil; -- Live/EndOfTurn
+local EXIT_TIMEFRAME_IN_PARAMS = false;
 local DISABLE_EXIT = false;
 local DISABLE_HA_SOURCE = false;
 
@@ -291,18 +295,18 @@ function CreatePositionStrategy(source, side, id)
         position_strategy.Stop = instance.parameters:getDouble("stop" .. id);
         if position_strategy.StopType == "atr" then
             position_strategy.StopATR = core.indicators:create("ATR", source, position_strategy.Stop);
+            position_strategy.AtrStopMult = instance.parameters:getDouble("atr_stop_mult" .. id);
         end
         if instance.parameters:getBoolean("use_trailing" .. id) then
             position_strategy.Trailing = instance.parameters:getInteger("trailing" .. id);
         end
-        position_strategy.AtrStopMult = instance.parameters:getDouble("atr_stop_mult" .. id);
     end
     if SetCustomLimit == nil then
         position_strategy.Limit = instance.parameters:getDouble("limit" .. id);
         if position_strategy.LimitType == "atr" then
             position_strategy.LimitATR = core.indicators:create("ATR", source, position_strategy.Limit);
+            position_strategy.AtrLimitMult = instance.parameters:getDouble("atr_limit_mult" .. id);
         end
-        position_strategy.AtrLimitMult = instance.parameters:getDouble("atr_limit_mult" .. id);
         position_strategy.TrailingLimitType = instance.parameters:getString("TRAILING_LIMIT_TYPE" .. id);
         position_strategy.TrailingLimitTrigger = instance.parameters:getDouble("TRAILING_LIMIT_TRIGGER" .. id);
         position_strategy.TrailingLimitStep = instance.parameters:getDouble("TRAILING_LIMIT_STEP" .. id);
