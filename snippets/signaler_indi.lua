@@ -1,5 +1,5 @@
 local indi_alerts = {};
-indi_alerts.Version = "2.0";
+indi_alerts.Version = "2.1";
 indi_alerts.inverted_arrows = false;
 local alerts = 
 { 
@@ -90,15 +90,15 @@ function indi_alerts:AddParameters(parameters)
     indicator.parameters:addInteger("Size", "Label Size", "", 10, 1 , 100);
     
     indicator.parameters:addGroup("Alerts");
-    indicator.parameters:addBoolean("Show", "Show Dialog box Alert", "", true);
-    indicator.parameters:addBoolean("ShowAlert", "Show Alert", "", true);
+    indicator.parameters:addBoolean("Show", "Show Dialog box Alert", "", false);
+    indicator.parameters:addBoolean("ShowAlert", "Show Alert", "", false);
     
     indicator.parameters:addGroup("Alerts Sound");
-    indicator.parameters:addBoolean("PlaySound", "Play Sound", "", true);    
+    indicator.parameters:addBoolean("PlaySound", "Play Sound", "", false);    
     indicator.parameters:addBoolean("RecurrentSound", "Recurrent Sound", "", false);
     
     indicator.parameters:addGroup("Alerts Email");
-    indicator.parameters:addBoolean("SendEmail", "Send Email", "", true);
+    indicator.parameters:addBoolean("SendEmail", "Send Email", "", false);
     indicator.parameters:addString("Email", "Email", "", "");
     indicator.parameters:setFlag("Email", core.FLAG_EMAIL);
 
