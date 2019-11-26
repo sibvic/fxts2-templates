@@ -1,4 +1,4 @@
--- Light dashboard template v.1.0
+-- Light dashboard template v.1.1
 
 local timeframes_list = {"m1", "m5", "m15", "m30", "H1", "H2", "H3", "H4", "H6", "H8", "D1", "W1", "M1"};
 local timeframes_modes = {"disabled", "disabled", "disabled", "disabled", "display", "disabled", "disabled", "disabled", "disabled", "disabled", "display", "display", "display"};
@@ -109,7 +109,6 @@ function PrepareInstrument(instrument)
         use = instance.parameters:getString("Use" .. ii);
         if use ~= "no" then
             local symbol = {};
-            symbol.Mode = use;
             symbol.Pair = instrument;
             symbol.Point = core.host:findTable("offers"):find("Instrument", symbol.Pair).PointSize;
             symbol.TF = timeframes_list[ii];
@@ -117,9 +116,7 @@ function PrepareInstrument(instrument)
             symbol.LoadedId = last_id + 2;
             symbol.Loading = true;
             symbol.SymbolIndex = #instruments + 1;
-            if use == "both" or use == "display" then
-                symbol.TimeframeIndex = timeframe_index;
-            end
+            symbol.TimeframeIndex = timeframe_index;
             function symbol:DoLoad()
                 self.Source = core.host:execute("getSyncHistory", self.Pair, self.TF, instance.source:isBid(), 300, self.LoadedId, self.LoadingId);
                 self.Indicators = CreateIndicators(self.Source);
@@ -290,7 +287,7 @@ function GetTableIndex(symbol)
 end
 
 function DrawSignal(symbol, context)
-    if (symbol.Mode ~= "both" and symbol.Mode ~= "display") or symbol.Text == nil then
+    if symbol.Text == nil then
         return;
     end
     local row, column = GetTableIndex(symbol);
@@ -308,7 +305,6 @@ function Draw(stage, context)
         return;
     end
     if not init then
-        context:createFont(FONT, "Wingdings", 0, context:pointsToPixels(8), 0)
         context:createFont(FONT_TEXT, "Arial", 0, context:pointsToPixels(8), 0)
         context:createPen(BG_PEN, context.SOLID, 1, instance.parameters.background_color);
         context:createSolidBrush(BG_BRUSH, instance.parameters.background_color);
@@ -325,9 +321,9 @@ function Draw(stage, context)
     CellsBuilder:Clear(context);
     for i = 1, #timeframes do
         if grid_mode == "h" then
-            CellsBuilder:Add(FONT_TEXT, timeframes[i], text_color, 1, (i + 1), context.LEFT);
+            CellsBuilder:Add(FONT_TEXT, timeframes[i], text_color, 1, (i + 1), context.CENTER);
         else
-            CellsBuilder:Add(FONT_TEXT, timeframes[i], text_color, i + 1, 1, context.LEFT);
+            CellsBuilder:Add(FONT_TEXT, timeframes[i], text_color, i + 1, 1, context.CENTER);
         end
     end
     for i = 1, #instruments do
