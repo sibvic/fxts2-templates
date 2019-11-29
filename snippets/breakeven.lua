@@ -1,7 +1,7 @@
 breakeven = {};
 -- public fields
 breakeven.Name = "Breakeven";
-breakeven.Version = "1.19";
+breakeven.Version = "1.20";
 breakeven.Debug = false;
 --private fields
 breakeven._moved_stops = {};
@@ -16,6 +16,9 @@ function breakeven:OnNewModule(module)
     if module.Name == "Trading" then self._trading = module; end
     if module.Name == "Tables monitor" then
         module:ListenCloseTrade(BreakevenOnClosedTrade);
+    end
+    if module.Name == "Signaler" then
+        self._signaler = module;
     end
 end
 function BreakevenOnClosedTrade(closed_trade)
@@ -80,7 +83,7 @@ function breakeven:CreateBaseController()
         return self._order;
     end
     function controller:GetTrade()
-        if self._trade == nil then
+        if self._trade == nil and self._request_id ~= nil then
             self._trade = core.host:findTable("trades"):find("OpenOrderReqID", self._request_id);
             if self._trade == nil then
                 return nil;
@@ -126,24 +129,8 @@ function breakeven:CreateMartingale()
         if self._current_lot == nil then
             self._current_lot = trade.AmountK;
         end
-
         if trade.BS == "B" then
             local movement = (instance.ask[NOW] - trade.Open) / instance.bid:pipSize();
-            if movement <= -self._step then
-                self._current_lot = self._current_lot * self._martingale_lot_sizing_val;
-                local result = trading:MarketOrder(trade.Instrument)
-                    :SetSide("S")
-                    :SetAccountID(trade.AccountID)
-                    :SetAmount(math.floor(self._current_lot + 0.5))
-                    :SetCustomID(CustomID)
-                    :Execute();
-                self._trade = nil;
-                self:SetRequestID(result.RequestID);
-                Signal("Opening martingale position (S)");
-                return true;
-            end
-        else
-            local movement = (trade.Open - instance.bid[NOW]) / instance.bid:pipSize();
             if movement <= -self._step then
                 self._current_lot = self._current_lot * self._martingale_lot_sizing_val;
                 local result = trading:MarketOrder(trade.Instrument)
@@ -154,12 +141,45 @@ function breakeven:CreateMartingale()
                     :Execute();
                 self._trade = nil;
                 self:SetRequestID(result.RequestID);
-                Signal("Opening martingale position (B)");
+                if self._signaler ~= nil then
+                    local command = string.format("action=create symbol=%s side=buy quantity=%s"
+                        , trade.Instrument
+                        , tostring(math.floor(self._current_lot + 0.5)));
+                    self._signaler:SendCommand(command);
+                end
+                return true;
+            end
+        else
+            local movement = (trade.Open - instance.bid[NOW]) / instance.bid:pipSize();
+            if movement <= -self._step then
+                self._current_lot = self._current_lot * self._martingale_lot_sizing_val;
+                local result = trading:MarketOrder(trade.Instrument)
+                    :SetSide("S")
+                    :SetAccountID(trade.AccountID)
+                    :SetAmount(math.floor(self._current_lot + 0.5))
+                    :SetCustomID(CustomID)
+                    :Execute();
+                self._trade = nil;
+                self:SetRequestID(result.RequestID);
+                if self._signaler ~= nil then
+                    local command = string.format("action=create symbol=%s side=sell quantity=%s"
+                        , trade.Instrument
+                        , tostring(math.floor(self._current_lot + 0.5)));
+                    self._signaler:SendCommand(command);
+                end
                 return true;
             end
         end
         self:UpdateStopLimits();
         return true;
+    end
+    function controller:CloseAll()
+        local it = trading:FindTrade():WhenCustomID(CustomID)
+        it:Do(function (trade) trading:Close(trade); end);
+        if self._signaler ~= nil then
+            signaler:SendCommand("action=close");
+        end
+        self._executed = true;
     end
     function controller:UpdateStopLimits()
         local trade = self:GetTrade();
@@ -167,7 +187,6 @@ function breakeven:CreateMartingale()
             return;
         end
         local offer = self:GetOffer();
-        
         local bAmount = 0;
         local bPriceSumm = 0;
         local sAmount = 0;
@@ -189,22 +208,32 @@ function breakeven:CreateMartingale()
         local avgPrice = avgBPrice * (bAmount / totalAmount) + avgSPrice * (sAmount / totalAmount);
         local stopPrice, limitPrice;
         if trade.BS == "B" then
-            stopPrice = avgPrice - self._martingale_stop * offer.PointSize;
-            limitPrice = avgPrice + self._martingale_limit * offer.PointSize;
-            if instance.bid[NOW] <= stopPrice or instance.bid[NOW] >= limitPrice then
-                local it = trading:FindTrade():WhenCustomID(CustomID)
-                it:Do(function (trade) trading:Close(trade); end);
-                Signal("Closing all positions");
-                self._executed = true;
+            if self._martingale_stop ~= nil then
+                stopPrice = avgPrice - self._martingale_stop * offer.PointSize;
+                if instance.bid[NOW] <= stopPrice then
+                    self:CloseAll();
+                end
+                return;
             end
-        else
+            if self._martingale_limit ~= nil then
+                limitPrice = avgPrice + self._martingale_limit * offer.PointSize;
+                if instance.bid[NOW] >= limitPrice then
+                    self:CloseAll();
+                end
+            end
+            return;
+        end
+        if self._martingale_stop ~= nil then
             stopPrice = avgPrice + self._martingale_stop * offer.PointSize;
+            if instance.ask[NOW] >= stopPrice then
+                self:CloseAll();
+                return;
+            end
+        end
+        if self._martingale_limit ~= nil then
             limitPrice = avgPrice - self._martingale_limit * offer.PointSize;
-            if instance.ask[NOW] >= stopPrice or instance.ask[NOW] <= limitPrice then
-                local it = trading:FindTrade():WhenCustomID(CustomID)
-                it:Do(function (trade) trading:Close(trade); end);
-                Signal("Closing all positions");
-                self._executed = true;
+            if instance.ask[NOW] <= limitPrice then
+                self:CloseAll();
             end
         end
     end
