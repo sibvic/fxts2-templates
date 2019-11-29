@@ -1,7 +1,7 @@
 breakeven = {};
 -- public fields
 breakeven.Name = "Breakeven";
-breakeven.Version = "1.18";
+breakeven.Version = "1.19";
 breakeven.Debug = false;
 --private fields
 breakeven._moved_stops = {};
@@ -190,7 +190,7 @@ function breakeven:CreateMartingale()
         local stopPrice, limitPrice;
         if trade.BS == "B" then
             stopPrice = avgPrice - self._martingale_stop * offer.PointSize;
-            limitPrice = avgPrice + self._martingale_stop * offer.PointSize;
+            limitPrice = avgPrice + self._martingale_limit * offer.PointSize;
             if instance.bid[NOW] <= stopPrice or instance.bid[NOW] >= limitPrice then
                 local it = trading:FindTrade():WhenCustomID(CustomID)
                 it:Do(function (trade) trading:Close(trade); end);
@@ -199,7 +199,7 @@ function breakeven:CreateMartingale()
             end
         else
             stopPrice = avgPrice + self._martingale_stop * offer.PointSize;
-            limitPrice = avgPrice - self._martingale_stop * offer.PointSize;
+            limitPrice = avgPrice - self._martingale_limit * offer.PointSize;
             if instance.ask[NOW] >= stopPrice or instance.ask[NOW] <= limitPrice then
                 local it = trading:FindTrade():WhenCustomID(CustomID)
                 it:Do(function (trade) trading:Close(trade); end);
