@@ -10,9 +10,10 @@ local UseOwnPositionsOnly = true;
 
 -- ATR stop/limit support
 local DISABLE_ATR_STOP_LIMIT = true;
+local DISABLE_LIMIT_TRAILING = true;
 
 -- Support of alerts export using DDE
-local DDEAlertsSupport = true;
+local DDEAlertsSupport = false;
 
 -- History preload count
 local HISTORY_PRELOAD_BARS = 300;
@@ -285,7 +286,7 @@ function CreatePositionStrategy(source, side, id)
     end
     if SetCustomLimit == nil then
         position_strategy.LimitType = instance.parameters:getString("limit_type" .. id);
-        assert(position_strategy.LimitType ~= "stop" or position_strategy.StopType == "pips", "To use limit based on stop you need to set stop in pips");
+        assert(position_strategy.LimitType ~= "stop" or position_strategy.StopType == "pips" or CreateStopParameters ~= nil, "To use limit based on stop you need to set stop in pips");
     elseif SaveCustomLimitParameters ~= nil then
         SaveCustomLimitParameters(position_strategy, id);
     end
@@ -311,9 +312,11 @@ function CreatePositionStrategy(source, side, id)
             position_strategy.LimitATR = core.indicators:create("ATR", source, position_strategy.Limit);
             position_strategy.AtrLimitMult = instance.parameters:getDouble("atr_limit_mult" .. id);
         end
-        position_strategy.TrailingLimitType = instance.parameters:getString("TRAILING_LIMIT_TYPE" .. id);
-        position_strategy.TrailingLimitTrigger = instance.parameters:getDouble("TRAILING_LIMIT_TRIGGER" .. id);
-        position_strategy.TrailingLimitStep = instance.parameters:getDouble("TRAILING_LIMIT_STEP" .. id);
+        if not DISABLE_LIMIT_TRAILING then
+            position_strategy.TrailingLimitType = instance.parameters:getString("TRAILING_LIMIT_TYPE" .. id);
+            position_strategy.TrailingLimitTrigger = instance.parameters:getDouble("TRAILING_LIMIT_TRIGGER" .. id);
+            position_strategy.TrailingLimitStep = instance.parameters:getDouble("TRAILING_LIMIT_STEP" .. id);
+        end
     end
     if CreateCustomBreakeven == nil then
         position_strategy.UseBreakeven = instance.parameters:getBoolean("use_breakeven" .. id);
@@ -327,6 +330,29 @@ function CreatePositionStrategy(source, side, id)
         if position_strategy.UseBreakeven and tick_source == nil then
             tick_source, TICKS_SOURCE_ID = trading_logic:SubscribeHistory(position_strategy.Source.close:instrument(), "t1", true);
         end
+    end
+
+    function position_strategy:SetDefaultLimit(command, stop_value)
+        if self.LimitType == "pips" then
+            return command:SetPipLimit(nil, self.Limit);
+        end
+        if self.LimitType == "stop" then
+            if stop_value == nil then
+                if self.Side == "B" then
+                    stop_value = (instance.ask[NOW] - command.valuemap.RateStop) / instance.bid:pipSize();
+                else
+                    stop_value = (command.valuemap.RateStop - instance.bid[NOW]) / instance.bid:pipSize();
+                end
+            end
+            return command:SetPipLimit(nil, stop_value * self.Limit);
+        end
+        if self.LimitType == "highlow" then
+            if self.Side == "B" then
+                return command:SetPipLimit(nil, (self.Source.high[period] - self.Source.close[period]) / self.Source:pipSize() + self.Limit);
+            end
+            return command:SetPipLimit(nil, (self.Source.close[period] - self.Source.low[period]) / self.Source:pipSize() + self.Limit);
+        end
+        return command;
     end
 
     function position_strategy:Open(period, periods_from_last)
@@ -369,17 +395,7 @@ function CreatePositionStrategy(source, side, id)
             end
         end
         if default_limit then
-            if self.LimitType == "pips" then
-                command = command:SetPipLimit(nil, self.Limit);
-            elseif self.LimitType == "stop" then
-                command = command:SetPipLimit(nil, stop_value * self.Limit);
-            elseif self.LimitType == "highlow" then
-                if self.Side == "B" then
-                    command = command:SetPipLimit(nil, (self.Source.high[period] - self.Source.close[period]) / self.Source:pipSize() + self.Limit);
-                else
-                    command = command:SetPipLimit(nil, (self.Source.close[period] - self.Source.low[period]) / self.Source:pipSize() + self.Limit);
-                end
-            end
+            command = self:SetDefaultLimit(command, stop_value);
         end
         local result = command:Execute();
         if result.Finished and not result.Success then

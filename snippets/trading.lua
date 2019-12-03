@@ -17,7 +17,7 @@ trading._used_limit_orders = {};
 function trading:trace(str) if not self.Debug then return; end core.host:trace(self.Name .. ": " .. str); end
 function trading:RegisterModule(modules) for _, module in pairs(modules) do self:OnNewModule(module); module:OnNewModule(self); end modules[#modules + 1] = self; self._ids_start = (#modules) * 100; end
 
-function trading:AddPositionParameters(parameters, id)
+function trading:AddPositionParameters(parameters, id, section_id)
     if self.AddAmountParameter then
         parameters:addDouble("amount" .. id, "Trade Amount", "", 1);
         parameters:addString("amount_type" .. id, "Amount Type", "", "lots");
@@ -26,7 +26,7 @@ function trading:AddPositionParameters(parameters, id)
         parameters:addStringAlternative("amount_type" .. id, "Risk % of Equity", "", "risk_equity");
     end
     if CreateStopParameters == nil or not CreateStopParameters(parameters, id) then
-        parameters:addGroup("  Stop parameters");
+        parameters:addGroup("  Stop parameters " .. section_id);
         parameters:addString("stop_type" .. id, "Stop Order", "", "no");
         parameters:addStringAlternative("stop_type" .. id, "No stop", "", "no");
         parameters:addStringAlternative("stop_type" .. id, "In Pips", "", "pips");
@@ -44,7 +44,7 @@ function trading:AddPositionParameters(parameters, id)
     if CreateLimitParameters ~= nil then
         CreateLimitParameters(parameters, id);
     else
-        parameters:addGroup("  Limit parameters");
+        parameters:addGroup("  Limit parameters " .. section_id);
         parameters:addString("limit_type" .. id, "Limit Order", "", "no");
         parameters:addStringAlternative("limit_type" .. id, "No limit", "", "no");
         parameters:addStringAlternative("limit_type" .. id, "In Pips", "", "pips");
@@ -57,15 +57,17 @@ function trading:AddPositionParameters(parameters, id)
         if not DISABLE_ATR_STOP_LIMIT then
             parameters:addDouble("atr_limit_mult" .. id, "ATR Limit Multiplicator", "", 2.0);
         end
-        parameters:addString("TRAILING_LIMIT_TYPE" .. id, "Trailing Limit", "", "Off");
-        parameters:addStringAlternative("TRAILING_LIMIT_TYPE" .. id, "Off", "", "Off");
-        parameters:addStringAlternative("TRAILING_LIMIT_TYPE" .. id, "Favorable", "moves limit up for long/buy positions, vice versa for short/sell", "Favorable");
-        parameters:addStringAlternative("TRAILING_LIMIT_TYPE" .. id, "Unfavorable", "moves limit down for long/buy positions, vice versa for short/sell", "Unfavorable");
-        parameters:addDouble("TRAILING_LIMIT_TRIGGER" .. id, "Trailing Limit Trigger in Pips", "", 0);
-        parameters:addDouble("TRAILING_LIMIT_STEP" .. id, "Trailing Limit Step in Pips", "", 10);
+        if not DISABLE_LIMIT_TRAILING then
+            parameters:addString("TRAILING_LIMIT_TYPE" .. id, "Trailing Limit", "", "Off");
+            parameters:addStringAlternative("TRAILING_LIMIT_TYPE" .. id, "Off", "", "Off");
+            parameters:addStringAlternative("TRAILING_LIMIT_TYPE" .. id, "Favorable", "moves limit up for long/buy positions, vice versa for short/sell", "Favorable");
+            parameters:addStringAlternative("TRAILING_LIMIT_TYPE" .. id, "Unfavorable", "moves limit down for long/buy positions, vice versa for short/sell", "Unfavorable");
+            parameters:addDouble("TRAILING_LIMIT_TRIGGER" .. id, "Trailing Limit Trigger in Pips", "", 0);
+            parameters:addDouble("TRAILING_LIMIT_STEP" .. id, "Trailing Limit Step in Pips", "", 10);
+        end
     end
     if self.AddBreakevenParameters then
-        parameters:addGroup("  Breakeven parameters");
+        parameters:addGroup("  Breakeven parameters " .. section_id);
         parameters:addBoolean("use_breakeven" .. id, "Use Breakeven", "", false);
         parameters:addDouble("breakeven_when" .. id, "Breakeven Activation Value, in pips", "", 10);
         parameters:addDouble("breakeven_to" .. id, "Breakeven To, in pips", "", 0);
@@ -101,7 +103,7 @@ function trading:Init(parameters, count)
         for i = 1, count do
             parameters:addGroup("Position #" .. i);
             parameters:addBoolean("use_position_" .. i, "Open position #" .. i, "", i == 1);
-            self:AddPositionParameters(parameters, "_" .. i);
+            self:AddPositionParameters(parameters, "_" .. i, "#" .. i);
         end
     end
 end
