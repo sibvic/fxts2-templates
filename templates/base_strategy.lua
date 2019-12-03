@@ -130,7 +130,8 @@ function CreateCustomActions()
     EntryActions[#EntryActions + 1] = enterShortAction;
 end
 
-function GetSignalSerial(source, period)
+function GetSignalSerial(source, period, periodsFromLast)
+    --return renko.DATA:date(NOW - periodsFromLast);
     return source:serial(period);
 end
 -- END OF USER DEFINED SECTION
@@ -583,7 +584,7 @@ function GoLong(source, period, positions, log)
         message = message .. "\r\nSignal info: " .. log;
     end
     signaler:Signal(message, source);
-    last_serial = GetSignalSerial(source, period);
+    last_serial = GetSignalSerial(source, period, 0);
 end
 
 function GoShort(source, period, positions, log)
@@ -609,12 +610,13 @@ function GoShort(source, period, positions, log)
         message = message .. "\nSignal info: " .. log;
     end
     signaler:Signal(message, source);
-    last_serial = GetSignalSerial(source, period);
+    last_serial = GetSignalSerial(source, period, 0);
 end
 
 function EntryFunction(source, period)
     UpdateIndicators();
-    if last_serial == source:serial(period) then
+    local current_serial = GetSignalSerial(source, period, 0);
+    if last_serial == current_serial then
         return;
     end
     local now = core.host:execute("convertTime", core.TZ_EST, ToTime, core.host:execute("getServerTime"));
@@ -628,22 +630,22 @@ function EntryFunction(source, period)
     local periodFromLast = source:size() - period - 1;
     for _, action in ipairs(EntryActions) do
         local isPass = action.IsPass(source, period, periodFromLast, action.Data);
-        action.Cache[source:date(period)] = isPass;
-        if isPass and (not action.ActOnSwitch or not action.Cache[source:date(period - 1)]) then
+        action.Cache[current_serial] = isPass;
+        if isPass and (not action.ActOnSwitch or not action.Cache[GetSignalSerial(source, period - 1, 1)]) then
             local log = nil;
             if add_log and action.GetLog ~= nil then
                 log = action.GetLog(source, period, periodFromLast, action.Data);
             end
             action.Execute(source, period, action.ExecuteData, log);
         elseif add_log then
-            terminal:alertMessage("", 0, action.GetLog(source, period, periodFromLast, action.Data), source:date(period));
+            terminal:alertMessage("", 0, action.GetLog(source, period, periodFromLast, action.Data), current_serial);
         end
     end
 end
 
 function ExitFunction(source, period)
     UpdateIndicators();
-    if last_serial == source:serial(period) then
+    if last_serial == GetSignalSerial(source, period, 0) then
         return;
     end
     local now = core.host:execute("convertTime", core.TZ_EST, ToTime, core.host:execute("getServerTime"));
