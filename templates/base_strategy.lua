@@ -634,7 +634,7 @@ function EntryFunction(source, period)
     for _, action in ipairs(EntryActions) do
         local isPass = action.IsPass(source, period, periodFromLast, action.Data);
         action.Cache[current_serial] = isPass;
-        if isPass and (not action.ActOnSwitch or not action.Cache[GetSignalSerial(source, period - 1, 1)]) then
+        if isPass and (not action.ActOnSwitch or action.Cache[GetSignalSerial(source, period - 1, 1)] == false) then
             local log = nil;
             if add_log and action.GetLog ~= nil then
                 log = action.GetLog(source, period, periodFromLast, action.Data);
@@ -648,7 +648,8 @@ end
 
 function ExitFunction(source, period)
     UpdateIndicators();
-    if last_serial == GetSignalSerial(source, period, 0) then
+    local current_serial = GetSignalSerial(source, period, 0);
+    if last_serial == current_serial then
         return;
     end
     local now = core.host:execute("convertTime", core.TZ_EST, ToTime, core.host:execute("getServerTime"));
@@ -662,8 +663,8 @@ function ExitFunction(source, period)
     local periodFromLast = source:size() - period - 1;
     for _, action in ipairs(ExitActions) do
         local isPass = action.IsPass(source, period, periodFromLast, action.Data);
-        action.Cache[source:date(period)] = isPass;
-        if isPass and (not action.ActOnSwitch or not action.Cache[source:date(period - 1)]) then
+        action.Cache[current_serial] = isPass;
+        if isPass and (not action.ActOnSwitch or action.Cache[GetSignalSerial(source, period - 1, 1)] == false) then
             local log = nil;
             if add_log and action.GetLog ~= nil then
                 log = action.GetLog(source, period, periodFromLast, action.Data);
