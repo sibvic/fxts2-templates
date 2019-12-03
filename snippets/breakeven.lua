@@ -1,7 +1,7 @@
 breakeven = {};
 -- public fields
 breakeven.Name = "Breakeven";
-breakeven.Version = "1.20";
+breakeven.Version = "1.21";
 breakeven.Debug = false;
 --private fields
 breakeven._moved_stops = {};
@@ -25,6 +25,7 @@ function BreakevenOnClosedTrade(closed_trade)
     for _, controller in ipairs(breakeven._controllers) do
         if controller.TradeID == closed_trade.TradeID then
             controller._trade = core.host:findTable("trades"):find("TradeID", closed_trade.TradeIDRemain);
+            controller.TradeID = closed_trade.TradeIDRemain;
         elseif controller.TradeID == closed_trade.TradeIDRemain then
             controller._executed = true;
             controller._close_percent = nil;
@@ -88,6 +89,7 @@ function breakeven:CreateBaseController()
             if self._trade == nil then
                 return nil;
             end
+            self.TradeID = self._trade.TradeID;
             self._initial_limit = self._trade.Limit;
             self._initial_stop = self._trade.Stop;
         end
@@ -598,7 +600,6 @@ function breakeven:CreateOnCandleClose()
         end
         local index = core.findDate(self._source, trade.Time, false);
         if self._source:size() - 1 - index >= self._bars_to_live then
-            core.host:trace("closing trade");
             self._command = self._parent._trading:Close(trade);
             self._executed = true;
             return false;
@@ -778,13 +779,11 @@ function breakeven:RestoreTrailingOnProfitController(controller)
                     trailing_mark[NOW] = trade.Close;
                 end
                 self._move_command = self._parent._trading:MoveStop(trade, trade.Open + new_stop * offer.PointSize);
-                core.host:trace("Moving stop for " .. trade.TradeID .. " to " .. trade.Open + new_stop * offer.PointSize);
             else
                 if not trailing_mark:hasData(NOW) then
                     trailing_mark[NOW] = trade.Close;
                 end
                 self._move_command = self._parent._trading:MoveStop(trade, trade.Open - new_stop * offer.PointSize);
-                core.host:trace("Moving stop for " .. trade.TradeID .. " to " .. trade.Open - new_stop * offer.PointSize);
             end
             return true;
         end
