@@ -131,6 +131,9 @@ function CreateCustomActions()
 end
 
 function GetSignalSerial(source, period, periodsFromLast)
+    --if renko.DATA:size() < 2 then
+    --     return nil;
+    --end
     --return renko.DATA:date(NOW - periodsFromLast);
     return source:serial(period);
 end
