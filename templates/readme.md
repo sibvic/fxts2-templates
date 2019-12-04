@@ -1,5 +1,9 @@
 # Templates
 
+## strategy_simple
+
+Example of the simplest possible strategy. 
+
 ## base_strategy
 
 Base strategy template. It supports execution of orders on other platforms.
