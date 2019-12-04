@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.27";
+trading.Version = "4.28";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -98,7 +98,7 @@ function trading:Init(parameters, count)
     
     if count == nil or count == 1 then
         parameters:addGroup("Position");
-        self:AddPositionParameters(parameters, "");
+        self:AddPositionParameters(parameters, "", "");
     else
         for i = 1, count do
             parameters:addGroup("Position #" .. i);
