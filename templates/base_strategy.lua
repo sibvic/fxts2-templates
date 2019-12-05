@@ -131,11 +131,11 @@ function CreateCustomActions()
     EntryActions[#EntryActions + 1] = enterShortAction;
 end
 
-function GetSignalSerial(source, period, periodsFromLast)
+function GetSignalSerial(source, period)
     --if renko.DATA:size() < 2 then
     --     return nil;
     --end
-    --return renko.DATA:date(NOW - periodsFromLast);
+    --return renko.DATA:date(NOW);
     return source:serial(period);
 end
 -- END OF USER DEFINED SECTION
@@ -332,7 +332,7 @@ function CreatePositionStrategy(source, side, id)
         end
     end
 
-    function position_strategy:SetDefaultLimit(command, stop_value)
+    function position_strategy:SetDefaultLimit(command, stop_value, period)
         if self.LimitType == "pips" then
             return command:SetPipLimit(nil, self.Limit);
         end
@@ -395,7 +395,7 @@ function CreatePositionStrategy(source, side, id)
             end
         end
         if default_limit then
-            command = self:SetDefaultLimit(command, stop_value);
+            command = self:SetDefaultLimit(command, stop_value, period);
         end
         local result = command:Execute();
         if result.Finished and not result.Success then
@@ -603,7 +603,7 @@ function GoLong(source, period, positions, log)
         message = message .. "\r\nSignal info: " .. log;
     end
     signaler:Signal(message, source);
-    last_serial = GetSignalSerial(source, period, 0);
+    last_serial = GetSignalSerial(source, period);
 end
 
 function GoShort(source, period, positions, log)
@@ -629,12 +629,11 @@ function GoShort(source, period, positions, log)
         message = message .. "\nSignal info: " .. log;
     end
     signaler:Signal(message, source);
-    last_serial = GetSignalSerial(source, period, 0);
+    last_serial = GetSignalSerial(source, period);
 end
-
 function EntryFunction(source, period)
     UpdateIndicators();
-    local current_serial = GetSignalSerial(source, period, 0);
+    local current_serial = GetSignalSerial(source, period);
     if last_serial == current_serial then
         return;
     end
@@ -650,21 +649,28 @@ function EntryFunction(source, period)
     for _, action in ipairs(EntryActions) do
         local isPass = action.IsPass(source, period, periodFromLast, action.Data);
         action.Cache[current_serial] = isPass;
-        if isPass and (not action.ActOnSwitch or action.Cache[GetSignalSerial(source, period - 1, 1)] == false) then
+        if action.CurrentSerial ~= current_serial then
+            action.LastSerial = action.CurrentSerial;
+            action.CurrentSerial = current_serial;
+        end
+        if isPass and (not action.ActOnSwitch or action.Cache[action.LastSerial] == false) then
             local log = nil;
             if add_log and action.GetLog ~= nil then
                 log = action.GetLog(source, period, periodFromLast, action.Data);
             end
             action.Execute(source, period, action.ExecuteData, log);
         elseif add_log then
-            terminal:alertMessage("", 0, action.GetLog(source, period, periodFromLast, action.Data), current_serial);
+            local log = action.GetLog(source, period, periodFromLast, action.Data);
+            if log ~= "" and log ~= nil then
+                terminal:alertMessage("", 0, log, current_serial);
+            end
         end
     end
 end
 
 function ExitFunction(source, period)
     UpdateIndicators();
-    local current_serial = GetSignalSerial(source, period, 0);
+    local current_serial = GetSignalSerial(source, period);
     if last_serial == current_serial then
         return;
     end
@@ -680,14 +686,21 @@ function ExitFunction(source, period)
     for _, action in ipairs(ExitActions) do
         local isPass = action.IsPass(source, period, periodFromLast, action.Data);
         action.Cache[current_serial] = isPass;
-        if isPass and (not action.ActOnSwitch or action.Cache[GetSignalSerial(source, period - 1, 1)] == false) then
+        if action.CurrentSerial ~= current_serial then
+            action.LastSerial = action.CurrentSerial;
+            action.CurrentSerial = current_serial;
+        end
+        if isPass and (not action.ActOnSwitch or action.Cache[action.LastSerial] == false) then
             local log = nil;
             if add_log and action.GetLog ~= nil then
                 log = action.GetLog(source, period, periodFromLast, action.Data);
             end
             action.Execute(source, period, action.ExecuteData, log);
         elseif add_log and action.GetLog ~= nil then
-            terminal:alertMessage("", 0, action.GetLog(source, period, periodFromLast, action.Data), source:date(period));
+            local log = action.GetLog(source, period, periodFromLast, action.Data);
+            if log ~= "" and log ~= nil then
+                terminal:alertMessage("", 0, log, current_serial);
+            end
         end
     end
 end
