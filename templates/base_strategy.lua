@@ -183,6 +183,7 @@ end
 function CreateAction(id)
     local actionType = instance.parameters:getString("Action" .. id);
     local action = {};
+    action.Cache = {};
     if actionType == "NO" then
         action.Execute = DisabledAction;
     elseif actionType == "SELL" then
