@@ -17,9 +17,10 @@ local DDEAlertsSupport = false;
 
 -- History preload count
 local HISTORY_PRELOAD_BARS = 300;
-
 -- Whether to request both prices: bid and ask
 local RequestBidAsk = false;
+-- wether to allow timeframes like m2 (true) or limit to the standard ones (false)
+local USE_CUSTOM_TIMEFRAMES = false;
 
 local ENFORCE_POSITION_CAP = false;
 

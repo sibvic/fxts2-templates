@@ -1,7 +1,7 @@
 trading_logic = {};
 -- public fields
 trading_logic.Name = "Trading logic";
-trading_logic.Version = "1.12";
+trading_logic.Version = "1.13";
 trading_logic.Debug = false;
 trading_logic.DoTrading = nil;
 trading_logic.DoExit = nil;
@@ -26,7 +26,11 @@ function trading_logic:Init(parameters)
             parameters:addBoolean("ha_as_source", "Use HA as source", "", false);
         end
         parameters:addString("timeframe", "Entry Time frame", "", "m5");
-        parameters:setFlag("timeframe", core.FLAG_BARPERIODS_EDIT);
+        if USE_CUSTOM_TIMEFRAMES then
+            parameters:setFlag("timeframe", core.FLAG_BARPERIODS_EDIT);
+        else
+            parameters:setFlag("timeframe", core.FLAG_BARPERIODS);
+        end
     end
     if ENFORCE_entry_execution_type == nil then
         parameters:addString("entry_execution_type", "Entry Execution Type", "Once per bar close or on every tick", "EndOfTurn");
@@ -35,7 +39,11 @@ function trading_logic:Init(parameters)
     end
     if not CustomTimeframeDefined and not DISABLE_EXIT and EXIT_TIMEFRAME_IN_PARAMS then
         parameters:addString("exit_timeframe", "Exit Time frame", "", "m5");
-        parameters:setFlag("exit_timeframe", core.FLAG_BARPERIODS_EDIT);
+        if USE_CUSTOM_TIMEFRAMES then
+            parameters:setFlag("exit_timeframe", core.FLAG_BARPERIODS_EDIT);
+        else
+            parameters:setFlag("exit_timeframe", core.FLAG_BARPERIODS);
+        end
     end
     if ENFORCE_exit_execution_type == nil and not DISABLE_EXIT then
         parameters:addString("exit_execution_type", "Exit Execution Type", "Once per bar close or on every tick", "Live");
