@@ -57,8 +57,8 @@ end
 -- Entry rate for the entry orders
 -- Return nil for market orders
 function GetEntryRate(source, bs, period) return nil; end
-function SetCustomStop(position_desc, command, period, periods_from_last) return false; end
-function SetCustomLimit(position_desc, command, period, periods_from_last) return false; end
+function SetCustomStop(position_desc, command, period, periods_from_last, source) return false; end
+function SetCustomLimit(position_desc, command, period, periods_from_last, source) return false; end
 function SaveCustomStopParameters(position_strategy, id) end
 function SaveCustomLimitParameters(position_strategy, id) end
 function CreateCustomBreakeven(position_desc, result, period, periods_from_last) return false; end
@@ -379,8 +379,8 @@ function CreatePositionStrategy(source, side, id)
         elseif self.Amount_Type == "equity" then
             command:SetPercentOfEquityAmount(self.Amount)
         end
-        local default_stop = SetCustomStop == nil or not SetCustomStop(self, command, period, periods_from_last);
-        local default_limit = SetCustomLimit == nil or not SetCustomLimit(self, command, period, periods_from_last);
+        local default_stop = SetCustomStop == nil or not SetCustomStop(self, command, period, periods_from_last, source);
+        local default_limit = SetCustomLimit == nil or not SetCustomLimit(self, command, period, periods_from_last, source);
         if default_stop then
             local stop_value;
             if self.StopType == "pips" then
