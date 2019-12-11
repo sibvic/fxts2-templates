@@ -100,8 +100,11 @@ function CreateCustomActions()
     local enterLongAction = {};
     enterLongAction.ActOnSwitch = true;
     enterLongAction.Cache = {};
-    enterLongAction.GetLog = function (source, period, periodFromLast, data)
-        return "";
+    enterLongAction.AddHeaders = function (headers)
+        --headers[#headers + 1] = "Buy value name";
+    end
+    enterLongAction.AddLog = function (source, period, periodFromLast, data, values)
+        --values["Buy value name"] = value;
     end
     enterLongAction.IsPass = function (source, period, periodFromLast, data)
         return false; -- TODO: implement
@@ -110,8 +113,11 @@ function CreateCustomActions()
     local enterShortAction = {};
     enterShortAction.ActOnSwitch = true;
     enterShortAction.Cache = {};
-    enterShortAction.GetLog = function (source, period, periodFromLast, data)
-        return "";
+    enterShortAction.AddHeaders = function (headers)
+        --headers[#headers + 1] = "Sell value name";
+    end
+    enterShortAction.AddLog = function (source, period, periodFromLast, data, values)
+        --values["Sell value name"] = value;
     end
     enterShortAction.IsPass = function (source, period, periodFromLast, data)
         return false; -- TODO: implement
@@ -179,6 +185,7 @@ function Init()
     signaler:Init(strategy.parameters);
 
     strategy.parameters:addBoolean("add_log", "Add log info to signals", "", false);
+    strategy.parameters:addFile("log_file", "Log file (csv)", "You can open it in Excel", core.app_path() .. "\\log\\" .. STRATEGY_NAME .. ".csv");
 end
 
 function CreateAction(id)
@@ -246,6 +253,8 @@ function CreateSellPositions(source)
 end
 
 local add_log;
+local log_file;
+local headers = {};
 
 function Prepare(name_only)
     trading_logic.HistoryPreloadBars = HISTORY_PRELOAD_BARS;
@@ -259,6 +268,25 @@ function Prepare(name_only)
     CreateEntryIndicators(trading_logic.MainSource);
     CreateExitIndicators(trading_logic.ExitSource);
     CreateCustomActions();
+
+    if add_log then
+        log_file = io.open(instance.parameters.log_file, "w");
+        headers[#headers + 1] = "date";
+        for _, action in ipairs(EntryActions) do
+            if action.AddLog ~= nil then
+                action.AddHeaders(headers);
+            end
+        end
+        for _, action in ipairs(ExitActions) do
+            if action.AddLog ~= nil then
+                action.AddHeaders(headers);
+            end
+        end
+        for i, header in ipairs(headers) do
+            log_file:write(header .. ";")
+        end
+        log_file:write("\n");
+    end
 
     local valid;
     if IncludeTradingTime then
@@ -494,8 +522,26 @@ function InRange(now, openTime, closeTime)
     return now == openTime;
 end
 
-function ExtUpdate(id, source, period) for _, module in pairs(Modules) do if module.ExtUpdate ~= nil then module:ExtUpdate(id, source, period); end end end
-function ReleaseInstance() for _, module in pairs(Modules) do if module.ReleaseInstance ~= nil then module:ReleaseInstance(); end end end
+local log_values;
+function ExtUpdate(id, source, period) 
+    if log_file ~= nil then
+        log_values = {};
+        log_values["date"] = core.formatDate(core.host:execute("getServerTime"));
+    end
+    for _, module in pairs(Modules) do if module.ExtUpdate ~= nil then module:ExtUpdate(id, source, period); end end 
+    if log_file ~= nil then
+        for i, header in ipairs(headers) do
+            log_file:write(tostring(log_values[header]) .. ";");
+        end
+        log_file:write("\n");
+    end
+end
+function ReleaseInstance() 
+    for _, module in pairs(Modules) do if module.ReleaseInstance ~= nil then module:ReleaseInstance(); end end 
+    if log_file ~= nil then
+        log_file:close();
+    end
+end
 
 function DoCloseOnOpposite(side)
     if instance.parameters.close_on_opposite then
@@ -655,17 +701,13 @@ function EntryFunction(source, period)
             action.LastSerial = action.CurrentSerial;
             action.CurrentSerial = current_serial;
         end
+
+        if add_log and action.AddLog ~= nil then
+            action.AddLog(source, period, periodFromLast, action.Data, log_values);
+        end
+
         if isPass and (not action.ActOnSwitch or action.Cache[action.LastSerial] == false) then
-            local log = nil;
-            if add_log and action.GetLog ~= nil then
-                log = action.GetLog(source, period, periodFromLast, action.Data);
-            end
-            action.Execute(source, period, action.ExecuteData, log);
-        elseif add_log then
-            local log = action.GetLog(source, period, periodFromLast, action.Data);
-            if log ~= "" and log ~= nil then
-                terminal:alertMessage("", 0, log, current_serial);
-            end
+            action.Execute(source, period, action.ExecuteData);
         end
     end
 end
@@ -692,17 +734,13 @@ function ExitFunction(source, period)
             action.LastSerial = action.CurrentSerial;
             action.CurrentSerial = current_serial;
         end
+        
+        if add_log and action.AddLog ~= nil then
+            action.AddLog(source, period, periodFromLast, action.Data, log_values);
+        end
+        
         if isPass and (not action.ActOnSwitch or action.Cache[action.LastSerial] == false) then
-            local log = nil;
-            if add_log and action.GetLog ~= nil then
-                log = action.GetLog(source, period, periodFromLast, action.Data);
-            end
-            action.Execute(source, period, action.ExecuteData, log);
-        elseif add_log and action.GetLog ~= nil then
-            local log = action.GetLog(source, period, periodFromLast, action.Data);
-            if log ~= "" and log ~= nil then
-                terminal:alertMessage("", 0, log, current_serial);
-            end
+            action.Execute(source, period, action.ExecuteData);
         end
     end
 end
