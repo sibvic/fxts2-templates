@@ -54,6 +54,14 @@ function UpdateIndicators()
     --indi:update(core.UpdateLast);
 end
 
+function LogIndicatorsHeaders(log)
+    --log[#log + 1] = indi.DATA:name();
+end
+
+function LogIndicatorsValues(log, period)
+    --log[indi.DATA:name()] = tostring(indi.DATA[period]);
+end
+
 -- Entry rate for the entry orders
 -- Return nil for market orders
 function GetEntryRate(source, bs, period) return nil; end
@@ -66,6 +74,13 @@ function CreateCustomBreakeven(position_desc, result, period, periods_from_last)
 function CreateCustomActions()
     -- local action1, isEntry1 = CreateAction(1);
     -- action1.Data = nil;
+    -- action1.ActOnSwitch = true;
+    -- action1.AddLog = function (source, period, periodFromLast, data, values)
+    --     --values["Buy value name"] = value;
+    -- end
+    -- action1.IsPass = function (source, period, periodFromLast, data)
+    --     return false; -- TODO: implement
+    -- end
     -- action1.IsPass = function (source, period, periodFromLast, data) return core.crossesOver(source.close, indi.Top, period); end
     -- if isEntry1 then
     --     EntryActions[#EntryActions + 1] = action1;
@@ -282,6 +297,7 @@ function Prepare(name_only)
                 action.AddHeaders(headers);
             end
         end
+        LogIndicatorsHeaders(headers);
         for i, header in ipairs(headers) do
             log_file:write(header .. ";")
         end
@@ -524,9 +540,11 @@ end
 
 local log_values;
 function ExtUpdate(id, source, period) 
+    UpdateIndicators();
     if log_file ~= nil then
         log_values = {};
         log_values["date"] = core.formatDate(core.host:execute("getServerTime"));
+        LogIndicatorsValues(log_values, period);
     end
     for _, module in pairs(Modules) do if module.ExtUpdate ~= nil then module:ExtUpdate(id, source, period); end end 
     if log_file ~= nil then
@@ -534,6 +552,7 @@ function ExtUpdate(id, source, period)
             log_file:write(tostring(log_values[header]) .. ";");
         end
         log_file:write("\n");
+        log_file:flush();
     end
 end
 function ReleaseInstance() 
@@ -680,7 +699,6 @@ function GoShort(source, period, positions, log)
     last_serial = GetSignalSerial(source, period);
 end
 function EntryFunction(source, period)
-    UpdateIndicators();
     local current_serial = GetSignalSerial(source, period);
     if last_serial == current_serial then
         return;
@@ -713,7 +731,6 @@ function EntryFunction(source, period)
 end
 
 function ExitFunction(source, period)
-    UpdateIndicators();
     local current_serial = GetSignalSerial(source, period);
     if last_serial == current_serial then
         return;
