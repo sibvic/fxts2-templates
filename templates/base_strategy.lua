@@ -59,8 +59,8 @@ end
 function GetEntryRate(source, bs, period) return nil; end
 function SetCustomStop(position_desc, command, period, periods_from_last, source) return false; end
 function SetCustomLimit(position_desc, command, period, periods_from_last, source) return false; end
-function SaveCustomStopParameters(position_strategy, id) end
-function SaveCustomLimitParameters(position_strategy, id) end
+function SaveCustomStopParameters(position_desc, id) end
+function SaveCustomLimitParameters(position_desc, id) end
 function CreateCustomBreakeven(position_desc, result, period, periods_from_last) return false; end
 
 function CreateCustomActions()
