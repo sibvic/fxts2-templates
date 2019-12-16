@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.28";
+trading.Version = "4.29";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -854,20 +854,12 @@ function trading:EntryOrder(instrument)
     function builder:SetCustomID(custom_id) self.valuemap.CustomID = custom_id; return self; end
     function builder:GetValueMap() return self.valuemap; end
     function builder:AddMetadata(id, val) if self._metadata == nil then self._metadata = {}; end self._metadata[id] = val; return self; end
-    function builder:Execute()
+    function builder:BuildValueMap()
         self.valuemap.Quantity = self.amount * self:_GetBaseUnitSize();
-        local desc = string.format("Creating %s %s for %s at %f", self.valuemap.BuySell, self.valuemap.OrderType, self.Instrument, self.valuemap.Rate);
         if self._metadata ~= nil then
             self._metadata.CustomID = self.valuemap.CustomID;
             self.valuemap.CustomID = trading:ObjectToJson(self._metadata);
         end
-        if self.valuemap.RateStop ~= nil then
-            desc = desc .. " stop " .. self.valuemap.RateStop;
-        end
-        if self.valuemap.RateLimit ~= nil then
-            desc = desc .. " limit " .. self.valuemap.RateLimit;
-        end
-        self.Parent:trace(desc);
         if self._PercentOfEquityAmount ~= nil then
             local equity = core.host:findTable("accounts"):find("AccountID", self.valuemap.AcctID).Equity;
             local used_equity = equity * self._PercentOfEquityAmount / 100.0;
@@ -881,16 +873,10 @@ function trading:EntryOrder(instrument)
             local possible_loss = self.Offer.PipCost * stop;
             self.valuemap.Quantity = math.floor(affordable_loss / possible_loss) * self:_GetBaseUnitSize();
         end
-
-        for _, module in pairs(self.Parent._all_modules) do
-            if module.BlockOrder ~= nil and module:BlockOrder(self.valuemap) then
-                self.Parent:trace("Creation of order blocked by " .. module.Name);
-                return trading:CreateEntryOrderFailResult("Creation of order blocked by " .. module.Name);
-            end
-        end
-        for _, module in pairs(self.Parent._all_modules) do
-            if module.OnOrder ~= nil then module:OnOrder(self.valuemap); end
-        end
+        return self.valuemap;
+    end
+    function builder:Execute()
+        self:BuildValueMap();
         local id = self.Parent:getId();
         local success, msg = terminal:execute(id, self.valuemap);
         if not(success) then
