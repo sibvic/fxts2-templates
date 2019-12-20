@@ -3,6 +3,7 @@ local EntryActions = {};
 local ExitActions = {};
 
 -- START OF USER DEFINED SECTION
+local STRATEGY_NAME = "Strategy";
 function CreateParameters() 
     --create your algorithm parameters here
     strategy.parameters:addInteger("period_1", "Period 1", "", 14)
@@ -37,7 +38,7 @@ end
 -- END OF USER DEFINED SECTION
 
 function Init()
-    strategy:name("Strategy template");
+    strategy:name(STRATEGY_NAME);
     strategy:description("");
     strategy:type(core.Both);
     strategy:setTag("NonOptimizableParameters", "StartTime,StopTime,ToTime,signaler_ToTime,signaler_show_alert,signaler_play_soundsignaler_sound_file,signaler_recurrent_sound,signaler_send_email,signaler_email,signaler_show_popup,signaler_debug_alert,use_advanced_alert,advanced_alert_key");
@@ -50,12 +51,14 @@ function Init()
     strategy.parameters:addString("Account", "Account to trade on", "", "");
     strategy.parameters:setFlag("Account", core.FLAG_ACCOUNT);
     strategy.parameters:addInteger("Amount", "Trade Amount in Lots", "", 1, 1, 1000000);
+    strategy.parameters:addBoolean("close_on_opposite", "Close on opposite", "", true);
+    strategy.parameters:addString("custom_id", "Custom ID", "", STRATEGY_NAME);
     CreateParameters();
 end
 
 local MAIN_SOURCE_ID = 1;
 local main_source;
-local base_size, offer_id, Account, Amount, AllowTrade;
+local base_size, offer_id, Account, Amount, AllowTrade, close_on_opposite, custom_id;
 function Prepare(nameOnly)
     local name = profile:id() .. "(" .. instance.bid:name() .. ")";
     instance:name(name);
@@ -65,6 +68,8 @@ function Prepare(nameOnly)
     AllowTrade = instance.parameters.AllowTrade;
     Account = instance.parameters.Account;
     Amount = instance.parameters.Amount;
+    close_on_opposite = instance.parameters.close_on_opposite;
+    custom_id = instance.parameters.custom_id;
     main_source = ExtSubscribe(MAIN_SOURCE_ID, nil, instance.parameters.timeframe, instance.parameters.type, "bar")
     CreateEntryIndicators(main_source);
     base_size = core.host:execute("getTradingProperty", "baseUnitSize", instance.bid:instrument(), Account);
@@ -74,30 +79,36 @@ end
 function ExtUpdate(id, source, period)
     UpdateIndicators();
     if IsEntryLong(main_source, period) then
+        if close_on_opposite then
+            CloseTrades("S");
+        end
         OpenTrade("B");
     end
     if IsEntryShort(main_source, period) then
+        if close_on_opposite then
+            CloseTrades("B");
+        end
         OpenTrade("S");
     end
     if IsExitLong(main_source, period) then
-        local enum = core.host:findTable("trades"):enumerator();
-        local row = enum:next();
-        while row ~= nil do
-            if row.BS == "B" and row.Instrument == main_source:instrument() then
-                CloseTrade(row);
-            end
-            row = enum:next();
-        end
+        CloseTrades("B");
     end
     if IsExitShort(source, period) then
-        local enum = core.host:findTable("trades"):enumerator();
-        local row = enum:next();
-        while row ~= nil do
-            if row.BS == "S" and row.Instrument == main_source:instrument() then
-                CloseTrade(row);
-            end
-            row = enum:next();
+        CloseTrades("S");
+    end
+end
+
+function CloseTrades(side)
+    local enum = core.host:findTable("trades"):enumerator();
+    local row = enum:next();
+    while row ~= nil do
+        if row.BS == side
+            and row.Instrument == main_source:instrument() 
+            and (row.QTXT == custom_id or custom_id == "")
+        then
+            CloseTrade(row);
         end
+        row = enum:next();
     end
 end
 
@@ -120,6 +131,7 @@ function CloseTrade(trade)
     valuemap.OrderType = "CM";
     valuemap.OfferID = trade.OfferID;
     valuemap.AcctID = trade.AccountID;
+    valuemap.TradeID = trade.TradeID;
     valuemap.Quantity = trade.Lot;
     local success, msg = terminal:execute(2, valuemap);
 end
