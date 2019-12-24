@@ -122,6 +122,7 @@ function OpenTrade(side)
     valuemap.AcctID = Account;
     valuemap.Quantity = Amount * base_size;
     valuemap.BuySell = side;
+    valuemap.CustomID = custom_id;
     local success, msg = terminal:execute(3, valuemap);
 end
 
