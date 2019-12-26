@@ -539,7 +539,13 @@ function InRange(now, openTime, closeTime)
 end
 
 local log_values;
-function ExtUpdate(id, source, period) 
+function ExtUpdate(id, source, period)
+    if trading_logic.MainSourceHA ~= nil then
+        trading_logic.MainSourceHA:update(core.UpdateLast);
+    end
+    if trading_logic.ExitSourceHA ~= nil then
+        trading_logic.ExitSourceHA:update(core.UpdateLast);
+    end
     UpdateIndicators();
     if log_file ~= nil then
         log_values = {};
