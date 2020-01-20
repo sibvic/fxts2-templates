@@ -88,6 +88,7 @@ function trading:Init(parameters, count)
     parameters:addStringAlternative("allow_side", "Both", "", "both")
     parameters:addStringAlternative("allow_side", "Long/buy only", "", "buy")
     parameters:addStringAlternative("allow_side", "Short/sell only", "", "sell")
+    parameters:addString("custom_id", "Custom ID", "", "id");
     parameters:addBoolean("close_on_opposite", "Close on Opposite", "", true);
     if ENFORCE_POSITION_CAP ~= true then
         parameters:addBoolean("position_cap", "Position Cap", "", false);

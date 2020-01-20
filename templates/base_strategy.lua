@@ -314,7 +314,11 @@ function Prepare(name_only)
     ToTime = instance.parameters.ToTime;
     trading_logic.DoTrading = EntryFunction;
     trading_logic.DoExit = ExitFunction;
-    custom_id = profile:id() .. "_" .. instance.bid:name();
+    if instance.parameters.custom_id == "" then
+        custom_id = instance.parameters.custom_id;
+    else
+        custom_id = profile:id() .. "_" .. instance.bid:name();
+    end
 
     if instance.parameters.use_mandatory_closing then
         exit_time, valid = ParseTime(instance.parameters.mandatory_closing_exit_time);
