@@ -1,7 +1,7 @@
 breakeven = {};
 -- public fields
 breakeven.Name = "Breakeven";
-breakeven.Version = "2.0";
+breakeven.Version = "2.1";
 breakeven.Debug = false;
 --private fields
 breakeven._moved_stops = {};
@@ -683,6 +683,7 @@ function breakeven:CreateController()
     function controller:DoPartialClose()
         local trade = self:GetTrade();
         if trade == nil then
+            self._close_percent = nil;
             return true;
         end
         if not trade:refresh() then
@@ -699,7 +700,6 @@ function breakeven:CreateController()
         if self._executed then
             if self._close_percent ~= nil then
                 if self._command ~= nil and self._command.Finished or self._command == nil then
-                    self._close_percent = nil;
                     return self:DoPartialClose();
                 end
             end
