@@ -79,22 +79,30 @@ end
 function ExtUpdate(id, source, period)
     UpdateIndicators();
     if IsEntryLong(main_source, period) then
-        if close_on_opposite then
-            CloseTrades("S");
+        if AllowTrade then
+            if close_on_opposite then
+                CloseTrades("S");
+            end
+            OpenTrade("B");
         end
-        OpenTrade("B");
     end
     if IsEntryShort(main_source, period) then
-        if close_on_opposite then
-            CloseTrades("B");
+        if AllowTrade then
+            if close_on_opposite then
+                CloseTrades("B");
+            end
+            OpenTrade("S");
         end
-        OpenTrade("S");
     end
     if IsExitLong(main_source, period) then
-        CloseTrades("B");
+        if AllowTrade then
+            CloseTrades("B");
+        end
     end
     if IsExitShort(source, period) then
-        CloseTrades("S");
+        if AllowTrade then
+            CloseTrades("S");
+        end
     end
 end
 
