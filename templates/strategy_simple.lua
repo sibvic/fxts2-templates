@@ -51,6 +51,10 @@ function Init()
     strategy.parameters:addString("Account", "Account to trade on", "", "");
     strategy.parameters:setFlag("Account", core.FLAG_ACCOUNT);
     strategy.parameters:addInteger("Amount", "Trade Amount in Lots", "", 1, 1, 1000000);
+    strategy.parameters:addBoolean("use_stop", "Set Stop", "", false);
+    strategy.parameters:addDouble("stop_pips", "Stop, pips", "", 10);
+    strategy.parameters:addBoolean("use_limit", "Set Limit", "", false);
+    strategy.parameters:addDouble("limit_pips", "Limit, pips", "", 20);
     strategy.parameters:addBoolean("close_on_opposite", "Close on opposite", "", true);
     strategy.parameters:addString("custom_id", "Custom ID", "", STRATEGY_NAME);
     CreateParameters();
@@ -59,12 +63,18 @@ end
 local MAIN_SOURCE_ID = 1;
 local main_source;
 local base_size, offer_id, Account, Amount, AllowTrade, close_on_opposite, custom_id;
+local use_stop, stop_pips, use_limit, limit_pips;
 function Prepare(nameOnly)
     local name = profile:id() .. "(" .. instance.bid:name() .. ")";
     instance:name(name);
     if nameOnly then
         return;
     end
+    
+    limit_pips = instance.parameters.limit_pips;
+    use_limit = instance.parameters.use_limit;
+    use_stop = instance.parameters.use_stop;
+    stop_pips = instance.parameters.stop_pips;
     AllowTrade = instance.parameters.AllowTrade;
     Account = instance.parameters.Account;
     Amount = instance.parameters.Amount;
@@ -131,6 +141,22 @@ function OpenTrade(side)
     valuemap.Quantity = Amount * base_size;
     valuemap.BuySell = side;
     valuemap.CustomID = custom_id;
+    if use_stop then
+        valuemap.PegTypeStop = "O";
+        if side == "B" then
+            valuemap.PegPriceOffsetPipsStop = -stop_pips;
+        else
+            valuemap.PegPriceOffsetPipsStop = stop_pips;
+        end
+    end
+    if use_limit then
+        valuemap.PegTypeLimit = "O";
+        if side == "B" then
+            valuemap.PegPriceOffsetPipsLimit = limit_pips;
+        else
+            valuemap.PegPriceOffsetPipsLimit = -limit_pips;
+        end
+    end
     local success, msg = terminal:execute(3, valuemap);
 end
 
