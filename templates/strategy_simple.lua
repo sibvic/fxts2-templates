@@ -48,6 +48,9 @@ function Init()
     strategy.parameters:setFlag("timeframe", core.FLAG_PERIODS);
     strategy.parameters:addBoolean("AllowTrade", "Allow strategy to trade", "", false);
     strategy.parameters:setFlag("AllowTrade", core.FLAG_ALLOW_TRADE);
+    strategy.parameters:addString("entry_execution_type", "Execution Type", "Once per bar close or on every tick", "Live");
+    strategy.parameters:addStringAlternative("entry_execution_type", "End of Turn", "", "EndOfTurn");
+    strategy.parameters:addStringAlternative("entry_execution_type", "Live", "", "Live");
     strategy.parameters:addString("Account", "Account to trade on", "", "");
     strategy.parameters:setFlag("Account", core.FLAG_ACCOUNT);
     strategy.parameters:addInteger("Amount", "Trade Amount in Lots", "", 1, 1, 1000000);
@@ -61,16 +64,18 @@ function Init()
 end
 
 local MAIN_SOURCE_ID = 1;
+local TICK_SOURCE_ID = 2;
+local entry_source_id;
 local main_source;
 local base_size, offer_id, Account, Amount, AllowTrade, close_on_opposite, custom_id;
-local use_stop, stop_pips, use_limit, limit_pips;
+local use_stop, stop_pips, use_limit, limit_pips, entry_execution_type;
 function Prepare(nameOnly)
     local name = profile:id() .. "(" .. instance.bid:name() .. ")";
     instance:name(name);
     if nameOnly then
         return;
     end
-    
+    entry_execution_type = instance.parameters.entry_execution_type;
     limit_pips = instance.parameters.limit_pips;
     use_limit = instance.parameters.use_limit;
     use_stop = instance.parameters.use_stop;
@@ -81,14 +86,29 @@ function Prepare(nameOnly)
     close_on_opposite = instance.parameters.close_on_opposite;
     custom_id = instance.parameters.custom_id;
     main_source = ExtSubscribe(MAIN_SOURCE_ID, nil, instance.parameters.timeframe, instance.parameters.type, "bar")
+    if entry_execution_type == "Live" then
+        tick_source = ExtSubscribe(TICK_SOURCE_ID, nil, "t1", instance.parameters.type, "bar");
+        entry_source_id = TICK_SOURCE_ID;
+    else
+        entry_source_id = MAIN_SOURCE_ID;
+    end
     CreateEntryIndicators(main_source);
     base_size = core.host:execute("getTradingProperty", "baseUnitSize", instance.bid:instrument(), Account);
     offer_id = core.host:findTable("offers"):find("Instrument", instance.bid:instrument()).OfferID;
 end
 
 function ExtUpdate(id, source, period)
+    if id ~= entry_source_id then
+        return;
+    end
+    local entry_period;
+    if entry_execution_type == "Live" then
+        entry_period = main_source:size() - 1;
+    else
+        entry_period = period;
+    end
     UpdateIndicators();
-    if IsEntryLong(main_source, period) then
+    if IsEntryLong(main_source, entry_period) then
         if AllowTrade then
             if close_on_opposite then
                 CloseTrades("S");
@@ -96,7 +116,7 @@ function ExtUpdate(id, source, period)
             OpenTrade("B");
         end
     end
-    if IsEntryShort(main_source, period) then
+    if IsEntryShort(main_source, entry_period) then
         if AllowTrade then
             if close_on_opposite then
                 CloseTrades("B");
@@ -104,12 +124,12 @@ function ExtUpdate(id, source, period)
             OpenTrade("S");
         end
     end
-    if IsExitLong(main_source, period) then
+    if IsExitLong(main_source, entry_period) then
         if AllowTrade then
             CloseTrades("B");
         end
     end
-    if IsExitShort(source, period) then
+    if IsExitShort(source, entry_period) then
         if AllowTrade then
             CloseTrades("S");
         end
