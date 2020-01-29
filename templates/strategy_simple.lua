@@ -5,7 +5,7 @@ local ExitActions = {};
 -- START OF USER DEFINED SECTION
 local STRATEGY_NAME = "Strategy";
 function CreateParameters() 
-    --create your algorithm parameters here
+    --create your algorithm strategy.parameters here
     strategy.parameters:addInteger("period_1", "Period 1", "", 14)
     strategy.parameters:addInteger("period_2", "Period 2", "", 7);
 end
@@ -61,6 +61,24 @@ function Init()
     strategy.parameters:addBoolean("close_on_opposite", "Close on opposite", "", true);
     strategy.parameters:addString("custom_id", "Custom ID", "", STRATEGY_NAME);
     CreateParameters();
+
+    strategy.parameters:addGroup("Alerts");
+    strategy.parameters:addInteger("signaler_ToTime", "Convert the date to", "", 6)
+    strategy.parameters:addIntegerAlternative("signaler_ToTime", "EST", "", 1)
+    strategy.parameters:addIntegerAlternative("signaler_ToTime", "UTC", "", 2)
+    strategy.parameters:addIntegerAlternative("signaler_ToTime", "Local", "", 3)
+    strategy.parameters:addIntegerAlternative("signaler_ToTime", "Server", "", 4)
+    strategy.parameters:addIntegerAlternative("signaler_ToTime", "Financial", "", 5)
+    strategy.parameters:addIntegerAlternative("signaler_ToTime", "Display", "", 6)
+    
+    strategy.parameters:addBoolean("signaler_show_alert", "Show Alert", "", true);
+    strategy.parameters:addBoolean("signaler_play_sound", "Play Sound", "", false);
+    strategy.parameters:addFile("signaler_sound_file", "Sound File", "", "");
+    strategy.parameters:setFlag("signaler_sound_file", core.FLAG_SOUND);
+    strategy.parameters:addBoolean("signaler_recurrent_sound", "Recurrent Sound", "", true);
+    strategy.parameters:addBoolean("signaler_send_email", "Send Email", "", false);
+    strategy.parameters:addString("signaler_email", "Email", "", "");
+    strategy.parameters:setFlag("signaler_email", core.FLAG_EMAIL);
 end
 
 local MAIN_SOURCE_ID = 1;
@@ -69,6 +87,8 @@ local entry_source_id;
 local main_source;
 local base_size, offer_id, Account, Amount, AllowTrade, close_on_opposite, custom_id;
 local use_stop, stop_pips, use_limit, limit_pips, entry_execution_type;
+local _show_alert, _sound_file, _recurrent_sound, _email;
+local _ToTime;
 function Prepare(nameOnly)
     local name = profile:id() .. "(" .. instance.bid:name() .. ")";
     instance:name(name);
@@ -95,8 +115,34 @@ function Prepare(nameOnly)
     CreateEntryIndicators(main_source);
     base_size = core.host:execute("getTradingProperty", "baseUnitSize", instance.bid:instrument(), Account);
     offer_id = core.host:findTable("offers"):find("Instrument", instance.bid:instrument()).OfferID;
+
+    _ToTime = instance.parameters.signaler_ToTime
+    if _ToTime == 1 then
+        _ToTime = core.TZ_EST
+    elseif _ToTime == 2 then
+        _ToTime = core.TZ_UTC
+    elseif _ToTime == 3 then
+        _ToTime = core.TZ_LOCAL
+    elseif _ToTime == 4 then
+        _ToTime = core.TZ_SERVER
+    elseif _ToTime == 5 then
+        _ToTime = core.TZ_FINANCIAL
+    elseif _ToTime == 6 then
+        _ToTime = core.TZ_TS
+    end
+    if instance.parameters.signaler_play_sound then
+        _sound_file = instance.parameters.signaler_sound_file;
+        assert(_sound_file ~= "", "Sound file must be chosen");
+    end
+    _show_alert = instance.parameters.signaler_show_alert;
+    _recurrent_sound = instance.parameters.signaler_recurrent_sound;
+    if instance.parameters.signaler_send_email then
+        _email = instance.parameters.signaler_email;
+        assert(_email ~= "", "E-mail address must be specified");
+    end
 end
 
+local last_entry, last_exit;
 function ExtUpdate(id, source, period)
     if id ~= entry_source_id then
         return;
@@ -108,31 +154,39 @@ function ExtUpdate(id, source, period)
         entry_period = period;
     end
     UpdateIndicators();
-    if IsEntryLong(main_source, entry_period) then
+    if IsEntryLong(main_source, entry_period) and last_entry ~= main_source:date(NOW) then
         if AllowTrade then
             if close_on_opposite then
                 CloseTrades("S");
             end
             OpenTrade("B");
         end
+        Signal("Entry long", main_source);
+        last_entry = main_source:date(NOW);
     end
-    if IsEntryShort(main_source, entry_period) then
+    if IsEntryShort(main_source, entry_period) and last_entry ~= main_source:date(NOW) then
         if AllowTrade then
             if close_on_opposite then
                 CloseTrades("B");
             end
             OpenTrade("S");
         end
+        Signal("Entry short", main_source);
+        last_entry = main_source:date(NOW);
     end
-    if IsExitLong(main_source, entry_period) then
+    if IsExitLong(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
         if AllowTrade then
             CloseTrades("B");
         end
+        Signal("Exit long", main_source);
+        last_exit = main_source:date(NOW);
     end
-    if IsExitShort(source, entry_period) then
+    if IsExitShort(source, entry_period) and last_exit ~= main_source:date(NOW) then
         if AllowTrade then
             CloseTrades("S");
         end
+        Signal("Exit short", main_source);
+        last_exit = main_source:date(NOW);
     end
 end
 
@@ -189,6 +243,46 @@ function CloseTrade(trade)
     valuemap.TradeID = trade.TradeID;
     valuemap.Quantity = trade.Lot;
     local success, msg = terminal:execute(2, valuemap);
+end
+
+function FormatEmail(source, period, message)
+    --format email subject
+    local subject = message .. "(" .. source:instrument() .. ")";
+    --format email text
+    local delim = "\013\010";
+    local signalDescr = "Signal: " .. (STRATEGY_NAME or "");
+    local symbolDescr = "Symbol: " .. source:instrument();
+    local messageDescr = "Message: " .. message;
+    local ttime = core.dateToTable(core.host:execute("convertTime", core.TZ_EST, _ToTime, source:date(period)));
+    local dateDescr = string.format("Time:  %02i/%02i %02i:%02i", ttime.month, ttime.day, ttime.hour, ttime.min);
+    local priceDescr = "Price: " .. source[period];
+    local text = "You have received this message because the following signal alert was received:"
+        .. delim .. signalDescr .. delim .. symbolDescr .. delim .. messageDescr .. delim .. dateDescr .. delim .. priceDescr;
+    return subject, text;
+end
+
+function Signal(message, source)
+    if source == nil then
+        if instance.source ~= nil then
+            source = instance.source;
+        elseif instance.bid ~= nil then
+            source = instance.bid;
+        else
+            local pane = core.host.Window.CurrentPane;
+            source = pane.Data:getStream(0);
+        end
+    end
+    if _show_alert then
+        terminal:alertMessage(source:instrument(), source[NOW], message, source:date(NOW));
+    end
+
+    if _sound_file ~= nil then
+        terminal:alertSound(_sound_file, _recurrent_sound);
+    end
+
+    if _email ~= nil then
+        terminal:alertEmail(_email, profile:id().. " : " .. message, FormatEmail(source, NOW, message));
+    end
 end
 
 dofile(core.app_path() .. "\\strategies\\standard\\include\\helper.lua");
