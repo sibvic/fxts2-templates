@@ -645,7 +645,8 @@ function IsPositionLimitHit(side, side_limit)
     if not instance.parameters.position_cap then
         return false;
     end
-    local sideIt = trading:FindTrade();
+    local sideIt = trading:FindTrade()
+        :WhenSide(side);
     local allIt = trading:FindTrade();
     if UseOwnPositionsOnly then
         sideIt:WhenCustomID(custom_id);
