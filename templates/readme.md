@@ -4,9 +4,13 @@
 
 Example of the simplest possible strategy. 
 
-## base_strategy
+## strategy_advanced
 
-Base strategy template. It supports execution of orders on other platforms.
+Strategy template which includes all supported features so far. It's the most complex template. 
+
+Features set:
+
+- Order execution on other platforms
 
 [Description of template parameters](https://github.com/sibvic/fxts2-templates/wiki/base_strategy-Template-parameters)
 

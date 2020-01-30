@@ -791,3 +791,10 @@ function ExtAsyncOperationFinished(cookie, success, message, message1, message2)
 end
 
 dofile(core.app_path() .. "\\strategies\\standard\\include\\helper.lua");
+
+dofile(core.app_path() .. "\\strategies\\custom\\snippets\\breakeven.lua")
+dofile(core.app_path() .. "\\strategies\\custom\\snippets\\DailyProfitLimit.lua")
+dofile(core.app_path() .. "\\strategies\\custom\\snippets\\signaler.lua")
+dofile(core.app_path() .. "\\strategies\\custom\\snippets\\tables_monitor.lua")
+dofile(core.app_path() .. "\\strategies\\custom\\snippets\\trading_logic.lua")
+dofile(core.app_path() .. "\\strategies\\custom\\snippets\\trading.lua")
