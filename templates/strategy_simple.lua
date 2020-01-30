@@ -56,6 +56,8 @@ function Init()
     strategy.parameters:addInteger("Amount", "Trade Amount in Lots", "", 1, 1, 1000000);
     strategy.parameters:addBoolean("use_stop", "Set Stop", "", false);
     strategy.parameters:addDouble("stop_pips", "Stop, pips", "", 10);
+    strategy.parameters:addBoolean("use_trailing", "Trailing stop order", "", false);
+    strategy.parameters:addInteger("trailing", "Trailing in pips", "Use 1 for dynamic and 10 or greater for the fixed trailing", 1);
     strategy.parameters:addBoolean("use_limit", "Set Limit", "", false);
     strategy.parameters:addDouble("limit_pips", "Limit, pips", "", 20);
     strategy.parameters:addBoolean("close_on_opposite", "Close on opposite", "", true);
@@ -86,7 +88,7 @@ local TICK_SOURCE_ID = 2;
 local entry_source_id;
 local main_source;
 local base_size, offer_id, Account, Amount, AllowTrade, close_on_opposite, custom_id;
-local use_stop, stop_pips, use_limit, limit_pips, entry_execution_type;
+local use_stop, stop_pips, use_limit, limit_pips, entry_execution_type, use_trailing, trailing;
 local _show_alert, _sound_file, _recurrent_sound, _email;
 local _ToTime;
 function Prepare(nameOnly)
@@ -95,6 +97,8 @@ function Prepare(nameOnly)
     if nameOnly then
         return;
     end
+    use_trailing = instance.parameters.use_trailing;
+    trailing = instance.parameters.trailing;
     entry_execution_type = instance.parameters.entry_execution_type;
     limit_pips = instance.parameters.limit_pips;
     use_limit = instance.parameters.use_limit;
@@ -221,6 +225,9 @@ function OpenTrade(side)
             valuemap.PegPriceOffsetPipsStop = -stop_pips;
         else
             valuemap.PegPriceOffsetPipsStop = stop_pips;
+        end
+        if use_trailing then
+            valuemap.TrailStepStop = trailing;
         end
     end
     if use_limit then
