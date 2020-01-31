@@ -1,10 +1,19 @@
 -- START OF CUSTOMIZATION SECTION
+-- Number of positions to open with individual set of stop/limit parameters.
+local PositionsCount = 1;
 -- Trading time parameters. You can turn it off if you never use it.
 local IncludeTradingTime = true;
 -- Whether to take into account positions created only by this strategy
 -- or take into account positions created by other strategies and by the user as well.
 -- If set to false the strategy may close positions created by the user and other strategies
 local UseOwnPositionsOnly = true;
+
+-- ATR stop/limit support
+local DISABLE_ATR_STOP_LIMIT = true;
+local DISABLE_LIMIT_TRAILING = true;
+
+-- Support of alerts export using DDE
+local DDEAlertsSupport = false;
 
 -- History preload count
 local HISTORY_PRELOAD_BARS = 300;
@@ -20,6 +29,7 @@ local ENFORCE_entry_execution_type = nil; -- Live/EndOfTurn
 local ENFORCE_exit_execution_type = nil; -- Live/EndOfTurn
 local EXIT_TIMEFRAME_IN_PARAMS = false;
 local DISABLE_EXIT = true;
+local DISABLE_HA_SOURCE = false;
 
 local STRATEGY_NAME = "Strategy Name";
 local STRATEGY_VERSION = "1";
@@ -167,7 +177,7 @@ function Init()
     strategy.parameters:addStringAlternative("Direction", "Reverse", "", "reverse");
     trading_logic:Init(strategy.parameters);
     trading.AddLimitParameter = SetCustomLimit == nil;
-    trading:Init(strategy.parameters, 1);
+    trading:Init(strategy.parameters, PositionsCount);
     DailyProfitLimit:Init(strategy.parameters);
     strategy.parameters:addGroup("Time Parameters");
     strategy.parameters:addInteger("ToTime", "Convert the date to", "", core.TZ_TS);
@@ -230,7 +240,15 @@ local last_serial;
 
 function CreatePositions(side, source)
     local positions = {};
-    positions[#positions + 1] = CreatePositionStrategy(source, side, "");
+    if PositionsCount == 1 then
+        positions[#positions + 1] = CreatePositionStrategy(source, side, "");
+        return positions;
+    end
+    for i = 1, PositionsCount do
+        if instance.parameters:getBoolean("use_position_" .. i) then
+            positions[#positions + 1] = CreatePositionStrategy(source, side, "_" .. i);
+        end
+    end
     return positions;
 end
 
@@ -329,12 +347,25 @@ function CreatePositionStrategy(source, side, id)
     position_strategy.Amount_Type = instance.parameters:getString("amount_type" .. id);
     if SetCustomStop == nil then
         position_strategy.Stop = instance.parameters:getDouble("stop" .. id);
+        if position_strategy.StopType == "atr" then
+            position_strategy.StopATR = core.indicators:create("ATR", source, position_strategy.Stop);
+            position_strategy.AtrStopMult = instance.parameters:getDouble("atr_stop_mult" .. id);
+        end
         if instance.parameters:getBoolean("use_trailing" .. id) then
             position_strategy.Trailing = instance.parameters:getInteger("trailing" .. id);
         end
     end
     if SetCustomLimit == nil then
         position_strategy.Limit = instance.parameters:getDouble("limit" .. id);
+        if position_strategy.LimitType == "atr" then
+            position_strategy.LimitATR = core.indicators:create("ATR", source, position_strategy.Limit);
+            position_strategy.AtrLimitMult = instance.parameters:getDouble("atr_limit_mult" .. id);
+        end
+        if not DISABLE_LIMIT_TRAILING then
+            position_strategy.TrailingLimitType = instance.parameters:getString("TRAILING_LIMIT_TYPE" .. id);
+            position_strategy.TrailingLimitTrigger = instance.parameters:getDouble("TRAILING_LIMIT_TRIGGER" .. id);
+            position_strategy.TrailingLimitStep = instance.parameters:getDouble("TRAILING_LIMIT_STEP" .. id);
+        end
     end
     if CreateCustomBreakeven == nil then
         position_strategy.UseBreakeven = instance.parameters:getBoolean("use_breakeven" .. id);
@@ -419,6 +450,25 @@ function CreatePositionStrategy(source, side, id)
         if result.Finished and not result.Success then
             return result;
         end
+        if default_stop then
+            if self.StopType == "atr" then
+                self.StopATR:update(core.UpdateLast);
+                breakeven:CreateIndicatorTrailingController()
+                    :SetRequestID(result.RequestID)
+                    :SetTrailingTarget(breakeven.STOP_ID)
+                    :SetIndicatorStream(self.StopATR.DATA, self.AtrStopMult, true);
+            end
+        end
+        if default_limit then
+            if self.LimitType == "atr" then
+                self.LimitATR:update(core.UpdateLast);
+                breakeven:CreateIndicatorTrailingController()
+                    :SetRequestID(result.RequestID)
+                    :SetTrailingTarget(breakeven.LIMIT_ID)
+                    :SetIndicatorStream(self.LimitATR.DATA, self.AtrLimitMult, true);
+            end
+            self:CreateTrailingLimit(result);
+        end
         local default_breakeven = CreateCustomBreakeven == nil or not CreateCustomBreakeven(self, result, period, periods_from_last);
         if default_breakeven then
             if self.UseBreakeven then
@@ -493,6 +543,12 @@ end
 
 local log_values;
 function ExtUpdate(id, source, period)
+    if trading_logic.MainSourceHA ~= nil then
+        trading_logic.MainSourceHA:update(core.UpdateLast);
+    end
+    if trading_logic.ExitSourceHA ~= nil then
+        trading_logic.ExitSourceHA:update(core.UpdateLast);
+    end
     UpdateIndicators();
     if log_file ~= nil then
         log_values = {};
@@ -517,6 +573,7 @@ end
 
 function DoCloseOnOpposite(side)
     if instance.parameters.close_on_opposite then
+        signaler:SendCommand("action=close side=" .. trading:getOppositeSide(side));
         local it = trading:FindTrade():WhenSide(trading:getOppositeSide(side))
         if UseOwnPositionsOnly then
             it:WhenCustomID(custom_id);
@@ -528,6 +585,7 @@ end
 function DisabledAction(source, period) return false; end
 
 function CloseAll(source, period)
+    signaler:SendCommand("action=close");
     local closedCount = 0;
     if instance.parameters.allow_trade then
         local it = trading:FindTrade();
@@ -542,6 +600,7 @@ function CloseAll(source, period)
 end
 
 function CloseLong(source, period)
+    signaler:SendCommand("action=close side=B");
     local closedCount = 0;
     if instance.parameters.allow_trade then
         local it = trading:FindTrade():WhenSide("B");
@@ -556,6 +615,7 @@ function CloseLong(source, period)
 end
 
 function CloseShort(source, period)
+    signaler:SendCommand("action=close side=S");
     local closedCount = 0;
     if instance.parameters.allow_trade then
         local it = trading:FindTrade():WhenSide("S");
@@ -597,6 +657,14 @@ function IsPositionLimitHit(side, side_limit)
 end
 
 function GoLong(source, period, positions, log)
+    for _, position in ipairs(positions) do
+        local command = string.format("action=create symbol=%s side=%s quantity=%s"
+            , source.close:instrument()
+            , "buy"
+            , tostring(position.Amount));
+        signaler:SendCommand(command);
+    end
+   
     if instance.parameters.allow_trade then
         DoCloseOnOpposite("B");
         if IsPositionLimitHit("B", instance.parameters.no_of_buy_position) then
@@ -616,6 +684,13 @@ function GoLong(source, period, positions, log)
 end
 
 function GoShort(source, period, positions, log)
+    for _, position in ipairs(positions) do
+        local command = string.format("action=create symbol=%s side=%s quantity=%s"
+            , source.close:instrument()
+            , "sell"
+            , tostring(position.Amount));
+        signaler:SendCommand(command);
+    end
     if instance.parameters.allow_trade then
         DoCloseOnOpposite("S");
         if IsPositionLimitHit("S", instance.parameters.no_of_sell_position) then
@@ -703,6 +778,7 @@ function ExtAsyncOperationFinished(cookie, success, message, message1, message2)
         local now = core.host:execute("convertTime", core.TZ_EST, ToTime, core.host:execute("getServerTime"));
         now = now - math.floor(now);
         if InRange(now, exit_time, exit_time + (instance.parameters.mandatory_closing_valid_interval / 86400.0)) then
+            signaler:SendCommand("action=close");
             local it = trading:FindTrade();
             if UseOwnPositionsOnly then
                 it:WhenCustomID(custom_id);
@@ -716,6 +792,7 @@ end
 dofile(core.app_path() .. "\\strategies\\standard\\include\\helper.lua");
 
 dofile(core.app_path() .. "\\strategies\\custom\\snippets\\breakeven.lua")
+dofile(core.app_path() .. "\\strategies\\custom\\snippets\\DailyProfitLimit.lua")
 dofile(core.app_path() .. "\\strategies\\custom\\snippets\\signaler.lua")
 dofile(core.app_path() .. "\\strategies\\custom\\snippets\\tables_monitor.lua")
 dofile(core.app_path() .. "\\strategies\\custom\\snippets\\trading_logic.lua")

@@ -102,7 +102,7 @@ The strategy will send you an email when this option enabled. Used with "Email" 
 
 Email to send the alert to.
 
-## strategy_advanced
+## strategy_advanced/strategy_advanced_plus
 
 You will need to copy-paste code for \\strategies\\custom\\snippets\\*.lua file at the end of the file. You can find these snippets on github: https://github.com/sibvic/fxts2-templates
 
@@ -110,20 +110,20 @@ Strategy template which includes all supported features so far. It's the most co
 
 Features set:
 
-- Multi-position entry
+- Multi-position entry (plus only)
 - Signal reversal
-- Heikin-Ashi as a source
+- Heikin-Ashi as a source (plus only)
 - Entry/exit timeframes
 - Close on opposite
 - Position cap
 - Amount types: lots, % of equity, Risk % of equity
-- Stop: no, pips, high/low, ATR
-- Close position on daily profit
+- Stop: no, pips, high/low, ATR (plus only)
+- Close position on daily profit (plus only)
 - Trading time
 - Mandatory closing
-- Alerts (including Telegram and Discord)
-- DDE alerts export
-- Order execution on other platforms
+- Alerts (including Telegram and Discord) (plus only)
+- DDE alerts export (plus only)
+- Order execution on other platforms (plus only)
 
 [Description of template parameters](https://github.com/sibvic/fxts2-templates/wiki/base_strategy-Template-parameters)
 
