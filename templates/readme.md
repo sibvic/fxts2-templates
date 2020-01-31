@@ -70,7 +70,7 @@ For example: if the strategy detects "long/buy" signal and then it will look for
 #### Custom ID
 
 Custom identification for the trades. Used to work with a set of trades only. 
-For example: if you set custom ID, the signal is detected and the Close on opposite feature is turned on then the strategy will ignore trades with Custom ID other that specified. This way you can run several strategies on the same instrument along each other and they to dot touch trades from another strategies (if every strategy will use it's own unique custom ID).
+For example: if you set custom ID, the signal is detected and the Close on the opposite feature is turned on then the strategy will ignore trades with Custom ID other than specified. This way you can run several strategies on the same instrument along with each other and they to dot touch trades from other strategies (if every strategy will use its own unique custom ID).
 
 ### Alerts parameters
 
@@ -108,6 +108,19 @@ Strategy template which includes all supported features so far. It's the most co
 
 Features set:
 
+- Multi-position entry
+- Signal reversal
+- Heikin-Ashi as a source
+- Entry/exit timeframes
+- Close on opposite
+- Position cap
+- Amount types: lots, % of equity, Risk % of equity
+- Stop: no, pips, high/low, ATR
+- Close position on daily profit
+- Trading time
+- Mandatory closing
+- Alerts (including Telegram and Discord)
+- DDE alerts export
 - Order execution on other platforms
 
 [Description of template parameters](https://github.com/sibvic/fxts2-templates/wiki/base_strategy-Template-parameters)
@@ -134,6 +147,34 @@ Trading time parameters. You can turn it off if you never use it.
 
 Whether to take into account positions created only by this strategy or take into account positions created by other strategies and by the user as well. If set to false the strategy may close positions created by the user and other strategies.
 
+### DISABLE_ATR_STOP_LIMIT
+
+Disables ATR stop and limit. 
+
+### DISABLE_LIMIT_TRAILING
+
+Disabled limit trailing.
+
+### USE_CUSTOM_TIMEFRAMES
+
+Enables custom timeframes like "m2".
+
+### ENFORCE_entry_execution_type, ENFORCE_exit_execution_type
+
+Allows to set entry/exit execution type and hide the related parameters.
+
+### EXIT_TIMEFRAME_IN_PARAMS
+
+Allows to hide separamet exit timeframe. When set to true the exit rules will use the same timeframe as entry rules.
+
+### DISABLE_EXIT
+
+Allows to disable exit logic in the strategy.
+
+### DISABLE_HA_SOURCE
+
+Allows to disable HA source in the strategy.
+
 ### DDEAlertsSupport
 
 Support of alerts export using DDE (like Excel). Set it to true/false
@@ -148,7 +189,7 @@ Whether to request both prices: bid and ask
 
 ### ENFORCE_POSITION_CAP
 
-TODO
+When set to true the parameters will close hidden and the features will be enabled and limited to 1 position only.
 
 ### CustomTimeframeDefined
 
