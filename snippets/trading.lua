@@ -5,7 +5,6 @@ trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
 trading.AddLimitParameter = true;
-trading.AddBreakevenParameters = true;
 trading._ids_start = nil;
 trading._signaler = nil;
 trading._account = nil;
@@ -41,9 +40,7 @@ function trading:AddPositionParameters(parameters, id, section_id)
         parameters:addBoolean("use_trailing" .. id, "Trailing stop order", "", false);
         parameters:addInteger("trailing" .. id, "Trailing in pips", "Use 1 for dynamic and 10 or greater for the fixed trailing", 1);
     end
-    if CreateLimitParameters ~= nil then
-        CreateLimitParameters(parameters, id);
-    else
+    if CreateLimitParameters == nil or not CreateLimitParameters(parameters, id) then
         parameters:addGroup("  Limit parameters " .. section_id);
         parameters:addString("limit_type" .. id, "Limit Order", "", "no");
         parameters:addStringAlternative("limit_type" .. id, "No limit", "", "no");
@@ -66,7 +63,7 @@ function trading:AddPositionParameters(parameters, id, section_id)
             parameters:addDouble("TRAILING_LIMIT_STEP" .. id, "Trailing Limit Step in Pips", "", 10);
         end
     end
-    if self.AddBreakevenParameters then
+    if CreateCustomBreakeven == nil then
         parameters:addGroup("  Breakeven parameters " .. section_id);
         parameters:addBoolean("use_breakeven" .. id, "Use Breakeven", "", false);
         parameters:addDouble("breakeven_when" .. id, "Breakeven Activation Value, in pips", "", 10);

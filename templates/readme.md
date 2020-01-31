@@ -74,7 +74,7 @@ For example: if you set custom ID, the signal is detected and the Close on the o
 
 ### Alerts parameters
 
-#### Convert the sate to
+#### Convert the date to
 
 This option allows you to select timezone to use in the messages. The strategy will format dates in the messages in that selected timezone.
 
@@ -103,6 +103,8 @@ The strategy will send you an email when this option enabled. Used with "Email" 
 Email to send the alert to.
 
 ## strategy_advanced
+
+You will need to copy-paste code for \\strategies\\custom\\snippets\\*.lua file at the end of the file. You can find these snippets on github: https://github.com/sibvic/fxts2-templates
 
 Strategy template which includes all supported features so far. It's the most complex template. 
 

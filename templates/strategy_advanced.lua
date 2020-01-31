@@ -177,7 +177,6 @@ function Init()
     strategy.parameters:addStringAlternative("Direction", "Reverse", "", "reverse");
     trading_logic:Init(strategy.parameters);
     trading.AddLimitParameter = SetCustomLimit == nil;
-    trading.AddBreakevenParameters = CreateCustomBreakeven == nil;
     trading:Init(strategy.parameters, PositionsCount);
     DailyProfitLimit:Init(strategy.parameters);
     strategy.parameters:addGroup("Time Parameters");
