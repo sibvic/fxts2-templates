@@ -4,6 +4,104 @@
 
 Example of the simplest possible strategy. 
 
+Features:
+
+- Timeframe to trade
+- Live/End of bar execution
+- Stop/limit
+- Close on opposite
+- Alerts: message, sound, email
+
+### Parameters
+
+#### Price type
+
+What price stream to use: bid or ask. This stream will be used as a source for the indicators.
+
+#### Timeframe
+
+What timeframe to use for the indicator source.
+
+#### Allow strategy to trade
+
+You can enable/disable trading using this parameter. You will get alerts only when trading is disabled.
+
+#### Execution type
+
+Strategy can check conditions on every tick (Live) or when the bar has closed. Live method will give you a faster reaction time but gives more false signals.
+
+#### Account to trade on
+
+Your account
+
+#### Trade amount in lots
+
+Defines the size of the opened positions. Defined in lots. The size of the lot depends on your account and symbol you trade. So, "1" can open "1 000 USD" position or "100 000 USD" positions depending on the type of your account. 
+
+#### Set stop
+
+Whether to set the stop for the opened trades. Used with "Stop, pips" parameter
+
+#### Stop, pips
+
+Distance to the stop order in pips.
+
+#### Trailing stop order
+
+Whether to use trailing for the stop order. Used with "Trailing in pips" parameter
+
+#### Trailing in pips
+
+Trailing stop in pips. Use "1" for dynamic trailing or >= 10 for the fixed trailing step.
+
+#### Setp limit
+
+Whether to set the limit for the opened trades. Used with "Limit, pips" parameter.
+
+#### Limit, pips
+
+Distance to the limit order in pips. 
+
+#### Close on opposite
+
+When set to true the strategy will close opposite trades when the signal detected. 
+For example: if the strategy detects "long/buy" signal and then it will look for short trades and close them. 
+
+#### Custom ID
+
+Custom identification for the trades. Used to work with a set of trades only. 
+For example: if you set custom ID, the signal is detected and the Close on opposite feature is turned on then the strategy will ignore trades with Custom ID other that specified. This way you can run several strategies on the same instrument along each other and they to dot touch trades from another strategies (if every strategy will use it's own unique custom ID).
+
+### Alerts parameters
+
+#### Convert the sate to
+
+This option allows you to select timezone to use in the messages. The strategy will format dates in the messages in that selected timezone.
+
+#### Show Alert
+
+The strategy will show you a dialog with the alert when this option enabled.
+
+#### Play sound
+
+The strategy will play a sound on alert. Used with "Sound file" and "Recurrent sound" parameters.
+
+#### Sound file
+
+Sound file to play when the alert detected.
+
+#### Recurrent sound
+
+The strategy will play the sound in a loop when this option enabled.
+
+#### Send email
+
+The strategy will send you an email when this option enabled. Used with "Email" parameter.
+
+#### Email
+
+Email to send the alert to.
+
 ## strategy_advanced
 
 Strategy template which includes all supported features so far. It's the most complex template. 
