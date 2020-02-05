@@ -168,7 +168,6 @@ function Init()
     trading_logic:Init(strategy.parameters);
     trading.AddLimitParameter = SetCustomLimit == nil;
     trading:Init(strategy.parameters, 1);
-    DailyProfitLimit:Init(strategy.parameters);
     strategy.parameters:addGroup("Time Parameters");
     strategy.parameters:addInteger("ToTime", "Convert the date to", "", core.TZ_TS);
     strategy.parameters:addIntegerAlternative("ToTime", "EST", "", core.TZ_EST);
