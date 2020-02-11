@@ -48,6 +48,10 @@ function Init()
     strategy.parameters:setFlag("timeframe", core.FLAG_PERIODS);
     strategy.parameters:addBoolean("AllowTrade", "Allow strategy to trade", "", false);
     strategy.parameters:setFlag("AllowTrade", core.FLAG_ALLOW_TRADE);
+    strategy.parameters:addString("AllowedSide", "Allowed side", "Allowed side for trading or signaling, can be Sell, Buy or Both", "Both");
+    strategy.parameters:addStringAlternative("AllowedSide", "Both", "", "Both");
+    strategy.parameters:addStringAlternative("AllowedSide", "Buy", "", "Buy");
+    strategy.parameters:addStringAlternative("AllowedSide", "Sell", "", "Sell");
     strategy.parameters:addString("entry_execution_type", "Execution Type", "Once per bar close or on every tick", "Live");
     strategy.parameters:addStringAlternative("entry_execution_type", "End of Turn", "", "EndOfTurn");
     strategy.parameters:addStringAlternative("entry_execution_type", "Live", "", "Live");
@@ -87,7 +91,7 @@ local MAIN_SOURCE_ID = 1;
 local TICK_SOURCE_ID = 2;
 local entry_source_id;
 local main_source;
-local base_size, offer_id, Account, Amount, AllowTrade, close_on_opposite, custom_id;
+local base_size, offer_id, Account, Amount, AllowTrade, close_on_opposite, custom_id, AllowedSide;
 local use_stop, stop_pips, use_limit, limit_pips, entry_execution_type, use_trailing, trailing;
 local _show_alert, _sound_file, _recurrent_sound, _email;
 local _ToTime;
@@ -99,6 +103,7 @@ function Prepare(nameOnly)
     end
     use_trailing = instance.parameters.use_trailing;
     trailing = instance.parameters.trailing;
+    AllowedSide = instance.parameters.AllowedSide;
     entry_execution_type = instance.parameters.entry_execution_type;
     limit_pips = instance.parameters.limit_pips;
     use_limit = instance.parameters.use_limit;
@@ -212,6 +217,14 @@ function ExtAsyncOperationFinished(cookie, success, message, message1, message2)
 end
 
 function OpenTrade(side)
+    if AllowedSide ~= "Both" then
+        if AllowedSide == "Buy" and side == "S" then
+            return;
+        end
+        if AllowedSide == "Sell" and side == "B" then
+            return;
+        end
+    end
     local valuemap = core.valuemap();
     valuemap.OrderType = "OM";
     valuemap.OfferID = offer_id;
