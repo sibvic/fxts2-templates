@@ -1041,7 +1041,6 @@ function trading:MarketOrder(instrument)
             local used_equity = equity * self._PercentOfEquityAmount / 100.0;
             local emr = core.host:getTradingProperty("EMR", self.Offer.Instrument, self.valuemap.AcctID);
             self.valuemap.Quantity = math.floor(used_equity / emr) * base_size;
-            core.host:trace(used_equity / emr);
         elseif self._RiskPercentOfEquityAmount ~= nil then
             local equity = core.host:findTable("accounts"):find("AccountID", self.valuemap.AcctID).Equity;
             local affordable_loss = equity * self._RiskPercentOfEquityAmount / 100.0;
