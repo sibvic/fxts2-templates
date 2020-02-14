@@ -190,7 +190,7 @@ function ExtUpdate(id, source, period)
         Signal("Exit long", main_source);
         last_exit = main_source:date(NOW);
     end
-    if IsExitShort(source, entry_period) and last_exit ~= main_source:date(NOW) then
+    if IsExitShort(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
         if AllowTrade then
             CloseTrades("S");
         end
