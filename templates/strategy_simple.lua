@@ -58,6 +58,7 @@ function Init()
     strategy.parameters:addString("Account", "Account to trade on", "", "");
     strategy.parameters:setFlag("Account", core.FLAG_ACCOUNT);
     strategy.parameters:addInteger("Amount", "Trade Amount in Lots", "", 1, 1, 1000000);
+    strategy.parameters:addGroup("Money Management");
     strategy.parameters:addBoolean("use_stop", "Set Stop", "", false);
     strategy.parameters:addDouble("stop_pips", "Stop, pips", "", 10);
     strategy.parameters:addBoolean("use_trailing", "Trailing stop order", "", false);
