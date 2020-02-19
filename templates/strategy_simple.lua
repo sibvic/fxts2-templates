@@ -65,6 +65,8 @@ function Init()
     strategy.parameters:addInteger("trailing", "Trailing in pips", "Use 1 for dynamic and 10 or greater for the fixed trailing", 1);
     strategy.parameters:addBoolean("use_limit", "Set Limit", "", false);
     strategy.parameters:addDouble("limit_pips", "Limit, pips", "", 20);
+    strategy.parameters:addBoolean("use_position_limit", "Use Position limit", "", true);
+    strategy.parameters:addInteger("position_limit", "Limit", "", 1);
     strategy.parameters:addBoolean("close_on_opposite", "Close on opposite", "", true);
     strategy.parameters:addString("custom_id", "Custom ID", "", STRATEGY_NAME);
     CreateParameters();
@@ -93,7 +95,7 @@ local TICK_SOURCE_ID = 2;
 local entry_source_id;
 local main_source;
 local base_size, offer_id, Account, Amount, AllowTrade, close_on_opposite, custom_id, AllowedSide;
-local use_stop, stop_pips, use_limit, limit_pips, entry_execution_type, use_trailing, trailing;
+local use_stop, stop_pips, use_limit, limit_pips, entry_execution_type, use_trailing, trailing, use_position_limit, position_limit;
 local _show_alert, _sound_file, _recurrent_sound, _email;
 local _ToTime;
 function Prepare(nameOnly)
@@ -102,6 +104,8 @@ function Prepare(nameOnly)
     if nameOnly then
         return;
     end
+    use_position_limit = instance.parameters.use_position_limit;
+    position_limit = instance.parameters.position_limit;
     use_trailing = instance.parameters.use_trailing;
     trailing = instance.parameters.trailing;
     AllowedSide = instance.parameters.AllowedSide;
@@ -164,7 +168,7 @@ function ExtUpdate(id, source, period)
         entry_period = period;
     end
     UpdateIndicators();
-    if IsEntryLong(main_source, entry_period) and last_entry ~= main_source:date(NOW) then
+    if IsEntryLong(main_source, entry_period) and last_entry ~= main_source:date(NOW) and not PositionsLimitHit() then
         if AllowTrade then
             if close_on_opposite then
                 CloseTrades("S");
@@ -174,7 +178,7 @@ function ExtUpdate(id, source, period)
         Signal("Entry long", main_source);
         last_entry = main_source:date(NOW);
     end
-    if IsEntryShort(main_source, entry_period) and last_entry ~= main_source:date(NOW) then
+    if IsEntryShort(main_source, entry_period) and last_entry ~= main_source:date(NOW) and not PositionsLimitHit() then
         if AllowTrade then
             if close_on_opposite then
                 CloseTrades("B");
@@ -198,6 +202,25 @@ function ExtUpdate(id, source, period)
         Signal("Exit short", main_source);
         last_exit = main_source:date(NOW);
     end
+end
+
+function PositionsLimitHit()
+    if not use_position_limit then
+        return false;
+    end
+    local enum = core.host:findTable("trades"):enumerator();
+    local row = enum:next();
+    local count = 0;
+    while row ~= nil do
+        if row.BS == side
+            and row.Instrument == main_source:instrument() 
+            and (row.QTXT == custom_id or custom_id == "")
+        then
+            count = count + 1;
+        end
+        row = enum:next();
+    end
+    return count >= position_limit;
 end
 
 function CloseTrades(side)
