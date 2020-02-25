@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.29";
+trading.Version = "4.30";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -498,6 +498,16 @@ function trading:FindOrder()
             row = enum:next();
         end
         return nil;
+    end
+    function search:Count()
+        local count = 0;
+        local enum = core.host:findTable("orders"):enumerator();
+        local row = enum:next();
+        while (row ~= nil) do
+            if self:PassFilter(row) then count = count + 1; end
+            row = enum:next();
+        end
+        return count;
     end
     return search;
 end
