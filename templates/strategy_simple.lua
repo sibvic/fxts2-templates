@@ -174,8 +174,9 @@ function ExtUpdate(id, source, period)
                 CloseTrades("S");
             end
             OpenTrade("B");
+        else
+            Signal("Entry long", main_source);
         end
-        Signal("Entry long", main_source);
         last_entry = main_source:date(NOW);
     end
     if IsEntryShort(main_source, entry_period) and last_entry ~= main_source:date(NOW) and not PositionsLimitHit() then
@@ -184,22 +185,25 @@ function ExtUpdate(id, source, period)
                 CloseTrades("B");
             end
             OpenTrade("S");
+        else
+            Signal("Entry short", main_source);
         end
-        Signal("Entry short", main_source);
         last_entry = main_source:date(NOW);
     end
     if IsExitLong(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
         if AllowTrade then
             CloseTrades("B");
+        else
+            Signal("Exit long", main_source);
         end
-        Signal("Exit long", main_source);
         last_exit = main_source:date(NOW);
     end
     if IsExitShort(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
         if AllowTrade then
             CloseTrades("S");
+        else
+            Signal("Exit short", main_source);
         end
-        Signal("Exit short", main_source);
         last_exit = main_source:date(NOW);
     end
 end
