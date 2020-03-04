@@ -268,6 +268,7 @@ end
 
 local add_log;
 local log_file;
+local use_mandatory_closing;
 local headers = {};
 
 function Prepare(name_only)
@@ -277,7 +278,10 @@ function Prepare(name_only)
     for _, module in pairs(Modules) do module:Prepare(nameOnly); end
 
     instance:name(profile:id() .. "(" .. instance.bid:name() ..  ")");
-    if name_only then return ; end
+    if name_only then 
+        return ; 
+    end
+    use_mandatory_closing = instance.parameters.use_mandatory_closing;
 
     CreateEntryIndicators(trading_logic.MainSource);
     CreateExitIndicators(trading_logic.ExitSource);
@@ -319,7 +323,7 @@ function Prepare(name_only)
         custom_id = profile:id() .. "_" .. instance.bid:name();
     end
 
-    if instance.parameters.use_mandatory_closing then
+    if use_mandatory_closing then
         exit_time, valid = ParseTime(instance.parameters.mandatory_closing_exit_time);
         assert(valid, "Time " .. instance.parameters.mandatory_closing_exit_time .. " is invalid");
         core.host:execute("setTimer", MANDATORY_CLOSE_TIMER_ID, math.max(instance.parameters.mandatory_closing_valid_interval / 2, 1));
@@ -543,6 +547,9 @@ end
 
 local log_values;
 function ExtUpdate(id, source, period)
+    if use_mandatory_closing and core.host.Trading:getTradingProperty("isSimulation") then
+        DoMandatoryClosing();
+    end
     if trading_logic.MainSourceHA ~= nil then
         trading_logic.MainSourceHA:update(core.UpdateLast);
     end
@@ -772,20 +779,23 @@ function ExitFunction(source, period)
     end
 end
 
+function DoMandatoryClosing()
+    local now = core.host:execute("convertTime", core.TZ_EST, ToTime, core.host:execute("getServerTime"));
+    now = now - math.floor(now);
+    if InRange(now, exit_time, exit_time + (instance.parameters.mandatory_closing_valid_interval / 86400.0)) then
+        local it = trading:FindTrade();
+        if UseOwnPositionsOnly then
+            it:WhenCustomID(custom_id);
+        end
+        it:Do(function (trade) trading:Close(trade); end );
+        signaler:Signal("Mandatory closing");
+    end
+end
+
 function ExtAsyncOperationFinished(cookie, success, message, message1, message2)
     for _, module in pairs(Modules) do if module.AsyncOperationFinished ~= nil then module:AsyncOperationFinished(cookie, success, message, message1, message2); end end
     if cookie == MANDATORY_CLOSE_TIMER_ID then
-        local now = core.host:execute("convertTime", core.TZ_EST, ToTime, core.host:execute("getServerTime"));
-        now = now - math.floor(now);
-        if InRange(now, exit_time, exit_time + (instance.parameters.mandatory_closing_valid_interval / 86400.0)) then
-            signaler:SendCommand("action=close");
-            local it = trading:FindTrade();
-            if UseOwnPositionsOnly then
-                it:WhenCustomID(custom_id);
-            end
-            it:Do(function (trade) trading:Close(trade); end );
-            signaler:Signal("Mandatory closing");
-        end
+        DoMandatoryClosing();
     end
 end
 
