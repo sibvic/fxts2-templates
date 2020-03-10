@@ -17,6 +17,7 @@ local V;
 local UP;
 local DN;
 local source;
+local div;
 
 function Prepare(nameOnly)
     assert(instance.source:supportsVolume(), "The source must have volume");
@@ -33,55 +34,202 @@ function Prepare(nameOnly)
         return;
     end
 
-    DN_color = instance.parameters.DN_color;
-    UP_color = instance.parameters.UP_color;
-
     V = instance:addStream("OBV", core.Line, name, "OBV", instance.parameters.clrV, first);
     V:setPrecision(0);
 
-    UP = instance:createTextOutput("Up", "Up", "Wingdings", 10, core.H_Center, core.V_Top, instance.parameters.UP_color, -1);
-    DN = instance:createTextOutput("Dn", "Dn", "Wingdings", 10, core.H_Center, core.V_Bottom, instance.parameters.DN_color, -1);
-
+    div = CreateDivergenceDetector(V, source.high, source.low, instance.parameters.UP_color, instance.parameters.DN_color, false);
+    div.UP = instance:createTextOutput("Up", "Up", "Wingdings", 10, core.H_Center, core.V_Top, instance.parameters.UP_color, -1);
+    div.DN = instance:createTextOutput("Dn", "Dn", "Wingdings", 10, core.H_Center, core.V_Bottom, instance.parameters.DN_color, -1);
+    
     instance:ownerDrawn(true);
     instance:drawOnMainChart(true);
 end
 
-local pperiod = nil;
-local pperiod1 = nil;
-local lines = {};
-
-local init = false;
-local init2 = false;
-local UP_PEN = 1;
-local DN_PEN = 2;
-function Draw(stage, context) 
-    if stage == 102 then
-        if not init then
-            context:createPen(UP_PEN, context.SOLID, 1, instance.parameters.UP_color);
-            context:createPen(DN_PEN, context.SOLID, 1, instance.parameters.DN_color);
-            init = true;
+function CreateDivergenceDetector(indi, high, low, up_color, down_color, double_peaks)
+    local controller = {};
+    controller.indi = indi;
+    controller.high = high;
+    controller.low = low;
+    controller.lines = {};
+    controller.double_peaks = double_peaks;
+    controller.init = false;
+    controller.init2 = false;
+    controller.up_color = up_color;
+    controller.down_color = down_color;
+    controller.UP_PEN = 1;
+    controller.DN_PEN = 2;
+    function controller:Update(period, mode)
+        if mode == core.UpdateAll then
+            self.lines = {};
         end
-        for _, line in ipairs(lines) do
-            local x1 = context:positionOfDate(line.Date1);
-            local x2 = context:positionOfDate(line.Date2);
-            local visible, y1 = context:pointOfPrice(line.Price1);
-            local visible, y2 = context:pointOfPrice(line.Price2);
-            context:drawLine(line.IsDown and DN_PEN or UP_PEN, x1, y1, x2, y2);
-        end
-    elseif stage == 2 then
-        if not init2 then
-            context:createPen(UP_PEN, context.SOLID, 1, instance.parameters.UP_color);
-            context:createPen(DN_PEN, context.SOLID, 1, instance.parameters.DN_color);
-            init2 = true;
-        end
-        for _, line in ipairs(lines) do
-            local x1 = context:positionOfDate(line.Date1);
-            local x2 = context:positionOfDate(line.Date2);
-            local visible, y1 = context:pointOfPrice(line.IndiVal1);
-            local visible, y2 = context:pointOfPrice(line.IndiVal2);
-            context:drawLine(line.IsDown and DN_PEN or UP_PEN, x1, y1, x2, y2);
+        if period >= 2 then
+            self:processBullish(period - 2);
+            self:processBearish(period - 2);
         end
     end
+    function controller:Draw(stage, context)
+        if stage == 102 then
+            if not self.init then
+                context:createPen(self.UP_PEN, context.SOLID, 1, self.up_color);
+                context:createPen(self.DN_PEN, context.SOLID, 1, self.down_color);
+                self.init = true;
+            end
+            for _, line in ipairs(self.lines) do
+                local x1 = context:positionOfDate(line.Date1);
+                local x2 = context:positionOfDate(line.Date2);
+                local visible, y1 = context:pointOfPrice(line.Price1);
+                local visible, y2 = context:pointOfPrice(line.Price2);
+                context:drawLine(line.IsDown and self.DN_PEN or self.UP_PEN, x1, y1, x2, y2);
+            end
+        elseif stage == 2 then
+            if not self.init2 then
+                context:createPen(self.UP_PEN, context.SOLID, 1, self.up_color);
+                context:createPen(self.DN_PEN, context.SOLID, 1, self.down_color);
+                self.init2 = true;
+            end
+            for _, line in ipairs(self.lines) do
+                local x1 = context:positionOfDate(line.Date1);
+                local x2 = context:positionOfDate(line.Date2);
+                local visible, y1 = context:pointOfPrice(line.IndiVal1);
+                local visible, y2 = context:pointOfPrice(line.IndiVal2);
+                context:drawLine(line.IsDown and self.DN_PEN or self.UP_PEN, x1, y1, x2, y2);
+            end
+        end
+    end
+    function controller:processBullish(period)
+        if self:isTrough(period, self.indi) then
+            local curr = period;
+            local prev = self:prevTrough(period);
+            if prev == nil then
+                return;
+            end
+            if double_peaks and (not self:isTrough(curr, self.low) or not self:isTrough(prev, self.low)) then
+                return;
+            end
+            if self.indi[curr] > self.indi[prev] and self.low[curr] < self.low[prev] then
+                if self.DN ~= nil then
+                    self.DN:set(curr, self.indi[curr], "\225", "Classic bullish");
+                end
+                local line = {};
+                line.Date1 = self.indi:date(prev);
+                line.Date2 = self.indi:date(curr);
+                line.IndiVal1 = self.indi[prev];
+                line.IndiVal2 = self.indi[curr];
+                line.Price1 = self.low[prev];
+                line.Price2 = self.low[curr]
+                line.IsDown = true;
+                self.lines[#self.lines + 1] = line;
+            elseif self.indi[curr] < self.indi[prev] and self.low[curr] > self.low[prev] then
+                if self.DN ~= nil then
+                    self.DN:set(curr, self.indi[curr], "\225", "Reversal bullish");
+                end
+                local line = {};
+                line.Date1 = self.indi:date(prev);
+                line.Date2 = self.indi:date(curr);
+                line.IndiVal1 = self.indi[prev];
+                line.IndiVal2 = self.indi[curr];
+                line.Price1 = self.low[prev];
+                line.Price2 = self.low[curr]
+                line.IsDown = true;
+                self.lines[#self.lines + 1] = line;
+            end
+        end
+    end
+    function controller:isTrough(period, src)
+        if src[period] < src[period - 1] and src[period] < src[period + 1] then
+            for i = period - 1, first, -1 do
+                if src[i] > src[period] then
+                    return true;
+                elseif src[period] > src[i] then
+                    return false;
+                end
+            end
+        end
+        return false;
+    end
+    function controller:prevTrough(period)
+        for i = period - 5, first, -1 do
+            if self.indi[i] <= self.indi[i - 1] 
+                and self.indi[i] < self.indi[i - 2] 
+                and self.indi[i] <= self.indi[i + 1] 
+                and self.indi[i] < self.indi[i + 2] 
+            then
+                return i;
+            end
+        end
+        return nil;
+    end
+    function controller:processBearish(period)
+        if self:isPeak(period, self.indi) then
+            local curr = period;
+            local prev = self:prevPeak(period);
+            if prev == nil then
+                return;
+            end
+            if double_peaks and (not self:isPeak(curr, self.low) or not self:isPeak(prev, self.low)) then
+                return;
+            end
+            if self.indi[curr] < self.indi[prev] and self.high[curr] > self.high[prev] then
+                if self.UP ~= nil then
+                    self.UP:set(curr, self.indi[curr], "\226", "Classic bearish");
+                end
+                local line = {};
+                line.Date1 = self.indi:date(prev);
+                line.Date2 = self.indi:date(curr);
+                line.IndiVal1 = self.indi[prev];
+                line.IndiVal2 = self.indi[curr];
+                line.Price1 = self.high[prev];
+                line.Price2 = self.high[curr];
+                line.IsDown = false;
+                self.lines[#self.lines + 1] = line;
+            elseif self.indi[curr] > self.indi[prev] and self.high[curr] < self.high[prev] then
+                if self.UP ~= nil then
+                    self.UP:set(curr, self.indi[curr], "\226", "Reversal bearish");
+                end
+                local line = {};
+                line.Date1 = self.indi:date(prev);
+                line.Date2 = self.indi:date(curr);
+                line.IndiVal1 = self.indi[prev];
+                line.IndiVal2 = self.indi[curr];
+                line.Price1 = self.high[prev];
+                line.Price2 = self.high[curr];
+                line.IsDown = false;
+                self.lines[#self.lines + 1] = line;
+            end
+        end
+    end
+    function controller:isPeak(period, src)
+        if src[period] > src[period - 1] and src[period] > src[period + 1] then
+            for i = period - 1, first, -1 do
+                if src[i] < src[period] then
+                    return true;
+                elseif src[period] < src[i] then
+                    return false;
+                end
+            end
+        end
+        return false;
+    end
+    function controller:prevPeak(period)
+        for i = period - 5, first, -1 do
+            if self.indi[i] >= self.indi[i - 1] 
+                and self.indi[i] > self.indi[i - 2] 
+                and self.indi[i] >= self.indi[i + 1] 
+                and self.indi[i] > self.indi[i + 2] 
+            then
+                return i;
+            end
+        end
+        return nil;
+    end
+
+    return controller;
+end
+
+local pperiod = nil;
+local pperiod1 = nil;
+function Draw(stage, context)
+    div:Draw(stage, context);
 end
 
 function Update(period, mode)
@@ -96,9 +244,6 @@ function Update(period, mode)
             V[period] = V[period - 1];
         end
     end
-    if pperiod ~= nil and pperiod > period or period <= first then
-        lines = {};
-    end
     pperiod = period;
     -- process only candles which are already closed closed.
     if pperiod1 ~= nil and pperiod1 == source:serial(period) then
@@ -107,127 +252,5 @@ function Update(period, mode)
     
     period = period - 1;
     pperiod1 = source:serial(period);
-
-    if period >= first then
-        if period >= first + 2 then
-            processBullish(period - 2);
-            processBearish(period - 2);
-        end
-    end
-end
-
-function processBullish(period)
-    if isTrough(period) then
-        local curr, prev;
-        curr = period;
-        prev = prevTrough(period);
-        if prev ~= nil then
-            if V[curr] > V[prev] and source.low[curr] < source.low[prev] then
-                DN:set(curr, V[curr], "\225", "Classic bullish");
-                local line = {};
-                line.Date1 = source:date(prev);
-                line.Date2 = source:date(curr);
-                line.IndiVal1 = V[prev];
-                line.IndiVal2 = V[curr];
-                line.Price1 = source.low[prev];
-                line.Price2 = source.low[curr]
-                line.IsDown = true;
-                lines[#lines + 1] = line;
-            elseif V[curr] < V[prev] and source.low[curr] > source.low[prev] then
-                DN:set(curr, V[curr], "\225", "Reversal bullish");
-                local line = {};
-                line.Date1 = source:date(prev);
-                line.Date2 = source:date(curr);
-                line.IndiVal1 = V[prev];
-                line.IndiVal2 = V[curr];
-                line.Price1 = source.low[prev];
-                line.Price2 = source.low[curr]
-                line.IsDown = true;
-                lines[#lines + 1] = line;
-            end
-        end
-    end
-end
-
-function isTrough(period)
-    local i;
-    if V[period] < V[period - 1] and V[period] < V[period + 1] then
-        for i = period - 1, first, -1 do
-            if V[i] > V[period] then
-                return true;
-            elseif V[period] > V[i] then
-                return false;
-            end
-        end
-    end
-    return false;
-end
-
-function prevTrough(period)
-    local i;
-    for i = period - 5, first, -1 do
-        if V[i] <= V[i - 1] and V[i] < V[i - 2] and
-           V[i] <= V[i + 1] and V[i] < V[i + 2] then
-           return i;
-        end
-    end
-    return nil;
-end
-
-function processBearish(period)
-    if isPeak(period) then
-        local curr, prev;
-        curr = period;
-        prev = prevPeak(period);
-        if prev ~= nil then
-            if V[curr] < V[prev] and source.high[curr] > source.high[prev] then
-                UP:set(curr, V[curr], "\226", "Classic bearish");
-                local line = {};
-                line.Date1 = source:date(prev);
-                line.Date2 = source:date(curr);
-                line.IndiVal1 = V[prev];
-                line.IndiVal2 = V[curr];
-                line.Price1 = source.high[prev];
-                line.Price2 = source.high[curr];
-                line.IsDown = false;
-                lines[#lines + 1] = line;
-            elseif V[curr] > V[prev] and source.high[curr] < source.high[prev] then
-                UP:set(curr, V[curr], "\226", "Reversal bearish");
-                local line = {};
-                line.Date1 = source:date(prev);
-                line.Date2 = source:date(curr);
-                line.IndiVal1 = V[prev];
-                line.IndiVal2 = V[curr];
-                line.Price1 = source.high[prev];
-                line.Price2 = source.high[curr];
-                line.IsDown = false;
-                lines[#lines + 1] = line;
-            end
-        end
-    end
-end
-
-function isPeak(period)
-    local i;
-    if V[period] > V[period - 1] and V[period] > V[period + 1] then
-        for i = period - 1, first, -1 do
-            if V[i] < V[period] then
-                return true;
-            elseif V[period] < V[i] then
-                return false;
-            end
-        end
-    end
-    return false;
-end
-
-function prevPeak(period)
-    local i;
-    for i = period - 5, first, -1 do
-        if V[i] >= V[i - 1] and V[i] > V[i - 2] and
-           V[i] >= V[i + 1] and V[i] > V[i + 2] then
-           return i;
-        end
-    end
-    return nil;
+    div:Update(period, mode);
 end
