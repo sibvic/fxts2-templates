@@ -102,6 +102,10 @@ The strategy will send you an email when this option enabled. Used with "Email" 
 
 Email to send the alert to.
 
+## strategy_simple_MTF_MI
+
+strategy_simple with multi-instrument multi-timeframe trading feature.
+
 ## strategy_advanced/strategy_advanced_plus
 
 You will need to copy-paste code for \\strategies\\custom\\snippets\\*.lua file at the end of the file. You can find these snippets on github: https://github.com/sibvic/fxts2-templates
