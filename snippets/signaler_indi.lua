@@ -1,5 +1,5 @@
 local indi_alerts = {};
-indi_alerts.Version = "2.1";
+indi_alerts.Version = "2.2";
 indi_alerts.inverted_arrows = false;
 local alerts = 
 { 
@@ -22,6 +22,7 @@ local alerts =
                 win32.formatNumber(source.close[NOW], false, source:getPrecision()), 
                 core.formatDate(core.now()));
         end,
+        FilterConsecutive = false,
         OnChange = true,
         Name = "Alert Name"
     }
@@ -262,7 +263,6 @@ function indi_alerts:Prepare()
     self.SendEmail = instance.parameters.SendEmail;
 
     self.PlaySound = instance.parameters.PlaySound;
-    local i;
     for i = 1, 100 do 
         local on = instance.parameters:getBoolean("ON" .. i);
         if on == nil then
@@ -275,6 +275,7 @@ function indi_alerts:Prepare()
         alert.DownCondition = alerts[i].DownCondition;
         alert.OnChange = alerts[i].OnChange;
         alert.Stage = alerts[i].Stage;
+        alert.FilterConsecutive = alerts[i].FilterConsecutive;
         alert.Label = instance.parameters:getString("Label" .. i);
         alert.ON = on;
         alert.DrawingMode = instance.parameters:getString("drawing_mode" .. i);
@@ -302,10 +303,43 @@ function indi_alerts:Prepare()
             alert.Alert = instance:addInternalStream(0, 0);
         end
         alert.AlertLevel = instance:addInternalStream(0, 0);
+        function alert:Clear(period)
+            local bookmark = self.Alert:getBookmark(i);
+            if bookmark ~= period then
+                return;
+            end
+            local i = 1;
+            while (bookmark ~= -1) do
+                bookmark = self.Alert:getBookmark(i + 1);
+                self.Alert:setBookmark(i, bookmark);
+                i = i + 1;
+            end
+        end
+        function alert:AddBookmark(period)
+            local i = 1;
+            local bookmark = self.Alert:getBookmark(i);
+            if bookmark == period then
+                return;
+            end
+            self.Alert:setBookmark(1, period);
+            while (bookmark ~= -1) do
+                local last_bookmark = self.Alert:getBookmark(i + 1);
+                self.Alert:setBookmark(i + 1, bookmark);
+                bookmark = last_bookmark;
+                i = i + 1;
+            end
+        end
         function alert:DownAlert(source, period, level, historical_period)
+            if self.FilterConsecutive then
+                local last_signal = self:GetLast(period - 1);
+                if last_signal == -1 then
+                    return;
+                end
+            end
             local text = self.FormatMessage(source, period, level, self.Label, false);
             shift = indi_alerts.Live ~= "Live" and 1 or 0;
             self.Alert[period] = -1;
+            self:AddBookmark(period);
             self.AlertLevel[period] = level;
             self.U = nil;
             if self.D ~= source:date(period) and period == source:size() - 1 - shift and not indi_alerts.FIRST then
@@ -321,9 +355,16 @@ function indi_alerts:Prepare()
             end
         end
         function alert:UpAlert(source, period, level, historical_period)
+            if self.FilterConsecutive then
+                local last_signal = self:GetLast(period - 1);
+                if last_signal == 1 then
+                    return;
+                end
+            end
             local text = self.FormatMessage(source, period, level, self.Label, true);
             shift = indi_alerts.Live ~= "Live" and 1 or 0;
             self.Alert[period] = 1;
+            self:AddBookmark(period);
             self.AlertLevel[period] = level;
             self.D = nil;
             if self.U ~= source:date(period) and period == source:size() - 1 - shift and not indi_alerts.FIRST then
@@ -339,11 +380,11 @@ function indi_alerts:Prepare()
             end
         end
         function alert:GetLast(period)
-            for i = period, 0, -1 do
-                if self.Alert:hasData(i) and self.Alert[i] ~= 0 then
-                    return self.Alert[i], i, self.AlertLevel[i];
-                end
+            local index = self.Alert:getBookmark(1);
+            if index == -1 then
+                return nil;
             end
+            return self.Alert[index], index, self.AlertLevel[index];
         end
         self.Alerts[#self.Alerts + 1] = alert;
     end
