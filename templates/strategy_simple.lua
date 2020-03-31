@@ -24,9 +24,15 @@ function UpdateIndicators()
 end
 
 function IsEntryLong(source, period)
+    if not indi_1.DATA:hasData(period - 1) or not indi_2.DATA:hasData(period - 1) then
+        return false;
+    end
     return core.crossesOver(indi_1.DATA, indi_2.DATA, period);
 end
 function IsEntryShort(source, period)
+    if not indi_1.DATA:hasData(period - 1) or not indi_2.DATA:hasData(period - 1) then
+        return false;
+    end
     return core.crossesUnder(indi_1.DATA, indi_2.DATA, period);
 end
 function IsExitLong(source, period)
