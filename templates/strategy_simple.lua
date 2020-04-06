@@ -77,6 +77,13 @@ function Init()
     strategy.parameters:addString("custom_id", "Custom ID", "", STRATEGY_NAME);
     CreateParameters();
 
+    strategy.parameters:addGroup("Trading time");
+    strategy.parameters:addString("StartTime", "Start Time for Trading", "", "00:00:00");
+    strategy.parameters:addString("StopTime", "Stop Time for Trading", "", "24:00:00");
+    strategy.parameters:addBoolean("use_mandatory_closing", "Use Mandatory Closing", "", false);
+    strategy.parameters:addString("mandatory_closing_exit_time", "Mandatory Closing Time", "", "23:59:59");
+    strategy.parameters:addInteger("mandatory_closing_valid_interval", "Valid Interval for Operation, in second", "", 60);
+
     strategy.parameters:addGroup("Alerts");
     strategy.parameters:addInteger("signaler_ToTime", "Convert the date to", "", 6)
     strategy.parameters:addIntegerAlternative("signaler_ToTime", "EST", "", 1)
@@ -98,18 +105,21 @@ end
 
 local MAIN_SOURCE_ID = 1;
 local TICK_SOURCE_ID = 2;
+local MANDATORY_CLOSE_TIMER_ID = 3;
 local entry_source_id;
 local main_source;
 local base_size, offer_id, Account, Amount, AllowTrade, close_on_opposite, custom_id, AllowedSide;
 local use_stop, stop_pips, use_limit, limit_pips, entry_execution_type, use_trailing, trailing, use_position_limit, position_limit;
 local _show_alert, _sound_file, _recurrent_sound, _email;
-local _ToTime;
+local _ToTime, OpenTime, CloseTime;
+local use_mandatory_closing, exit_time;
 function Prepare(nameOnly)
     local name = profile:id() .. "(" .. instance.bid:name() .. ")";
     instance:name(name);
     if nameOnly then
         return;
     end
+    use_mandatory_closing = instance.parameters.use_mandatory_closing;
     use_position_limit = instance.parameters.use_position_limit;
     position_limit = instance.parameters.position_limit;
     use_trailing = instance.parameters.use_trailing;
@@ -136,6 +146,12 @@ function Prepare(nameOnly)
     base_size = core.host:execute("getTradingProperty", "baseUnitSize", instance.bid:instrument(), Account);
     offer_id = core.host:findTable("offers"):find("Instrument", instance.bid:instrument()).OfferID;
 
+    local valid;
+    OpenTime, valid = ParseTime(instance.parameters.StartTime);
+    assert(valid, "Time " .. instance.parameters.StartTime .. " is invalid");
+    CloseTime, valid = ParseTime(instance.parameters.StopTime);
+    assert(valid, "Time " .. instance.parameters.StopTime .. " is invalid");
+
     _ToTime = instance.parameters.signaler_ToTime
     if _ToTime == 1 then
         _ToTime = core.TZ_EST
@@ -160,10 +176,49 @@ function Prepare(nameOnly)
         _email = instance.parameters.signaler_email;
         assert(_email ~= "", "E-mail address must be specified");
     end
+    if use_mandatory_closing then
+        exit_time, valid = ParseTime(instance.parameters.mandatory_closing_exit_time);
+        assert(valid, "Time " .. instance.parameters.mandatory_closing_exit_time .. " is invalid");
+        core.host:execute("setTimer", MANDATORY_CLOSE_TIMER_ID, math.max(instance.parameters.mandatory_closing_valid_interval / 2, 1));
+    end
+end
+
+function ParseTime(time)
+    local pos = string.find(time, ":");
+    if pos == nil then
+        return nil, false;
+    end
+    local h = tonumber(string.sub(time, 1, pos - 1));
+    time = string.sub(time, pos + 1);
+    pos = string.find(time, ":");
+    if pos == nil then
+        return nil, false;
+    end
+    local m = tonumber(string.sub(time, 1, pos - 1));
+    local s = tonumber(string.sub(time, pos + 1));
+    return (h / 24.0 +  m / 1440.0 + s / 86400.0),                          -- time in ole format
+           ((h >= 0 and h < 24 and m >= 0 and m < 60 and s >= 0 and s < 60) or (h == 24 and m == 0 and s == 0)); -- validity flag
+end
+
+function InRange(now, openTime, closeTime)
+    if openTime == closeTime then
+        return true;
+    end
+    if openTime < closeTime then
+        return now >= openTime and now <= closeTime;
+    end
+    if openTime > closeTime then
+        return now > openTime or now < closeTime;
+    end
+
+    return now == openTime;
 end
 
 local last_entry, last_exit;
 function ExtUpdate(id, source, period)
+    if use_mandatory_closing and core.host.Trading:getTradingProperty("isSimulation") then
+        DoMandatoryClosing();
+    end
     if id ~= entry_source_id then
         return;
     end
@@ -194,6 +249,12 @@ function ExtUpdate(id, source, period)
         Signal("Entry short", main_source);
         last_entry = main_source:date(NOW);
     end
+
+    local now = core.host:execute("convertTime", core.TZ_EST, _ToTime, core.host:execute("getServerTime"));
+    now = now - math.floor(now);
+    if not InRange(now, OpenTime, CloseTime) then
+        return;
+    end
     if IsExitLong(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
         if AllowTrade then
             CloseTrades("B");
@@ -207,6 +268,19 @@ function ExtUpdate(id, source, period)
         end
         Signal("Exit short", main_source);
         last_exit = main_source:date(NOW);
+    end
+end
+
+function DoMandatoryClosing()
+    if not use_mandatory_closing then
+        return;
+    end
+    local now = core.host:execute("convertTime", core.TZ_EST, _ToTime, core.host:execute("getServerTime"));
+    now = now - math.floor(now);
+    if InRange(now, exit_time, exit_time + (instance.parameters.mandatory_closing_valid_interval / 86400.0)) then
+        CloseTrades("B");
+        CloseTrades("S");
+        DeleteOrders();
     end
 end
 
@@ -240,6 +314,28 @@ function PositionsLimitHit()
     return count >= position_limit;
 end
 
+function DeleteOrders()
+    local enum = core.host:findTable("orders"):enumerator()
+    local row = enum:next()
+    while row ~= nil do
+        if row.AccountID == Account and row.Instrument == main_source:instrument() then
+            local valuemap = core.valuemap()
+            valuemap.Command = "DeleteOrder"
+            valuemap.OrderID = row.OrderID
+            success, msg = terminal:execute(4, valuemap)
+            if not (success) then
+                terminal:alertMessage(
+                    instance.bid:instrument(),
+                    instance.bid[NOW],
+                    "Failed delete order " .. row.OrderID .. ":" .. msg,
+                    instance.bid:date(NOW)
+                )
+            end
+        end
+        row = enum:next()
+    end
+end
+
 function CloseTrades(side)
     local enum = core.host:findTable("trades"):enumerator();
     local row = enum:next();
@@ -255,6 +351,9 @@ function CloseTrades(side)
 end
 
 function ExtAsyncOperationFinished(cookie, success, message, message1, message2)
+    if cookie == MANDATORY_CLOSE_TIMER_ID then
+        DoMandatoryClosing();
+    end
 end
 
 function OpenTrade(side)
