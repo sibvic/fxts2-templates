@@ -63,7 +63,10 @@ function Init()
     strategy.parameters:addStringAlternative("entry_execution_type", "Live", "", "Live");
     strategy.parameters:addString("Account", "Account to trade on", "", "");
     strategy.parameters:setFlag("Account", core.FLAG_ACCOUNT);
-    strategy.parameters:addInteger("Amount", "Trade Amount in Lots", "", 1, 1, 1000000);
+    strategy.parameters:addString("amount_type", "Amount Units", "", "lots");
+    strategy.parameters:addStringAlternative("amount_type", "Lots", "", "lots");
+    strategy.parameters:addStringAlternative("amount_type", "% of equity", "", "equity");
+    strategy.parameters:addDouble("Amount", "Trade Amount", "", 1, 1, 1000000);
     strategy.parameters:addGroup("Money Management");
     strategy.parameters:addBoolean("use_stop", "Set Stop", "", false);
     strategy.parameters:addDouble("stop_pips", "Stop, pips", "", 10);
@@ -108,7 +111,7 @@ local TICK_SOURCE_ID = 2;
 local MANDATORY_CLOSE_TIMER_ID = 3;
 local entry_source_id;
 local main_source;
-local base_size, offer_id, Account, Amount, AllowTrade, close_on_opposite, custom_id, AllowedSide;
+local base_size, offer_id, Account, Amount, amount_type, AllowTrade, close_on_opposite, custom_id, AllowedSide;
 local use_stop, stop_pips, use_limit, limit_pips, entry_execution_type, use_trailing, trailing, use_position_limit, position_limit;
 local _show_alert, _sound_file, _recurrent_sound, _email;
 local _ToTime, OpenTime, CloseTime;
@@ -133,6 +136,7 @@ function Prepare(nameOnly)
     AllowTrade = instance.parameters.AllowTrade;
     Account = instance.parameters.Account;
     Amount = instance.parameters.Amount;
+    amount_type = instance.parameters.amount_type;
     close_on_opposite = instance.parameters.close_on_opposite;
     custom_id = instance.parameters.custom_id;
     main_source = ExtSubscribe(MAIN_SOURCE_ID, nil, instance.parameters.timeframe, instance.parameters.type, "bar")
@@ -369,7 +373,14 @@ function OpenTrade(side)
     valuemap.OrderType = "OM";
     valuemap.OfferID = offer_id;
     valuemap.AcctID = Account;
-    valuemap.Quantity = Amount * base_size;
+    if amount_type == "lots" then
+        valuemap.Quantity = Amount * base_size;
+    else
+        local equity = core.host:findTable("accounts"):find("AccountID", valuemap.AcctID).Equity;
+        local used_equity = equity * Amount / 100.0;
+        local emr = core.host:getTradingProperty("EMR", instance.bid:instrument(), valuemap.AcctID);
+        valuemap.Quantity = math.floor(used_equity / emr) * base_size;
+    end
     valuemap.BuySell = side;
     valuemap.CustomID = custom_id;
     if use_stop then

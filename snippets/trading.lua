@@ -19,7 +19,7 @@ function trading:RegisterModule(modules) for _, module in pairs(modules) do self
 function trading:AddPositionParameters(parameters, id, section_id)
     if self.AddAmountParameter then
         parameters:addDouble("amount" .. id, "Trade Amount", "", 1);
-        parameters:addString("amount_type" .. id, "Amount Type", "", "lots");
+        parameters:addString("amount_type" .. id, "Amount Unit", "", "lots");
         parameters:addStringAlternative("amount_type" .. id, "In Lots", "", "lots");
         parameters:addStringAlternative("amount_type" .. id, "% of Equity", "", "equity");
         parameters:addStringAlternative("amount_type" .. id, "Risk % of Equity", "", "risk_equity");
