@@ -66,6 +66,25 @@ function Init()
     indicator.parameters:addString("grid_mode", "Grid mode", "", "v")
     indicator.parameters:addStringAlternative("grid_mode", "Horizontal", "", "h")
     indicator.parameters:addStringAlternative("grid_mode", "Vertical", "", "v")
+
+    indicator.parameters:addInteger("signaler_ToTime", "Convert the date to", "", 6)
+    indicator.parameters:addIntegerAlternative("signaler_ToTime", "EST", "", 1)
+    indicator.parameters:addIntegerAlternative("signaler_ToTime", "UTC", "", 2)
+    indicator.parameters:addIntegerAlternative("signaler_ToTime", "Local", "", 3)
+    indicator.parameters:addIntegerAlternative("signaler_ToTime", "Server", "", 4)
+    indicator.parameters:addIntegerAlternative("signaler_ToTime", "Financial", "", 5)
+    indicator.parameters:addIntegerAlternative("signaler_ToTime", "Display", "", 6)
+    
+    indicator.parameters:addBoolean("signaler_show_alert", "Show Alert", "", true);
+    indicator.parameters:addBoolean("signaler_play_sound", "Play Sound", "", false);
+    indicator.parameters:addFile("signaler_sound_file", "Sound File", "", "");
+    indicator.parameters:setFlag("signaler_sound_file", core.FLAG_SOUND);
+    indicator.parameters:addBoolean("signaler_recurrent_sound", "Recurrent Sound", "", true);
+    indicator.parameters:addBoolean("signaler_send_email", "Send Email", "", false);
+    indicator.parameters:addString("signaler_email", "Email", "", "");
+    indicator.parameters:setFlag("signaler_email", core.FLAG_EMAIL);
+    indicator.parameters:addBoolean("signaler_show_popup", "Show Popup", "", false);
+    indicator.parameters:addBoolean("signaler_debug_alert", "Print Into Log", "", false);
 end
 
 function Add(id)
@@ -200,6 +219,7 @@ function CellsBuilder:Draw(x, y)
     end
 end
 
+local email, ToTime, sound_file, show_alert, recurrent_sound, show_popup;
 function Prepare(nameOnly)
     instance:name(indi_name);
     if nameOnly then
@@ -225,6 +245,33 @@ function Prepare(nameOnly)
     core.host:execute("setStatus", "Loading");
     instance:ownerDrawn(true);
     CellsBuilder.GapCoeff = instance.parameters.cells_gap;
+
+    ToTime = instance.parameters.signaler_ToTime
+    if ToTime == 1 then
+        ToTime = core.TZ_EST
+    elseif ToTime == 2 then
+        ToTime = core.TZ_UTC
+    elseif ToTime == 3 then
+        ToTime = core.TZ_LOCAL
+    elseif ToTime == 4 then
+        ToTime = core.TZ_SERVER
+    elseif ToTime == 5 then
+        ToTime = core.TZ_FINANCIAL
+    elseif ToTime == 6 then
+        ToTime = core.TZ_TS
+    end
+    if instance.parameters.signaler_play_sound then
+        sound_file = instance.parameters.signaler_sound_file;
+        assert(sound_file ~= "", "Sound file must be chosen");
+    end
+    show_alert = instance.parameters.signaler_show_alert;
+    recurrent_sound = instance.parameters.signaler_recurrent_sound;
+    show_popup = instance.parameters.signaler_show_popup;
+    signaler_debug_alert = instance.parameters.signaler_debug_alert;
+    if instance.parameters.signaler_send_email then
+        email = instance.parameters.signaler_email;
+        assert(email ~= "", "E-mail address must be specified");
+    end
 end
 
 local init = false;
@@ -310,12 +357,65 @@ function UpdateData()
             for i, indicator in ipairs(symbol.Indicators) do
                 indicator:update(core.UpdateLast);
             end
-            local signal, label = GetLastSignal(symbol.Indicators, symbol.Source);
+            local signal, label = GetLastSignal(symbol.Indicators, symbol.Indicators[1].DATA);
             symbol.Signal = signal;
             symbol.Text = label;
+            if signal ~= 0 and symbol.last_alert ~= symbol.Indicators[1].DATA:date(NOW) then
+                Signal(symbol.Indicators[1].DATA:instrument() .. "(" .. symbol.Indicators[1].DATA:barSize() .. "): " .. symbol.Text);
+                symbol.last_alert = symbol.Indicators[1].DATA:date(NOW);
+            end
 		else
             symbol.Text = "...";
         end
+    end
+end
+
+function FormatEmail(source, period, message)
+    --format email subject
+    local subject = message .. "(" .. source:instrument() .. ")";
+    --format email text
+    local delim = "\013\010";
+    local signalDescr = "Signal: " .. (indi_name or "");
+    local symbolDescr = "Symbol: " .. source:instrument();
+    local messageDescr = "Message: " .. message;
+    local ttime = core.dateToTable(core.host:execute("convertTime", core.TZ_EST, ToTime, source:date(period)));
+    local dateDescr = string.format("Time:  %02i/%02i %02i:%02i", ttime.month, ttime.day, ttime.hour, ttime.min);
+    local priceDescr = "Price: " .. source[period];
+    local text = "You have received this message because the following signal alert was received:"
+        .. delim .. signalDescr .. delim .. symbolDescr .. delim .. messageDescr .. delim .. dateDescr .. delim .. priceDescr;
+    return subject, text;
+end
+
+function Signal(message, source)
+    if source == nil then
+        if instance.source ~= nil then
+            source = instance.source;
+        elseif instance.bid ~= nil then
+            source = instance.bid;
+        else
+            local pane = core.host.Window.CurrentPane;
+            source = pane.Data:getStream(0);
+        end
+    end
+    if show_alert then
+        terminal:alertMessage(source:instrument(), source[NOW], message, source:date(NOW));
+    end
+
+    if sound_file ~= nil then
+        terminal:alertSound(sound_file, recurrent_sound);
+    end
+
+    if email ~= nil then
+        terminal:alertEmail(email, profile:id().. " : " .. message, FormatEmail(source, NOW, message));
+    end
+
+    if signaler_debug_alert then
+        core.host:trace(message);
+    end
+
+    if show_popup then
+        local subject, text = FormatEmail(source, NOW, message);
+        core.host:execute("prompt", 42, subject, text);
     end
 end
 
