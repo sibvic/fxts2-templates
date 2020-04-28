@@ -93,7 +93,7 @@ function signaler:AsyncOperationFinished(cookie, success, message, message1, mes
             self.last_req:setRequestHeader("Content-Type", "application/json");
             self.last_req:setRequestHeader("Content-Length", tostring(string.len(query)));
 
-            self.last_req:start("http://profitrobots.com/api/v1/notification", "POST", query);
+            self.last_req:start("https://profitrobots.com/api/v1/notification", "POST", query);
         elseif #self._commands > 0 then
             local data = self:ArrayToJSON(self._commands);
             self._commands = {};
@@ -104,7 +104,7 @@ function signaler:AsyncOperationFinished(cookie, success, message, message1, mes
             self.last_req:setRequestHeader("Content-Type", "application/json");
             self.last_req:setRequestHeader("Content-Length", tostring(string.len(query)));
 
-            self.last_req:start("http://profitrobots.com/api/v1/notification", "POST", query);
+            self.last_req:start("https://profitrobots.com/api/v1/notification", "POST", query);
         end
     end
 end
