@@ -336,6 +336,10 @@ Template of dashboard/scanner indicator.
 
 Light version of dashboard/scanner indicator. Only basic information are drawn. Optimized for the performance.
 
+## Dashboard_light_instruments
+
+The same as Dashboard_light for without timeframes. Only instruments will be shown.
+
 ## Heatmap
 
 Template of a heatmap. Shows green/red/gray rectangle for each condition for each bar. Add your conditions to "conditions". Each condition should implement function GetSignal(period) and function Update(period, mode).
