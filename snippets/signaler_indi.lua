@@ -9,7 +9,7 @@ local alerts =
         end,
         DownCondition = function (period)
         end,
-        FormatMessage = function(source, period, level, label, isUp)
+        FormatMessage = function(source, period, level, label, isUp, metadata)
             return string.format(
                 "Label: %s\013\010" ..
                 "Instrument: %s\013\010" ..
@@ -52,16 +52,29 @@ function Activate(alert, period, historical_period)
     if indi_alerts.Live ~= "Live" then period = period - 1; end
     alert.Alert[period] = 0;
     if not alert.ON then
-        if indi_alerts.FIRST then indi_alerts.FIRST = false; end
         return;
     end
-    if alert.UpCondition(period) and (not alert.OnChange or not alert.UpCondition(period - 1)) then
-        alert:UpAlert(source, period, source.high[period], historical_period);
-    elseif alert.DownCondition(period) and (not alert.OnChange or not alert.DownCondition(period - 1)) then
-        alert:DownAlert(source, period, source.low[period], historical_period);
+    local isUp, upMetadata = alert.UpCondition(period);
+    if isUp then
+        if alert.OnChange then
+            local isUpPrev, _ = alert.UpCondition(period - 1);
+            if isUpPrev then
+                return;
+            end
+        end
+        alert:UpAlert(source, period, source.high[period], historical_period, upMetadata);
+        return;
     end
-
-    if indi_alerts.FIRST then indi_alerts.FIRST = false; end
+    local isDown, downMetadata = alert.DownCondition(period);
+    if isDown then
+        if alert.OnChange then
+            local isDownPrev, _ = alert.DownCondition(period - 1);
+            if isDownPrev then
+                return;
+            end
+        end
+        alert:DownAlert(source, period, source.low[period], historical_period, downMetadata);
+    end
 end
 
 function AsyncOperationFinished(cookie, success, message, message1, message2)
@@ -69,7 +82,6 @@ function AsyncOperationFinished(cookie, success, message, message1, message2)
 end
 
 indi_alerts.last_id = 0;
-indi_alerts.FIRST = true;
 indi_alerts._alerts = {};
 indi_alerts._advanced_alert_timer = nil;
 function indi_alerts:AddParameters(parameters)
@@ -329,20 +341,20 @@ function indi_alerts:Prepare()
                 i = i + 1;
             end
         end
-        function alert:DownAlert(source, period, level, historical_period)
+        function alert:DownAlert(source, period, level, historical_period, metadata)
             if self.FilterConsecutive then
                 local last_signal = self:GetLast(period - 1);
                 if last_signal == -1 then
                     return;
                 end
             end
-            local text = self.FormatMessage(source, period, level, self.Label, false);
+            local text = self.FormatMessage(source, period, level, self.Label, false, metadata);
             shift = indi_alerts.Live ~= "Live" and 1 or 0;
             self.Alert[period] = -1;
             self:AddBookmark(period);
             self.AlertLevel[period] = level;
             self.U = nil;
-            if self.D ~= source:date(period) and period == source:size() - 1 - shift and not indi_alerts.FIRST then
+            if self.D ~= source:date(period) and period == source:size() - 1 - shift then
                 self.D = source:date(period);
                 if not historical_period then
                     indi_alerts:SoundAlert(self.Down);
@@ -354,20 +366,20 @@ function indi_alerts:Prepare()
                 end
             end
         end
-        function alert:UpAlert(source, period, level, historical_period)
+        function alert:UpAlert(source, period, level, historical_period, metadata)
             if self.FilterConsecutive then
                 local last_signal = self:GetLast(period - 1);
                 if last_signal == 1 then
                     return;
                 end
             end
-            local text = self.FormatMessage(source, period, level, self.Label, true);
+            local text = self.FormatMessage(source, period, level, self.Label, true, metadata);
             shift = indi_alerts.Live ~= "Live" and 1 or 0;
             self.Alert[period] = 1;
             self:AddBookmark(period);
             self.AlertLevel[period] = level;
             self.D = nil;
-            if self.U ~= source:date(period) and period == source:size() - 1 - shift and not indi_alerts.FIRST then
+            if self.U ~= source:date(period) and period == source:size() - 1 - shift then
                 self.U = source:date(period);
                 if not historical_period then
                     indi_alerts:SoundAlert(self.Up);
