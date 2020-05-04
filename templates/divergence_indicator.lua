@@ -1,9 +1,11 @@
+local indicatorName = "Divergence";
+local stream_name = "Out";
+
 function Init()
-    indicator:name("On Balance Volume");
-    indicator:description("Displays volume as a histogram");
+    indicator:name(indicatorName);
+    indicator:description("");
     indicator:requiredSource(core.Bar);
     indicator:type(core.Oscillator);
-    indicator:setTag("group", "Volume Indicators");
 
     indicator.parameters:addColor("clrV", "Indicator Color", "", core.rgb(65, 105, 225));
     indicator.parameters:addColor("UP_color", "Color of Uptrend", "", core.rgb(255, 0, 0));
@@ -20,8 +22,6 @@ local source;
 local div;
 
 function Prepare(nameOnly)
-    assert(instance.source:supportsVolume(), "The source must have volume");
-
     source = instance.source;
     close = instance.source.close;
     volume = instance.source.volume;
@@ -34,7 +34,7 @@ function Prepare(nameOnly)
         return;
     end
 
-    V = instance:addStream("OBV", core.Line, name, "OBV", instance.parameters.clrV, first);
+    V = instance:addStream(stream_name, core.Line, name, stream_name, instance.parameters.clrV, first);
     V:setPrecision(0);
 
     div = CreateDivergenceDetector(V, source.high, source.low, instance.parameters.UP_color, instance.parameters.DN_color, false);
@@ -233,17 +233,7 @@ function Draw(stage, context)
 end
 
 function Update(period, mode)
-    if period == first then
-        V[period] = volume[period];
-    elseif period > first then
-        if close[period] > close[period - 1] then
-            V[period] = V[period - 1] + volume[period];
-        elseif close[period] < close[period - 1] then
-            V[period] = V[period - 1] - volume[period];
-        else
-            V[period] = V[period - 1];
-        end
-    end
+    V[period] = volume[period];
     pperiod = period;
     -- process only candles which are already closed closed.
     if pperiod1 ~= nil and pperiod1 == source:serial(period) then
