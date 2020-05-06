@@ -278,7 +278,7 @@ function ExtUpdate(id, source, period)
     end
     UpdateIndicators();
     for i, action in ipairs(actions) do
-        if action.IsPass(period) then
+        if action.IsPass(entry_period) then
             local actionType = instance.parameters:getString("Action" .. i);
             if actionType == "SELL" then
                 DoSell();
