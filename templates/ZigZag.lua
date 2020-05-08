@@ -51,8 +51,6 @@ function Prepare(nameOnly)
     pipSize = source:pipSize()
 end
 
-function Draw(stage, context) indi_alerts:Draw(stage, context, source); end
-
 function CreateZigZag(stream, Depth, Deviation, Backstep, ZigC, ZagC)
     local searchBoth = 0
     local searchPeak = 1
