@@ -233,6 +233,27 @@ function ExtUpdate(id, source, period)
         entry_period = period;
     end
     UpdateIndicators();
+
+    if IsExitLong(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
+        if AllowTrade then
+            CloseTrades("B");
+        end
+        Signal("Exit long", main_source);
+        last_exit = main_source:date(NOW);
+    end
+    if IsExitShort(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
+        if AllowTrade then
+            CloseTrades("S");
+        end
+        Signal("Exit short", main_source);
+        last_exit = main_source:date(NOW);
+    end
+
+    local now = core.host:execute("convertTime", core.TZ_EST, _ToTime, core.host:execute("getServerTime"));
+    now = now - math.floor(now);
+    if not InRange(now, OpenTime, CloseTime) then
+        return;
+    end
     if IsEntryLong(main_source, entry_period) and last_entry ~= main_source:date(NOW) and not PositionsLimitHit() then
         if AllowTrade then
             if close_on_opposite then
@@ -252,26 +273,6 @@ function ExtUpdate(id, source, period)
         end
         Signal("Entry short", main_source);
         last_entry = main_source:date(NOW);
-    end
-
-    local now = core.host:execute("convertTime", core.TZ_EST, _ToTime, core.host:execute("getServerTime"));
-    now = now - math.floor(now);
-    if not InRange(now, OpenTime, CloseTime) then
-        return;
-    end
-    if IsExitLong(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
-        if AllowTrade then
-            CloseTrades("B");
-        end
-        Signal("Exit long", main_source);
-        last_exit = main_source:date(NOW);
-    end
-    if IsExitShort(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
-        if AllowTrade then
-            CloseTrades("S");
-        end
-        Signal("Exit short", main_source);
-        last_exit = main_source:date(NOW);
     end
 end
 
