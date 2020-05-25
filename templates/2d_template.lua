@@ -1,4 +1,5 @@
 -- 2D chart template
+-- You need to create parameters for the indicators in function CreateParameters and create indicators in function CreateIndicators. 
 
 local Modules = {};
 
@@ -6,25 +7,25 @@ local Modules = {};
 local indi_name = "2D";
 local indi_version = "1";
 
-local axis_shift = 10;
+local axis_shift = 10; -- distance between the edge of the chart and axis
 
-local x_indi = "SSD";
-local x_stream = 0;
-local x_min = 0;
-local x_max = 100;
-local x_sections = 5;
-local x_digits = 0;
-local x_levels = { 80, 20 };
+local x_indi = "SSD"; -- ID of the indicator to use
+local x_stream = 0; -- index of the stream to use
+local x_min = 0; -- min value on the axis
+local x_max = 100; -- max value on the axis
+local x_sections = 5; -- number of sections/notches on the axis
+local x_digits = 0; -- number of digits after the point for the values on the axis
+local x_levels = { 80, 20 }; -- static lines on the axis (OB/OS)
 
-local y_indi = "RSI";
-local y_stream = 0;
-local y_min = 0;
-local y_max = 100;
-local y_sections = 5;
-local y_digits = 0;
-local y_levels = { 70, 30 };
+local y_indi = "RSI"; -- ID of the indicator to use
+local y_stream = 0; -- index of the stream to use
+local y_min = 0; -- min value on the axis
+local y_max = 100; -- max value on the axis
+local y_sections = 5; -- number of sections/notches on the axis
+local y_digits = 0; -- number of digits after the point for the values on the axis
+local y_levels = { 70, 30 }; -- static lines on the axis (OB/OS)
 
-local points_count = 5;
+local points_count = 5; -- the length of the history on the chart
 
 function CreateIndicators(source)
     local indicators = {};
