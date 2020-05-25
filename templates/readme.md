@@ -353,3 +353,7 @@ Strategy template for a custom trailing stop.
 ## stop_limit_targets
 
 Draws lines for the stop/limit targets.
+
+## 2d_template
+
+Draws 2d chart for two indicators. x = first indicator and y = the second.
