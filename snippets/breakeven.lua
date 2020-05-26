@@ -175,7 +175,7 @@ function breakeven:CreateMartingale(openFunction)
                 return true;
             end
         end
-        --self:UpdateStopLimits();
+        self:UpdateStopLimits();
         return true;
     end
     function controller:CloseAll()
