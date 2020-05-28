@@ -48,6 +48,9 @@ function Init()
     strategy:description("");
     strategy:type(core.Both);
     strategy:setTag("NonOptimizableParameters", "StartTime,StopTime,ToTime,signaler_ToTime,signaler_show_alert,signaler_play_soundsignaler_sound_file,signaler_recurrent_sound,signaler_send_email,signaler_email,signaler_show_popup,signaler_debug_alert,use_advanced_alert,advanced_alert_key");
+    strategy.parameters:addGroup("Algorithm Parameters")
+    CreateParameters();
+    strategy.parameters:addGroup("Trading Parameters")
     strategy.parameters:addBoolean("type", "Price Type", "", true);
     strategy.parameters:setFlag("type", core.FLAG_BIDASK);
     strategy.parameters:addString("timeframe", "Timeframe", "", "m1");
@@ -78,7 +81,6 @@ function Init()
     strategy.parameters:addInteger("position_limit", "Limit", "", 1);
     strategy.parameters:addBoolean("close_on_opposite", "Close on opposite", "", true);
     strategy.parameters:addString("custom_id", "Custom ID", "", STRATEGY_NAME);
-    CreateParameters();
 
     strategy.parameters:addGroup("Trading time");
     strategy.parameters:addString("StartTime", "Start Time for Trading", "", "00:00:00");
