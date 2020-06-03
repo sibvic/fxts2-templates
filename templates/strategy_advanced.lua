@@ -34,6 +34,7 @@ local LAST_ID = 2;
 -- Set it to true when you define your own timeframe and is_bid parameters
 local CustomTimeframeDefined = false;
 
+function OnNewBar(source, period) end
 function CreateParameters() end
 function CreateStopParameters(params, id) return false; end
 function CreateLimitParameters(params, id) return false; end
@@ -496,6 +497,9 @@ end
 
 local log_values;
 function ExtUpdate(id, source, period)
+    if id == trading_logic._trading_source_id then
+        OnNewBar(source, period);
+    end
     if use_mandatory_closing and core.host.Trading:getTradingProperty("isSimulation") then
         DoMandatoryClosing();
     end
