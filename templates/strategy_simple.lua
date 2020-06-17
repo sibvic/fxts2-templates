@@ -1,7 +1,4 @@
 
-local EntryActions = {};
-local ExitActions = {};
-
 -- START OF USER DEFINED SECTION
 local STRATEGY_NAME = "Strategy";
 function CreateParameters() 
