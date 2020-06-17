@@ -863,7 +863,6 @@ function trading:EntryOrder(instrument)
     function builder:GetValueMap() return self.valuemap; end
     function builder:AddMetadata(id, val) if self._metadata == nil then self._metadata = {}; end self._metadata[id] = val; return self; end
     function builder:BuildValueMap()
-        self.valuemap.Quantity = self.amount * self:_GetBaseUnitSize();
         if self._metadata ~= nil then
             self._metadata.CustomID = self.valuemap.CustomID;
             self.valuemap.CustomID = trading:ObjectToJson(self._metadata);
@@ -880,6 +879,8 @@ function trading:EntryOrder(instrument)
             local stop = math.abs(self.valuemap.RateStop - self.valuemap.Rate) / self.Offer.PointSize;
             local possible_loss = self.Offer.PipCost * stop;
             self.valuemap.Quantity = math.floor(affordable_loss / possible_loss) * self:_GetBaseUnitSize();
+        else
+            self.valuemap.Quantity = self.amount * self:_GetBaseUnitSize();
         end
         return self.valuemap;
     end
