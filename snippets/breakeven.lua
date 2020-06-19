@@ -1,7 +1,7 @@
 breakeven = {};
 -- public fields
 breakeven.Name = "Breakeven";
-breakeven.Version = "2.1";
+breakeven.Version = "2.2";
 breakeven.Debug = false;
 --private fields
 breakeven._moved_stops = {};
@@ -643,7 +643,7 @@ function breakeven:PartialClose()
         if trade.PL >= self._when then
             local base_size = core.host:execute("getTradingProperty", "baseUnitSize", trade.Instrument, trade.AccountID);
             local to_close = breakeven:round(trade.Lot * self._close_percent / 100.0 / base_size) * base_size;
-            trading:ParialClose(trade, to_close);
+            trading:PartialClose(trade, to_close);
             self._close_percent = nil;
         end
         return true;
@@ -692,7 +692,7 @@ function breakeven:CreateController()
         end
         local base_size = core.host:execute("getTradingProperty", "baseUnitSize", trade.Instrument, trade.AccountID);
         local to_close = breakeven:round(trade.Lot * self._close_percent / 100.0 / base_size) * base_size;
-        trading:ParialClose(trade, to_close);
+        trading:PartialClose(trade, to_close);
         self._close_percent = nil;
         return true;
     end

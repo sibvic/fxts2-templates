@@ -662,7 +662,7 @@ function trading:FindClosedTrade()
     return search;
 end
 
-function trading:ParialClose(trade, amount)
+function trading:PartialClose(trade, amount)
     -- not finished
     local account = core.host:findTable("accounts"):find("AccountID", trade.AccountID);
     local id = self:getId();
@@ -834,6 +834,7 @@ function trading:EntryOrder(instrument)
     function builder:SetAmount(amount) self.amount = amount; return self; end
     function builder:SetRiskPercentOfEquityAmount(percent) self._RiskPercentOfEquityAmount = percent; return self; end
     function builder:SetPercentOfEquityAmount(percent) self._PercentOfEquityAmount = percent; return self; end
+    function builder:SetPercentOfMarginAmount(percent) self._PercentOfMarginAmount = percent; return self; end
     function builder:UpdateOrderType()
         if self.valuemap.BuySell == nil or self.valuemap.Rate == nil then
             return;
@@ -863,6 +864,7 @@ function trading:EntryOrder(instrument)
     function builder:GetValueMap() return self.valuemap; end
     function builder:AddMetadata(id, val) if self._metadata == nil then self._metadata = {}; end self._metadata[id] = val; return self; end
     function builder:BuildValueMap()
+        self.valuemap.Quantity = self.amount * self:_GetBaseUnitSize();
         if self._metadata ~= nil then
             self._metadata.CustomID = self.valuemap.CustomID;
             self.valuemap.CustomID = trading:ObjectToJson(self._metadata);
@@ -879,8 +881,11 @@ function trading:EntryOrder(instrument)
             local stop = math.abs(self.valuemap.RateStop - self.valuemap.Rate) / self.Offer.PointSize;
             local possible_loss = self.Offer.PipCost * stop;
             self.valuemap.Quantity = math.floor(affordable_loss / possible_loss) * self:_GetBaseUnitSize();
-        else
-            self.valuemap.Quantity = self.amount * self:_GetBaseUnitSize();
+        elseif self._PercentOfEquityAmount ~= nil then
+            local equity = core.host:findTable("accounts"):find("AccountID", self.valuemap.AcctID).UsableMargin;
+            local used_equity = equity * self._PercentOfMarginAmount / 100.0;
+            local emr = core.host:getTradingProperty("EMR", self.Offer.Instrument, self.valuemap.AcctID);
+            self.valuemap.Quantity = math.floor(used_equity / emr) * self:_GetBaseUnitSize();
         end
         return self.valuemap;
     end
@@ -1024,6 +1029,7 @@ function trading:MarketOrder(instrument)
     function builder:SetAmount(amount) self._amount = amount; return self; end
     function builder:SetRiskPercentOfEquityAmount(percent) self._RiskPercentOfEquityAmount = percent; return self; end
     function builder:SetPercentOfEquityAmount(percent) self._PercentOfEquityAmount = percent; return self; end
+    function builder:SetPercentOfMarginAmount(percent) self._PercentOfMarginAmount = percent; return self; end
     function builder:SetSide(buy_sell) self.valuemap.BuySell = buy_sell; return self; end
     function builder:SetPipLimit(limit_type, limit)
         self.valuemap.PegTypeLimit = limit_type or "O";
@@ -1058,6 +1064,11 @@ function trading:MarketOrder(instrument)
             assert(self.valuemap.PegPriceOffsetPipsStop ~= nil, "Only pip stop are supported");
             local possible_loss = self.Offer.PipCost * self.valuemap.PegPriceOffsetPipsStop;
             self.valuemap.Quantity = math.floor(affordable_loss / possible_loss) * base_size;
+        elseif self._PercentOfEquityAmount ~= nil then
+            local equity = core.host:findTable("accounts"):find("AccountID", self.valuemap.AcctID).UsableMargin;
+            local used_equity = equity * self._PercentOfMarginAmount / 100.0;
+            local emr = core.host:getTradingProperty("EMR", self.Offer.Instrument, self.valuemap.AcctID);
+            self.valuemap.Quantity = math.floor(used_equity / emr) * self:_GetBaseUnitSize();
         else
             self.valuemap.Quantity = self._amount * base_size;
         end
