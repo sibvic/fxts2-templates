@@ -360,10 +360,14 @@ function CreatePositionStrategy(source, side, id)
         end
         if self.LimitType == "stop" then
             if stop_value == nil then
-                if self.Side == "B" then
-                    stop_value = (instance.ask[NOW] - command.valuemap.RateStop) / instance.bid:pipSize();
+                if command.valuemap.RateStop ~= nil then
+                    if self.Side == "B" then
+                        stop_value = (instance.ask[NOW] - command.valuemap.RateStop) / instance.bid:pipSize();
+                    else
+                        stop_value = (command.valuemap.RateStop - instance.bid[NOW]) / instance.bid:pipSize();
+                    end
                 else
-                    stop_value = (command.valuemap.RateStop - instance.bid[NOW]) / instance.bid:pipSize();
+                    stop_value = command.valuemap.PegPriceOffsetPipsStop;
                 end
             end
             return command:SetPipLimit(nil, stop_value * self.Limit);

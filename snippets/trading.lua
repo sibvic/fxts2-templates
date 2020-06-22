@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.30";
+trading.Version = "4.31";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -864,7 +864,6 @@ function trading:EntryOrder(instrument)
     function builder:GetValueMap() return self.valuemap; end
     function builder:AddMetadata(id, val) if self._metadata == nil then self._metadata = {}; end self._metadata[id] = val; return self; end
     function builder:BuildValueMap()
-        self.valuemap.Quantity = self.amount * self:_GetBaseUnitSize();
         if self._metadata ~= nil then
             self._metadata.CustomID = self.valuemap.CustomID;
             self.valuemap.CustomID = trading:ObjectToJson(self._metadata);
@@ -886,6 +885,8 @@ function trading:EntryOrder(instrument)
             local used_equity = equity * self._PercentOfMarginAmount / 100.0;
             local emr = core.host:getTradingProperty("EMR", self.Offer.Instrument, self.valuemap.AcctID);
             self.valuemap.Quantity = math.floor(used_equity / emr) * self:_GetBaseUnitSize();
+        else
+            self.valuemap.Quantity = self.amount * self:_GetBaseUnitSize();
         end
         return self.valuemap;
     end
