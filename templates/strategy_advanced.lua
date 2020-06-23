@@ -34,6 +34,15 @@ local LAST_ID = 2;
 -- Set it to true when you define your own timeframe and is_bid parameters
 local CustomTimeframeDefined = false;
 
+-- You can create custom exit logic for the opened position/order
+function CreateExitController(positionResult)
+end
+-- Restore exit controllers for orders and trades after FXTS2/strategy was restarted
+function RestoreExitControllerForOrder(order)
+end
+function RestoreExitControllerForTrade(trade)
+end
+
 function OnNewBar(source, period) end
 function CreateParameters() end
 function CreateStopParameters(params, id) return false; end
@@ -299,7 +308,7 @@ function Prepare(name_only)
     ToTime = instance.parameters.ToTime;
     trading_logic.DoTrading = EntryFunction;
     trading_logic.DoExit = ExitFunction;
-    if instance.parameters.custom_id == "" then
+    if instance.parameters.custom_id ~= "" then
         custom_id = instance.parameters.custom_id;
     else
         custom_id = profile:id() .. "_" .. instance.bid:name();
@@ -310,6 +319,16 @@ function Prepare(name_only)
         assert(valid, "Time " .. instance.parameters.mandatory_closing_exit_time .. " is invalid");
         core.host:execute("setTimer", MANDATORY_CLOSE_TIMER_ID, math.max(instance.parameters.mandatory_closing_valid_interval / 2, 1));
     end
+    local it = trading:FindTrade();
+    if UseOwnPositionsOnly then
+        it:WhenCustomID(custom_id);
+    end
+    it:Do(function (trade) RestoreExitControllerForTrade(trade); end);
+    local it = trading:FindOrder();
+    if UseOwnPositionsOnly then
+        it:WhenCustomID(custom_id);
+    end
+    it:Do(function (order) RestoreExitControllerForOrder(order); end);
 end
 
 function CreatePositionStrategy(source, side, id)
@@ -402,6 +421,8 @@ function CreatePositionStrategy(source, side, id)
             command:SetRiskPercentOfEquityAmount(self.Amount)
         elseif self.Amount_Type == "equity" then
             command:SetPercentOfEquityAmount(self.Amount)
+        elseif self.Amount_Type == "margin" then
+            command:SetPercentOfMarginAmount(self.Amount)
         end
         local default_stop = SetCustomStop == nil or not SetCustomStop(self, command, period, periods_from_last, source);
         local default_limit = SetCustomLimit == nil or not SetCustomLimit(self, command, period, periods_from_last, source);
@@ -427,6 +448,7 @@ function CreatePositionStrategy(source, side, id)
         if result.Finished and not result.Success then
             return result;
         end
+        CreateExitController(result);
         local default_breakeven = CreateCustomBreakeven == nil or not CreateCustomBreakeven(self, result, period, periods_from_last);
         if default_breakeven then
             if self.UseBreakeven then

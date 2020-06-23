@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.31";
+trading.Version = "4.32";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -22,6 +22,7 @@ function trading:AddPositionParameters(parameters, id, section_id)
         parameters:addString("amount_type" .. id, "Amount Unit", "", "lots");
         parameters:addStringAlternative("amount_type" .. id, "In Lots", "", "lots");
         parameters:addStringAlternative("amount_type" .. id, "% of Equity", "", "equity");
+        parameters:addStringAlternative("amount_type" .. id, "% of Margin", "", "margin");
         parameters:addStringAlternative("amount_type" .. id, "Risk % of Equity", "", "risk_equity");
     end
     if CreateStopParameters == nil or not CreateStopParameters(parameters, id) then

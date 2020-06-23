@@ -1,7 +1,7 @@
 breakeven = {};
 -- public fields
 breakeven.Name = "Breakeven";
-breakeven.Version = "2.2";
+breakeven.Version = "2.3";
 breakeven.Debug = false;
 --private fields
 breakeven._moved_stops = {};
@@ -38,6 +38,14 @@ function breakeven:Init(parameters)
 end
 
 function breakeven:Prepare(nameOnly)
+end
+
+function breakeven:ReleaseInstance()
+    for _, controller in ipairs(self._controllers) do
+        if controller.Save ~= nil then
+            controller:Save();
+        end
+    end
 end
 
 function breakeven:ExtUpdate(id, source, period)
@@ -80,6 +88,9 @@ function breakeven:CreateBaseController()
     function controller:GetOrder()
         if self._order == nil then
             self._order = core.host:findTable("orders"):find("RequestID", self._request_id);
+            if self._order ~= nil then
+                self.OrderID = self._order.OrderID;
+            end
         end
         return self._order;
     end
