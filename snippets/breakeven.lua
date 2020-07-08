@@ -1,7 +1,7 @@
 breakeven = {};
 -- public fields
 breakeven.Name = "Breakeven";
-breakeven.Version = "2.3";
+breakeven.Version = "3.0";
 breakeven.Debug = false;
 --private fields
 breakeven._moved_stops = {};
@@ -13,12 +13,14 @@ breakeven._controllers = {};
 
 function breakeven:trace(str) if not self.Debug then return; end core.host:trace(self.Name .. ": " .. str); end
 function breakeven:OnNewModule(module)
-    if module.Name == "Trading" then self._trading = module; end
-    if module.Name == "Tables monitor" then
+    if module.Name == "Trading" then 
+        self._trading = module;
+    elseif module.Name == "Tables monitor" then
         module:ListenCloseTrade(BreakevenOnClosedTrade);
-    end
-    if module.Name == "Signaler" then
+    elseif module.Name == "Signaler" then
         self._signaler = module;
+    elseif module.Name == "Storage" then
+        self._storage = module;
     end
 end
 function BreakevenOnClosedTrade(closed_trade)
@@ -38,6 +40,17 @@ function breakeven:Init(parameters)
 end
 
 function breakeven:Prepare(nameOnly)
+    if breakeven._storage == nil then
+        return;
+    end
+    local enum = core.host:findTable("trades"):enumerator();
+    local trade = enum:next();
+    while trade ~= nil do
+        if breakeven._storage:ReadNumber("BE_" .. trade.TradeID) == 1 then
+            self:CreateBreakeven():Restore(trade.TradeID);
+        end
+        trade = enum:next();
+    end
 end
 
 function breakeven:ReleaseInstance()
@@ -86,7 +99,7 @@ function breakeven:CreateBaseController()
         return self;
     end
     function controller:GetOrder()
-        if self._order == nil then
+        if self._order == nil and self._request_id ~= nil then
             self._order = core.host:findTable("orders"):find("RequestID", self._request_id);
             if self._order ~= nil then
                 self.OrderID = self._order.OrderID;
@@ -663,7 +676,7 @@ function breakeven:PartialClose()
     return controller;
 end
 
-function breakeven:CreateController()
+function breakeven:CreateBreakeven()
     local controller = self:CreateBaseController();
     controller._trailing = 0;
     function controller:SetWhen(when)
@@ -709,6 +722,10 @@ function breakeven:CreateController()
     end
     function controller:DoBreakeven()
         if self._executed then
+            if breakeven._storage ~= nil then
+                local trade = self:GetTrade();
+                breakeven._storage:SaveNumber("BE_" .. trade.TradeID, 1);
+            end
             if self._close_percent ~= nil then
                 if self._command ~= nil and self._command.Finished or self._command == nil then
                     return self:DoPartialClose();
@@ -733,6 +750,25 @@ function breakeven:CreateController()
         end
         return true;
     end
+    function controller:Save()
+        if self._executed or breakeven._storage == nil then
+            return;
+        end
+        local trade = self:GetTrade();
+        if trade ~= nil then
+            breakeven._storage.SaveNumber("BE_" .. trade.TradeID, 1);
+            breakeven._storage:SaveNumber("BE_" .. trade.TradeID .. "_when", self._when);
+            breakeven._storage:SaveNumber("BE_" .. trade.TradeID .. "_to", self._to);
+            breakeven._storage:SaveNumber("BE_" .. trade.TradeID .. "_trailing", self._trailing);
+            breakeven._storage:SaveNumber("BE_" .. trade.TradeID .. "_close_percent", self._close_percent);
+        end
+    end
+    function controller:Restore(tradeID)
+        self._when = breakeven._storage:ReadNumber("BE_" .. trade.TradeID .. "_when");
+        self._to = breakeven._storage:ReadNumber("BE_" .. trade.TradeID .. "_to");
+        self._trailing = breakeven._storage:ReadNumber("BE_" .. trade.TradeID .. "_trailing");
+        self._close_percent = breakeven._storage:ReadNumber("BE_" .. trade.TradeID .. "_close_percent");
+    end
     self._controllers[#self._controllers + 1] = controller;
     return controller;
 end
@@ -745,7 +781,7 @@ function breakeven:RestoreTrailingOnProfitController(controller)
         return self;
     end
     function controller:GetClosedTrade()
-        if self._closed_trade == nil then
+        if self._closed_trade == nil and self.RequestID ~= nil then
             self._closed_trade = core.host:findTable("closed trades"):find("OpenOrderReqID", self._request_id);
             if self._closed_trade == nil then return nil; end
         end

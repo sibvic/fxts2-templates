@@ -54,17 +54,3 @@ end
 function your_module_name:ExtUpdate(id, source, period)
     --do what you usually do in Update
 end
-
-function your_module_name:BlockTrading(id, source, period)
-    --do what you usually do in Update
-    return false;
-end
-
-function your_module_name:BlockOrder(order_value_map)
-    --use to forbid openind an order
-    return false;
-end
-
-function your_module_name:OnOrder(order_value_map)
-    --pre-order actions
-end

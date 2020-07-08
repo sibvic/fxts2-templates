@@ -89,7 +89,7 @@ end
 
 local commands = {};
 function ExtUpdate(id, source, period)  -- The method called every time when a new bid or ask price appears.
-    for _, module in pairs(Modules) do if module.BlockTrading ~= nil and module:BlockTrading(id, source, period) then return; end end for _, module in pairs(Modules) do if module.ExtUpdate ~= nil then module:ExtUpdate(id, source, period); end end
+    for _, module in pairs(Modules) do if module.ExtUpdate ~= nil then module:ExtUpdate(id, source, period); end end
     if AllowTrade then
         if not(checkReady("trades")) or not(checkReady("orders")) then
             return ;

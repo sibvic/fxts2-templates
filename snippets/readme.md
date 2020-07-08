@@ -163,3 +163,7 @@ Example:
 ## sources
 
 Helps to load several history streams and controls it's loading.
+
+## storage
+
+Provides persistent storage.

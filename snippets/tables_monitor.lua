@@ -64,7 +64,4 @@ function tables_monitor:AsyncOperationFinished(cookie, success, message, message
     end
 end
 function tables_monitor:ExtUpdate(id, source, period) end
-function tables_monitor:BlockTrading(id, source, period) return false; end
-function tables_monitor:BlockOrder(order_value_map) return false; end
-function tables_monitor:OnOrder(order_value_map) end
 tables_monitor:RegisterModule(Modules);
