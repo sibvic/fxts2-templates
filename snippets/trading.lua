@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.32";
+trading.Version = "4.33";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -780,23 +780,27 @@ function trading:CreateEntryOrderSuccessResult(msg)
         return self.FixStatus ~= nil and self.FixStatus == "F";
     end
     function res:GetOrder()
-        if self._order == nil then
+        if self._order == nil and self.RequestID ~= nil then
             self._order = core.host:findTable("orders"):find("RequestID", self.RequestID);
-            if self._order == nil then return nil; end
+            if self._order == nil then
+                return nil;
+            end
         end
         if not self._order:refresh() then return nil; end
         return self._order;
     end
     function res:GetTrade()
-        if self._trade == nil then
+        if self._trade == nil and self.RequestID ~= nil then
             self._trade = core.host:findTable("trades"):find("OpenOrderReqID", self.RequestID);
-            if self._trade == nil then return nil; end
+            if self._trade == nil then
+                return nil;
+            end
         end
         if not self._trade:refresh() then return nil; end
         return self._trade;
     end
     function res:GetClosedTrade()
-        if self._closed_trade == nil then
+        if self._closed_trade == nil and self.RequestID ~= nil then
             self._closed_trade = core.host:findTable("closed trades"):find("OpenOrderReqID", self.RequestID);
             if self._closed_trade == nil then return nil; end
         end
@@ -966,7 +970,7 @@ function trading:CreateMarketOrderSuccessResult(msg)
         return self._trade;
     end
     function res:GetClosedTrade()
-        if self._closed_trade == nil then
+        if self._closed_trade == nil and self.RequestID ~= nil then
             self._closed_trade = core.host:findTable("closed trades"):find("OpenOrderReqID", self.RequestID);
             if self._closed_trade == nil then return nil; end
         end
