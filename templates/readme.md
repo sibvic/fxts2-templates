@@ -102,6 +102,11 @@ The strategy will send you an email when this option enabled. Used with "Email" 
 
 Email to send the alert to.
 
+
+## strategy_simple
+
+strategy_simple with OCO orders.
+
 ## strategy_simple_MTF_MI
 
 strategy_simple with multi-instrument multi-timeframe trading feature.
