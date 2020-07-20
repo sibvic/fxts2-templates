@@ -504,7 +504,7 @@ function CreatePositionStrategy(source, side, id)
         local default_breakeven = CreateCustomBreakeven == nil or not CreateCustomBreakeven(self, result, period, periods_from_last);
         if default_breakeven then
             if self.UseBreakeven then
-                local controller = breakeven:CreateController()
+                local controller = breakeven:CreateBreakeven()
                     :SetRequestID(result.RequestID)
                     :SetWhen(self.BreakevenWhen)
                     :SetTo(self.BreakevenTo);
