@@ -20,6 +20,9 @@ function UpdateIndicators()
     indi_2:update(core.UpdateLast);
 end
 
+function OnNewBar(source, period)
+end
+
 function IsEntryLong(source, period)
     if not indi_1.DATA:hasData(period - 1) or not indi_2.DATA:hasData(period - 1) then
         return false;
@@ -217,7 +220,7 @@ function InRange(now, openTime, closeTime)
     return now == openTime;
 end
 
-local last_entry, last_exit;
+local last_entry, last_exit, last_bar;
 function ExtUpdate(id, source, period)
     if use_mandatory_closing and core.host.Trading:getTradingProperty("isSimulation") then
         DoMandatoryClosing();
@@ -232,6 +235,12 @@ function ExtUpdate(id, source, period)
         entry_period = period;
     end
     UpdateIndicators();
+    if last_bar == nil then
+        last_bar = main_source:date(entry_period);
+    elseif last_bar ~= main_source:date(entry_period) then
+        last_bar = main_source:date(entry_period);
+        OnNewBar(main_source, entry_period);
+    end
 
     if IsExitLong(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
         if AllowTrade then
