@@ -102,8 +102,11 @@ The strategy will send you an email when this option enabled. Used with "Email" 
 
 Email to send the alert to.
 
+## strategy_medium
 
-## strategy_simple
+strategy_simple + breakeven feature
+
+## strategy_simple_OCO
 
 strategy_simple with OCO orders.
 
