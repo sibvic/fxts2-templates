@@ -529,6 +529,7 @@ function ExtUpdate(id, source, period)
     if use_mandatory_closing and core.host.Trading:getTradingProperty("isSimulation") then
         DoMandatoryClosing();
     end
+    trading_logic:UpdateIndicators();
     UpdateIndicators();
     if log_file ~= nil then
         log_values = {};

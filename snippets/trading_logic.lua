@@ -1,7 +1,7 @@
 trading_logic = {};
 -- public fields
 trading_logic.Name = "Trading logic";
-trading_logic.Version = "1.13";
+trading_logic.Version = "1.14";
 trading_logic.Debug = false;
 trading_logic.DoTrading = nil;
 trading_logic.DoExit = nil;
@@ -132,13 +132,15 @@ function trading_logic:Prepare(name_only)
         end
     end
 end
-function trading_logic:ExtUpdate(id, source, period)
+function trading_logic:UpdateIndicators()
     if self.MainSourceHA ~= nil then
         self.MainSourceHA:update(core.UpdateLast);
     end
     if self.ExitSourceHA ~= nil then
         self.ExitSourceHA:update(core.UpdateLast);
     end
+end
+function trading_logic:ExtUpdate(id, source, period)
     if id == self._trading_source_id and self.DoTrading ~= nil then
         local period2 = period;
         if source ~= self.MainSource then

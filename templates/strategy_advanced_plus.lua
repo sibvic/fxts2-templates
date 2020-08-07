@@ -587,6 +587,7 @@ function ExtUpdate(id, source, period)
     if trading_logic.ExitSourceHA ~= nil then
         trading_logic.ExitSourceHA:update(core.UpdateLast);
     end
+    trading_logic:UpdateIndicators();
     UpdateIndicators();
     if log_file ~= nil then
         log_values = {};
