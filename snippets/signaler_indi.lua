@@ -19,7 +19,7 @@ local alerts =
                 isUp and (label .. " Bull pattern") or (label .. " Bear pattern"), 
                 source:instrument(), 
                 source:barSize(), 
-                win32.formatNumber(source.close[NOW], false, source:getPrecision()), 
+                win32.formatNumber(source:isBar() and source.close[NOW] or source[NOW], false, source:getPrecision()), 
                 core.formatDate(core.now()));
         end,
         FilterConsecutive = false,
@@ -62,7 +62,11 @@ function Activate(alert, period, historical_period)
                 return;
             end
         end
-        alert:UpAlert(source, period, source.high[period], historical_period, upMetadata);
+        if source:isBar() then
+            alert:UpAlert(source, period, source.high[period], historical_period, upMetadata);
+        else
+            alert:UpAlert(source, period, source[period], historical_period, upMetadata);
+        end
         return;
     end
     local isDown, downMetadata = alert.DownCondition(period);
@@ -73,7 +77,11 @@ function Activate(alert, period, historical_period)
                 return;
             end
         end
-        alert:DownAlert(source, period, source.low[period], historical_period, downMetadata);
+        if source:isBar() then
+            alert:DownAlert(source, period, source.low[period], historical_period, downMetadata);
+        else
+            alert:DownAlert(source, period, source[period], historical_period, downMetadata);
+        end
     end
 end
 
