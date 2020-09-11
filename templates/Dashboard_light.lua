@@ -27,8 +27,8 @@ function CreateParameters()
 end
 
 function GetLastSignal(indi, source)
-    local up = indi:getTextOutput(0);
-    local down = indi:getTextOutput(1);
+    local up = indi[1]:getTextOutput(0);
+    local down = indi[1]:getTextOutput(1);
     for i = 0, up:size() - 1 do
         if up:hasData(NOW - i) then
             return 1, "B";
