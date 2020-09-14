@@ -344,6 +344,10 @@ Template of dashboard/scanner indicator.
 
 Light version of dashboard/scanner indicator. Only basic information are drawn. Optimized for the performance.
 
+## Dashboard_sorted
+
+Dashboard with sorting by value.
+
 ## Dashboard_light_instruments
 
 The same as Dashboard_light for without timeframes. Only instruments will be shown.
