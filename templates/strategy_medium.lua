@@ -233,7 +233,7 @@ function ExtUpdate(id, source, period)
     if use_mandatory_closing and core.host.Trading:getTradingProperty("isSimulation") then
         DoMandatoryClosing();
     end
-    if id ~= entry_source_id then
+    if id ~= entry_source_id or main_source:size() == 0 then
         return;
     end
     local entry_period;
