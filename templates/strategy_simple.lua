@@ -64,6 +64,9 @@ function Init()
     strategy.parameters:addString("entry_execution_type", "Execution Type", "Once per bar close or on every tick", "Live");
     strategy.parameters:addStringAlternative("entry_execution_type", "End of Turn", "", "EndOfTurn");
     strategy.parameters:addStringAlternative("entry_execution_type", "Live", "", "Live");
+    strategy.parameters:addString("trade_direction", "Trade Direction", "", "Direct");
+    strategy.parameters:addStringAlternative("trade_direction", "Direct", "", "Direct");
+    strategy.parameters:addStringAlternative("trade_direction", "Reversed", "", "Reversed");
     strategy.parameters:addString("Account", "Account to trade on", "", "");
     strategy.parameters:setFlag("Account", core.FLAG_ACCOUNT);
     strategy.parameters:addString("amount_type", "Amount Units", "", "lots");
@@ -117,13 +120,14 @@ local base_size, offer_id, Account, Amount, amount_type, AllowTrade, close_on_op
 local use_stop, stop_pips, use_limit, limit_pips, entry_execution_type, use_trailing, trailing, use_position_limit, position_limit;
 local _show_alert, _sound_file, _recurrent_sound, _email;
 local _ToTime, OpenTime, CloseTime;
-local use_mandatory_closing, exit_time;
+local use_mandatory_closing, exit_time, trade_direction;
 function Prepare(nameOnly)
     local name = profile:id() .. "(" .. instance.bid:name() .. ")";
     instance:name(name);
     if nameOnly then
         return;
     end
+    trade_direction = instance.parameters.trade_direction;
     use_mandatory_closing = instance.parameters.use_mandatory_closing;
     use_position_limit = instance.parameters.use_position_limit;
     position_limit = instance.parameters.position_limit;
@@ -243,17 +247,31 @@ function ExtUpdate(id, source, period)
     end
 
     if IsExitLong(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
-        if AllowTrade then
-            CloseTrades("B");
+        if trade_direction == "Direct" then
+            if AllowTrade then
+                CloseTrades("B");
+            end
+            Signal("Exit long", main_source);
+        else
+            if AllowTrade then
+                CloseTrades("S");
+            end
+            Signal("Exit short", main_source);
         end
-        Signal("Exit long", main_source);
         last_exit = main_source:date(NOW);
     end
     if IsExitShort(main_source, entry_period) and last_exit ~= main_source:date(NOW) then
-        if AllowTrade then
-            CloseTrades("S");
+        if trade_direction == "Direct" then
+            if AllowTrade then
+                CloseTrades("S");
+            end
+            Signal("Exit short", main_source);
+        else
+            if AllowTrade then
+                CloseTrades("B");
+            end
+            Signal("Exit long", main_source);
         end
-        Signal("Exit short", main_source);
         last_exit = main_source:date(NOW);
     end
 
@@ -265,21 +283,45 @@ function ExtUpdate(id, source, period)
     if IsEntryLong(main_source, entry_period) and last_entry ~= main_source:date(NOW) and not PositionsLimitHit() then
         if AllowTrade then
             if close_on_opposite then
-                CloseTrades("S");
+                if trade_direction == "Direct" then
+                    CloseTrades("S");
+                else
+                    CloseTrades("B");
+                end
             end
-            OpenTrade("B");
+            if trade_direction == "Direct" then
+                OpenTrade("B");
+            else
+                OpenTrade("S");
+            end
         end
-        Signal("Entry long", main_source);
+        if trade_direction == "Direct" then
+            Signal("Entry long", main_source);
+        else
+            Signal("Entry short", main_source);
+        end
         last_entry = main_source:date(NOW);
     end
     if IsEntryShort(main_source, entry_period) and last_entry ~= main_source:date(NOW) and not PositionsLimitHit() then
         if AllowTrade then
             if close_on_opposite then
-                CloseTrades("B");
+                if trade_direction == "Direct" then
+                    CloseTrades("B");
+                else
+                    CloseTrades("S");
+                end
             end
-            OpenTrade("S");
+            if trade_direction == "Direct" then
+                OpenTrade("S");
+            else
+                OpenTrade("B");
+            end
         end
-        Signal("Entry short", main_source);
+        if trade_direction == "Direct" then
+            Signal("Entry short", main_source);
+        else
+            Signal("Entry long", main_source);
+        end
         last_entry = main_source:date(NOW);
     end
 end
