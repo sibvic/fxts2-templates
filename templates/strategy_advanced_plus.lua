@@ -134,6 +134,7 @@ function CreateCustomActions()
     enterLongAction.IsPass = function (source, period, periodFromLast, data)
         return false; -- TODO: implement
     end
+    AddLongCondition(enterLongAction);
 
     local enterShortAction = {};
     enterShortAction.ActOnSwitch = true;
@@ -147,20 +148,7 @@ function CreateCustomActions()
     enterShortAction.IsPass = function (source, period, periodFromLast, data)
         return false; -- TODO: implement
     end
-
-    if instance.parameters.Direction == "direct" then
-        enterLongAction.Execute = GoLong;
-        enterShortAction.Execute = GoShort;
-        enterLongAction.ExecuteData = CreateBuyPositions(trading_logic.MainSource);
-        enterShortAction.ExecuteData = CreateSellPositions(trading_logic.MainSource);
-    else
-        enterLongAction.Execute = GoShort;
-        enterShortAction.Execute = GoLong;
-        enterLongAction.ExecuteData = CreateSellPositions(trading_logic.MainSource);
-        enterShortAction.ExecuteData = CreateBuyPositions(trading_logic.MainSource);
-    end
-    EntryActions[#EntryActions + 1] = enterLongAction;
-    EntryActions[#EntryActions + 1] = enterShortAction;
+    AddShortCondition(enterShortAction);
 end
 
 function GetSignalSerial(source, period)
@@ -171,6 +159,27 @@ function GetSignalSerial(source, period)
     return source:serial(period);
 end
 -- END OF USER DEFINED SECTION
+
+function AddLongCondition(condition)
+    if instance.parameters.Direction == "direct" then
+        condition.Execute = GoLong;
+        condition.ExecuteData = CreateBuyPositions(trading_logic.MainSource);
+    else
+        condition.Execute = GoShort;
+        condition.ExecuteData = CreateSellPositions(trading_logic.MainSource);
+    end
+    EntryActions[#EntryActions + 1] = condition;
+end
+function AddShortCondition(condition)
+    if instance.parameters.Direction ~= "direct" then
+        condition.Execute = GoLong;
+        condition.ExecuteData = CreateBuyPositions(trading_logic.MainSource);
+    else
+        condition.Execute = GoShort;
+        condition.ExecuteData = CreateSellPositions(trading_logic.MainSource);
+    end
+    EntryActions[#EntryActions + 1] = condition;
+end
 
 function Init()
     strategy:name(STRATEGY_NAME .. " v" .. STRATEGY_VERSION);
@@ -208,7 +217,7 @@ function Init()
     strategy.parameters:addGroup("Alert");
     signaler:Init(strategy.parameters);
 
-    strategy.parameters:addBoolean("add_log", "Add log info to signals", "", false);
+    strategy.parameters:addBoolean("add_log", "Write log", "", false);
     strategy.parameters:addFile("log_file", "Log file (csv)", "You can open it in Excel", core.app_path() .. "\\log\\" .. STRATEGY_NAME .. ".csv");
 end
 
