@@ -272,8 +272,7 @@ function PositionsLimitHit(main_source)
     local row = enum:next();
     local count = 0;
     while row ~= nil do
-        if row.BS == side
-            and row.Instrument == main_source:instrument() 
+        if row.Instrument == main_source:instrument() 
             and (row.QTXT == custom_id or custom_id == "")
         then
             count = count + 1;
@@ -283,8 +282,7 @@ function PositionsLimitHit(main_source)
     local enum = core.host:findTable("orders"):enumerator();
     local row = enum:next();
     while row ~= nil do
-        if row.BS == side
-            and row.Instrument == main_source:instrument() 
+        if row.Instrument == main_source:instrument() 
             and (row.QTXT == custom_id or custom_id == "")
         then
             count = count + 1;
