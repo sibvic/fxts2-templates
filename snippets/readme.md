@@ -167,3 +167,7 @@ Helps to load several history streams and controls it's loading.
 ## storage
 
 Provides persistent storage.
+
+## MT4
+
+Functions for partial emulation of MT4 features. Makes it easier to convert indicators and EA from MT4.
