@@ -369,3 +369,7 @@ Draws lines for the stop/limit targets.
 ## 2d_template
 
 Draws 2d chart for two indicators. x = first indicator and y = the second.
+
+## Dashboard_currencies and Dashboard_currencies_view
+
+Dashboard shows currency relation in a table.
