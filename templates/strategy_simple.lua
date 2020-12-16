@@ -280,19 +280,22 @@ function ExtUpdate(id, source, period)
     if not InRange(now, OpenTime, CloseTime) then
         return;
     end
-    if IsEntryLong(main_source, entry_period) and last_entry ~= main_source:date(NOW) and not PositionsLimitHit() then
+    if IsEntryLong(main_source, entry_period) and last_entry ~= main_source:date(NOW) then
         if AllowTrade then
+            local closed_positions = 0;
             if close_on_opposite then
                 if trade_direction == "Direct" then
-                    CloseTrades("S");
+                    closed_positions = CloseTrades("S");
                 else
-                    CloseTrades("B");
+                    closed_positions = CloseTrades("B");
                 end
             end
-            if trade_direction == "Direct" then
-                OpenTrade("B");
-            else
-                OpenTrade("S");
+            if closed_positions > 0 or not PositionsLimitHit() then
+                if trade_direction == "Direct" then
+                    OpenTrade("B");
+                else
+                    OpenTrade("S");
+                end
             end
         end
         if trade_direction == "Direct" then
@@ -302,19 +305,22 @@ function ExtUpdate(id, source, period)
         end
         last_entry = main_source:date(NOW);
     end
-    if IsEntryShort(main_source, entry_period) and last_entry ~= main_source:date(NOW) and not PositionsLimitHit() then
+    if IsEntryShort(main_source, entry_period) and last_entry ~= main_source:date(NOW) then
         if AllowTrade then
+            local closed_positions = 0;
             if close_on_opposite then
                 if trade_direction == "Direct" then
-                    CloseTrades("B");
+                    closed_positions = CloseTrades("B");
                 else
-                    CloseTrades("S");
+                    closed_positions = CloseTrades("S");
                 end
             end
-            if trade_direction == "Direct" then
-                OpenTrade("S");
-            else
-                OpenTrade("B");
+            if closed_positions > 0 or not PositionsLimitHit() then
+                if trade_direction == "Direct" then
+                    OpenTrade("S");
+                else
+                    OpenTrade("B");
+                end
             end
         end
         if trade_direction == "Direct" then
@@ -390,6 +396,7 @@ function DeleteOrders()
 end
 
 function CloseTrades(side)
+    local count = 0;
     local enum = core.host:findTable("trades"):enumerator();
     local row = enum:next();
     while row ~= nil do
@@ -398,9 +405,11 @@ function CloseTrades(side)
             and (row.QTXT == custom_id or custom_id == "")
         then
             CloseTrade(row);
+            count = count + 1;
         end
         row = enum:next();
     end
+    return count;
 end
 
 function ExtAsyncOperationFinished(cookie, success, message, message1, message2)
