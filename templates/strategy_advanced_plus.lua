@@ -125,7 +125,7 @@ function CreateCustomActions()
     local enterLongAction = {};
     enterLongAction.ActOnSwitch = true;
     enterLongAction.Cache = {};
-    enterLongAction.AddHeaders = function (headers)
+    enterLongAction.AddHeaders = function (headers, data)
         --headers[#headers + 1] = "Buy value name";
     end
     enterLongAction.AddLog = function (source, period, periodFromLast, data, values)
@@ -139,7 +139,7 @@ function CreateCustomActions()
     local enterShortAction = {};
     enterShortAction.ActOnSwitch = true;
     enterShortAction.Cache = {};
-    enterShortAction.AddHeaders = function (headers)
+    enterShortAction.AddHeaders = function (headers, data)
         --headers[#headers + 1] = "Sell value name";
     end
     enterShortAction.AddLog = function (source, period, periodFromLast, data, values)
@@ -311,12 +311,12 @@ function Prepare(name_only)
         headers[#headers + 1] = "date";
         for _, action in ipairs(EntryActions) do
             if action.AddLog ~= nil then
-                action.AddHeaders(headers);
+                action.AddHeaders(headers, action.Data);
             end
         end
         for _, action in ipairs(ExitActions) do
             if action.AddLog ~= nil then
-                action.AddHeaders(headers);
+                action.AddHeaders(headers, action.Data);
             end
         end
         LogIndicatorsHeaders(headers);
