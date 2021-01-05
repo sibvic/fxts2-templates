@@ -352,17 +352,24 @@ function Update(period, mode)
 end
 
 function UpdateData()
+    local offers = {};
     for _, symbol in ipairs(items) do
         if symbol.Indicators ~= nil then
-            for i, indicator in ipairs(symbol.Indicators) do
-                indicator:update(core.UpdateLast);
+            if offers[symbol.Pair] == nil then
+                offers[symbol.Pair] = core.host:findTable("offers"):find("Instrument", symbol.Pair);
             end
-            local signal, label = GetLastSignal(symbol.Indicators, symbol.Indicators[1].DATA);
-            symbol.Signal = signal;
-            symbol.Text = label;
-            if signal ~= 0 and symbol.last_alert ~= symbol.Indicators[1].DATA:date(NOW) then
-                Signal(symbol.Indicators[1].DATA:instrument() .. "(" .. symbol.Indicators[1].DATA:barSize() .. "): " .. symbol.Text);
-                symbol.last_alert = symbol.Indicators[1].DATA:date(NOW);
+            if symbol.LastUpdate ~= offers[symbol.Pair].Time then
+                symbol.LastUpdate = offers[symbol.Pair].Time;
+                for i, indicator in ipairs(symbol.Indicators) do
+                    indicator:update(core.UpdateLast);
+                end
+                local signal, label = GetLastSignal(symbol.Indicators, symbol.Indicators[1].DATA);
+                symbol.Signal = signal;
+                symbol.Text = label;
+                if signal ~= 0 and symbol.last_alert ~= symbol.Indicators[1].DATA:date(NOW) then
+                    Signal(symbol.Indicators[1].DATA:instrument() .. "(" .. symbol.Indicators[1].DATA:barSize() .. "): " .. symbol.Text);
+                    symbol.last_alert = symbol.Indicators[1].DATA:date(NOW);
+                end
             end
 		else
             symbol.Text = "...";

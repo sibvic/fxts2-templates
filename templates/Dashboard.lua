@@ -380,24 +380,28 @@ function Update(period, mode)
 end
 
 function UpdateData()
+    local offers = {};
     for _, symbol in ipairs(items) do
         if symbol.Indicators ~= nil and not symbol.Loading then
-            for i, indicator in ipairs(symbol.Indicators) do
-                indicator:update(core.UpdateLast);
+            if offers[symbol.Pair] == nil then
+                offers[symbol.Pair] = core.host:findTable("offers"):find("Instrument", symbol.Pair);
             end
-            local signal, time, label = GetLastSignal(symbol.Indicators, symbol.Source);
-            symbol.Signal = signal;
-            symbol.SignalTime = time;
-            symbol.Text = label;
-            if signal ~= 0 then
-                local is_current_bar = symbol.Source:date(NOW) <= time;
-                if is_current_bar and symbol.last_alert ~= time and (symbol.Mode == "both" or symbol.Mode == "alert") then
-                    signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. symbol.Text);
-                    symbol.last_alert = time;
+            if symbol.LastUpdate ~= offers[symbol.Pair].Time then
+                symbol.LastUpdate = offers[symbol.Pair].Time;
+                local signal, time, label = GetLastSignal(symbol.Indicators, symbol.Source);
+                symbol.Signal = signal;
+                symbol.SignalTime = time;
+                symbol.Text = label;
+                if signal ~= 0 then
+                    local is_current_bar = symbol.Source:date(NOW) <= time;
+                    if is_current_bar and symbol.last_alert ~= time and (symbol.Mode == "both" or symbol.Mode == "alert") then
+                        signaler:Signal(symbol.Source:instrument() .. "(" .. symbol.Source:barSize() .. "): " .. symbol.Text);
+                        symbol.last_alert = time;
+                    end
                 end
-            end
-            if symbol.dde ~= nil then
-                dde_server:set(dde_topic, symbol.dde, symbol.Text);
+                if symbol.dde ~= nil then
+                    dde_server:set(dde_topic, symbol.dde, symbol.Text);
+                end
             end
 		else
             symbol.Text = "...";

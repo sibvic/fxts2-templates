@@ -347,14 +347,19 @@ function Update(period, mode)
 end
 
 function UpdateData()
+    local offers = {};
     for _, symbol in ipairs(items) do
         if symbol.Indicators ~= nil and not symbol.Loading then
-            for i, indicator in ipairs(symbol.Indicators) do
-                indicator:update(core.UpdateLast);
+            if offers[symbol.Pair] == nil then
+                offers[symbol.Pair] = core.host:findTable("offers"):find("Instrument", symbol.Pair);
             end
-            local signal, label = GetLastSignal(symbol.Indicators, symbol.Source);
-            symbol.Signal = signal;
-            symbol.Text = label;
+            if symbol.LastUpdate ~= offers[symbol.Pair].Time then
+                symbol.LastUpdate = offers[symbol.Pair].Time;
+                    
+                local signal, label = GetLastSignal(symbol.Indicators, symbol.Source);
+                symbol.Signal = signal;
+                symbol.Text = label;
+            end
 		else
             symbol.Text = "...";
         end

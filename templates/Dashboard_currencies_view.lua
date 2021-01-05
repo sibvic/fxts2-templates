@@ -361,13 +361,20 @@ end
 local added = false;
 
 function UpdateData()
+    local offers = {};
     for _, symbol in ipairs(items) do
         if symbol.Indicators ~= nil then
-            for i, indicator in ipairs(symbol.Indicators) do
-                indicator:update(core.UpdateLast);
+            if offers[symbol.Pair] == nil then
+                offers[symbol.Pair] = core.host:findTable("offers"):find("Instrument", symbol.Pair);
+            end
+            if symbol.LastUpdate ~= offers[symbol.Pair].Time then
+                symbol.LastUpdate = offers[symbol.Pair].Time;
+                for i, indicator in ipairs(symbol.Indicators) do
+                    indicator:update(core.UpdateLast);
+                end
+                symbol.Signal = GetSignal(symbol);
             end
         end
-        symbol.Signal = GetSignal(symbol);
     end
     if not added then
         instance:addViewBar(core.now());
