@@ -617,7 +617,8 @@ end
 
 function IsPositionLimitHit(side, side_limit)
     if ENFORCE_POSITION_CAP == true then
-        local sideIt = trading:FindTrade();
+        local sideIt = trading:FindTrade()
+            :WhenSide(side);
         local allIt = trading:FindTrade();
         if UseOwnPositionsOnly then
             sideIt:WhenCustomID(custom_id);
