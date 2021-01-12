@@ -78,6 +78,7 @@ function Init()
     indicator.parameters:addString("grid_mode", "Grid mode", "", "v")
     indicator.parameters:addStringAlternative("grid_mode", "Horizontal", "", "h")
     indicator.parameters:addStringAlternative("grid_mode", "Vertical", "", "v")
+    indicator.parameters:addInteger("update_rate", "Update rate, seconds", "", 5);
     indicator.parameters:addGroup("Alerts");
     signaler:Init(indicator.parameters);
 end
@@ -275,7 +276,7 @@ function Prepare(nameOnly)
             end
         end
     end
-    timer_handle = core.host:execute("setTimer", TIMER_ID, 1);
+    timer_handle = core.host:execute("setTimer", TIMER_ID, instance.parameters.update_rate);
     core.host:execute("setStatus", "Loading");
     instance:ownerDrawn(true);
     CellsBuilder.GapCoeff = instance.parameters.cells_gap;

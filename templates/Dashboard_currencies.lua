@@ -87,6 +87,7 @@ function Init()
     indicator.parameters:addInteger("load_quota", "Loading quota", "Prevents freeze. Use 0 to disable", 0);
     indicator.parameters:addDouble("cells_gap", "Gap coefficient", "", 1.2);
     indicator.parameters:addColor("grid_color", "Grid color", "", core.rgb(128, 128, 128));
+    indicator.parameters:addInteger("update_rate", "Update rate, seconds", "", 5);
 end
 
 local items = {};
@@ -295,7 +296,7 @@ function Prepare(nameOnly)
 
     text_color = instance.parameters.text_color;
     symbol_text_color = instance.parameters.symbol_text_color;
-    timer_handle = core.host:execute("setTimer", TIMER_ID, 1);
+    timer_handle = core.host:execute("setTimer", TIMER_ID, instance.parameters.update_rate);
     core.host:execute("setStatus", "Loading");
     instance:ownerDrawn(true);
     CellsBuilder.GapCoeff = instance.parameters.cells_gap;
