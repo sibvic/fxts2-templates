@@ -337,7 +337,10 @@ function DeleteOrders()
     local enum = core.host:findTable("orders"):enumerator()
     local row = enum:next()
     while row ~= nil do
-        if row.AccountID == Account and row.Instrument == main_source:instrument() then
+        if row.AccountID == Account 
+            and row.Instrument == main_source:instrument() 
+            and (row.QTXT == custom_id or custom_id == "")
+        then
             local valuemap = core.valuemap()
             valuemap.Command = "DeleteOrder"
             valuemap.OrderID = row.OrderID
