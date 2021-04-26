@@ -87,6 +87,11 @@ function trading:Init(parameters, count)
     parameters:addStringAlternative("allow_side", "Long/buy only", "", "buy")
     parameters:addStringAlternative("allow_side", "Short/sell only", "", "sell")
     parameters:addString("custom_id", "Custom ID", "", "id");
+    parameters:addString("execution_mode", "Execution mode", "", "IOC");
+    parameters:addStringAlternative("execution_mode", "Immediate Or Cancel", "", "IOC");
+    parameters:addStringAlternative("execution_mode", "Fill Or Kill", "", "FOK");
+    parameters:addStringAlternative("execution_mode", "Good Till Cancelled", "", "GTC");
+    parameters:addStringAlternative("execution_mode", "Day", "", "DAY");
     parameters:addBoolean("close_on_opposite", "Close on Opposite", "", true);
     if ENFORCE_POSITION_CAP ~= true then
         parameters:addBoolean("position_cap", "Position Cap", "", false);
@@ -840,6 +845,7 @@ function trading:EntryOrder(instrument)
     function builder:SetRiskPercentOfEquityAmount(percent) self._RiskPercentOfEquityAmount = percent; return self; end
     function builder:SetPercentOfEquityAmount(percent) self._PercentOfEquityAmount = percent; return self; end
     function builder:SetPercentOfMarginAmount(percent) self._PercentOfMarginAmount = percent; return self; end
+    function builder:SetExecutionType(type) self.valuemap.GTC = type; return self; end
     function builder:UpdateOrderType()
         if self.valuemap.BuySell == nil or self.valuemap.Rate == nil then
             return;
@@ -1037,6 +1043,7 @@ function trading:MarketOrder(instrument)
     function builder:SetPercentOfEquityAmount(percent) self._PercentOfEquityAmount = percent; return self; end
     function builder:SetPercentOfMarginAmount(percent) self._PercentOfMarginAmount = percent; return self; end
     function builder:SetSide(buy_sell) self.valuemap.BuySell = buy_sell; return self; end
+    function builder:SetExecutionType(type) self.valuemap.GTC = type; return self; end
     function builder:SetPipLimit(limit_type, limit)
         self.valuemap.PegTypeLimit = limit_type or "O";
         self.valuemap.PegPriceOffsetPipsLimit = self.valuemap.BuySell == "B" and limit or -limit;
