@@ -457,7 +457,7 @@ function CreatePositionStrategy(source, side, id)
         command:SetSide(self.Side)
             :SetAccountID(instance.parameters.account)
             :SetCustomID(custom_id)
-            :SetExecutionType(execution_mode);
+            :SetExecutionType(instance.parameters.execution_mode);
         if self.Amount_Type == "lots" then
             command:SetAmount(self.Amount)
         elseif self.Amount_Type == "risk_equity" then

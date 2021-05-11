@@ -118,9 +118,11 @@ function CreateCustomActions()
     enterLongAction.Cache = {};
     enterLongAction.AddHeaders = function (headers, data)
         --headers[#headers + 1] = "Buy value name";
+        --headers[#headers + 1] = "Long passed";
     end
     enterLongAction.AddLog = function (source, period, periodFromLast, data, values)
         --values["Buy value name"] = value;
+        --values["Long passed"] = self:IsPass(source, period, periodFromLast, data);
     end
     enterLongAction.IsPass = function (source, period, periodFromLast, data)
         return false; -- TODO: implement
@@ -132,9 +134,11 @@ function CreateCustomActions()
     enterShortAction.Cache = {};
     enterShortAction.AddHeaders = function (headers, data)
         --headers[#headers + 1] = "Sell value name";
+        --headers[#headers + 1] = "Short passed";
     end
     enterShortAction.AddLog = function (source, period, periodFromLast, data, values)
         --values["Sell value name"] = value;
+        --values["Short passed"] = self:IsPass(source, period, periodFromLast, data);
     end
     enterShortAction.IsPass = function (source, period, periodFromLast, data)
         return false; -- TODO: implement
@@ -425,7 +429,7 @@ function CreatePositionStrategy(source, side, id)
         command:SetSide(self.Side)
             :SetAccountID(instance.parameters.account)
             :SetCustomID(custom_id)
-            :SetExecutionType(execution_mode);
+            :SetExecutionType(instance.parameters.execution_mode);
         if self.Amount_Type == "lots" then
             command:SetAmount(self.Amount)
         elseif self.Amount_Type == "risk_equity" then
