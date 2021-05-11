@@ -424,10 +424,10 @@ function OpenTrade(side)
     local success, msg = terminal:execute(3, valuemap);
     if success then
         if use_breakeven then
-            local controller = breakeven:CreateBreakeven()
-                :SetRequestID(msg)
-                :SetWhen(breakeven_when)
-                :SetTo(breakeven_to);
+            local condition = breakeven:CreatePLGTCondition(breakeven_when);
+            local controller = breakeven:CreateController(condition);
+            controller:AddAction(breakeven:CreateMoveStopAction(breakeven_to));
+            controller:SetRequestID(msg);
         end
     end
 end

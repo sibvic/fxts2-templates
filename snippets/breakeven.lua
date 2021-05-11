@@ -1,7 +1,7 @@
 breakeven = {};
 -- public fields
 breakeven.Name = "Breakeven";
-breakeven.Version = "3.0";
+breakeven.Version = "4.0";
 breakeven.Debug = false;
 --private fields
 breakeven._moved_stops = {};
@@ -73,6 +73,155 @@ function breakeven:round(num, idp)
         return math.floor(num * mult + 0.5) / mult
     end
     return math.floor(num + 0.5)
+end
+
+function breakeven:CreatePLGTCondition(pl)
+    local condition = {};
+    condition._pl = pl;
+    function condition:IsPass(data)
+        local trade = data:GetTrade();
+        if trade == nil then
+            return false;
+        end
+        if not trade:refresh() then
+            return true;
+        end
+        return trade.PL >= self._pl;
+    end
+    return condition;
+end
+
+function breakeven:CreateMoveStopAction(to, trailing)
+    local action = {};
+    function action:Execute(data)
+        if self._command ~= nil then
+            return self._command.Finished;
+        end
+        local trade = data:GetTrade();
+        if trade == nil then
+            return false;
+        end
+        if not trade:refresh() then
+            return true;
+        end
+        self._command = self._parent._trading:MoveStop(trade, self:getTo(), self._trailing);
+        return false;
+    end
+    -- private start
+    action._to = to;
+    action._trailing = trailing;
+    function action:getTo()
+        local trade = self:GetTrade();
+        local offer = self:GetOffer();
+        if trade.BS == "B" then
+            return offer.Bid - (trade.PL - self._to) * offer.PointSize;
+        else
+            return offer.Ask + (trade.PL - self._to) * offer.PointSize;
+        end
+    end
+    -- private end
+    return action;
+end
+
+function breakeven:CreatePartialClose(toClosePercent)
+    local action = {};
+    function action:Execute(data)
+        if self._command ~= nil then
+            if not self._command.Finished then
+                return false;
+            end
+            if self._command.Success then
+                return true;
+            end
+            return self:doClose(data);
+        end
+        return self:doClose(data);
+    end
+    -- private start
+    function action:doClose(data)
+        local trade = data:GetTrade();
+        if trade == nil then
+            return false;
+        end
+        if not trade:refresh() then
+            return true;
+        end
+        local base_size = core.host:execute("getTradingProperty", "baseUnitSize", trade.Instrument, trade.AccountID);
+        local to_close = breakeven:round(trade.Lot * self._toClosePercent / 100.0 / base_size) * base_size;
+        self._command = trading:PartialClose(trade, to_close);
+        return false;
+    end
+    action._toClosePercent = toClosePercent;
+    -- private end
+    return action;
+end
+
+function breakeven:CreateController(condition)
+    local controller = {};
+    function controller:AddAction(action)
+        self._actions[#self._actions + 1] = action;
+    end
+    function controller:DoLogic()
+        if #self._actions == 0 then
+            return;
+        end
+        if self._condition:IsPass(self) then
+            if self._actions:Execute(self) then
+                table.remove(self._actions, 1);
+            end
+        end
+    end
+    function controller:Save()
+    end
+    function controller:Restore(tradeID)
+    end
+    function controller:SetTrade(trade)
+        self._trade = trade;
+        self.TradeID = trade.TradeID;
+        return self;
+    end
+    function controller:GetOffer()
+        if self._offer == nil then
+            local order = self:GetOrder();
+            if order == nil then
+                order = self:GetTrade();
+            end
+            self._offer = core.host:findTable("offers"):find("Instrument", order.Instrument);
+        end
+        return self._offer;
+    end
+    function controller:SetRequestID(trade_request_id)
+        self._request_id = trade_request_id;
+        return self;
+    end
+    function controller:GetOrder()
+        if self._order == nil and self._request_id ~= nil then
+            self._order = core.host:findTable("orders"):find("RequestID", self._request_id);
+            if self._order ~= nil then
+                self.OrderID = self._order.OrderID;
+            end
+        end
+        return self._order;
+    end
+    function controller:GetTrade()
+        if self._trade == nil and self._request_id ~= nil then
+            self._trade = core.host:findTable("trades"):find("OpenOrderReqID", self._request_id);
+            if self._trade == nil then
+                return nil;
+            end
+            self.TradeID = self._trade.TradeID;
+            self._initial_limit = self._trade.Limit;
+            self._initial_stop = self._trade.Stop;
+        end
+        return self._trade;
+    end
+    -- private start
+    controller._parent = self;
+    controller._executed = false;
+    controller._actions = {};
+    controller._condition = condition;
+    -- private end
+    return controller;
 end
 
 function breakeven:CreateBaseController()
@@ -678,78 +827,6 @@ end
 
 function breakeven:CreateBreakeven()
     local controller = self:CreateBaseController();
-    controller._trailing = 0;
-    function controller:SetWhen(when)
-        self._when = when;
-        return self;
-    end
-    function controller:SetTo(to)
-        self._to = to;
-        return self;
-    end
-    function controller:SetTrailing(trailing)
-        self._trailing = trailing
-        return self;
-    end
-    function controller:SetPartialClose(amountPercent)
-        self._close_percent = amountPercent;
-        return self;
-    end
-    function controller:getTo()
-        local trade = self:GetTrade();
-        local offer = self:GetOffer();
-        if trade.BS == "B" then
-            return offer.Bid - (trade.PL - self._to) * offer.PointSize;
-        else
-            return offer.Ask + (trade.PL - self._to) * offer.PointSize;
-        end
-    end
-    function controller:DoPartialClose()
-        local trade = self:GetTrade();
-        if trade == nil then
-            self._close_percent = nil;
-            return true;
-        end
-        if not trade:refresh() then
-            self._close_percent = nil;
-            return false;
-        end
-        local base_size = core.host:execute("getTradingProperty", "baseUnitSize", trade.Instrument, trade.AccountID);
-        local to_close = breakeven:round(trade.Lot * self._close_percent / 100.0 / base_size) * base_size;
-        trading:PartialClose(trade, to_close);
-        self._close_percent = nil;
-        return true;
-    end
-    function controller:DoBreakeven()
-        if self._executed then
-            if breakeven._storage ~= nil then
-                local trade = self:GetTrade();
-                breakeven._storage:SaveNumber("BE_" .. trade.TradeID, 1);
-            end
-            if self._close_percent ~= nil then
-                if self._command ~= nil and self._command.Finished or self._command == nil then
-                    return self:DoPartialClose();
-                end
-            end
-            return false;
-        end
-        local trade = self:GetTrade();
-        if trade == nil then
-            return true;
-        end
-        if not trade:refresh() then
-            self._executed = true;
-            return false;
-        end
-        if trade.PL >= self._when then
-            if self._to ~= nil then
-                self._command = self._parent._trading:MoveStop(trade, self:getTo(), self._trailing);
-            end
-            self._executed = true;
-            return false;
-        end
-        return true;
-    end
     function controller:Save()
         if self._executed or breakeven._storage == nil then
             return;

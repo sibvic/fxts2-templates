@@ -514,16 +514,17 @@ function CreatePositionStrategy(source, side, id)
         local default_breakeven = CreateCustomBreakeven == nil or not CreateCustomBreakeven(self, result, period, periods_from_last);
         if default_breakeven then
             if self.UseBreakeven then
-                local controller = breakeven:CreateBreakeven()
-                    :SetRequestID(result.RequestID)
-                    :SetWhen(self.BreakevenWhen)
-                    :SetTo(self.BreakevenTo);
-                if self.BreakevenTrailing == "set" then
-                    controller:SetTrailing(self.BreakevenTrailingValue);
+                local condition = breakeven:CreatePLGTCondition(self.BreakevenWhen);
+                local controller = breakeven:CreateController(condition);
+                if self.BreakevenTo ~= nil then
+                    controller:AddAction(breakeven:CreateMoveStopAction(self.BreakevenTo,
+                        self.BreakevenTrailing == "set" and self.BreakevenTrailingValue or nil)
+                    );
                 end
                 if self.BreakevenCloseAmount ~= nil then
-                    controller:SetPartialClose(self.BreakevenCloseAmount);
+                    controller:AddAction(breakeven:CreatePartialClose(self.BreakevenCloseAmount));
                 end
+                controller:SetRequestID(result.RequestID);
             end
         end
         return result;
