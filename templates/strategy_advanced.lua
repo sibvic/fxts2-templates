@@ -345,6 +345,39 @@ function Prepare(name_only)
     it:Do(function (order) RestoreExitControllerForOrder(order); end);
 end
 
+function AddBreakeven(be, result)
+    if not be.UseBreakeven then
+        return;
+    end
+
+    local controller = breakeven:CreateBreakeven()
+        :SetRequestID(result.RequestID)
+        :SetWhen(be.BreakevenWhen);
+    if be.MoveStop then
+        controller:SetTo(be.BreakevenTo);
+    end
+    if be.BreakevenTrailing == "set" then
+        controller:SetTrailing(be.BreakevenTrailingValue);
+    end
+    if be.BreakevenCloseAmount ~= nil then
+        controller:SetPartialClose(be.BreakevenCloseAmount);
+    end
+end
+
+function GetBreakeven(id)
+    local be = {};
+    be.UseBreakeven = instance.parameters:getBoolean("use_breakeven" .. id);
+    be.BreakevenWhen = instance.parameters:getDouble("breakeven_when" .. id);
+    be.BreakevenTo = instance.parameters:getDouble("breakeven_to" .. id);
+    be.MoveStop = instance.parameters:getBoolean("move_be_stop" .. id);
+    be.BreakevenTrailing = instance.parameters:getString("breakeven_trailing");
+    be.BreakevenTrailingValue = instance.parameters:getInteger("trailing" .. id);
+    if instance.parameters:getBoolean("breakeven_close" .. id) then
+        be.BreakevenCloseAmount = instance.parameters:getDouble("breakeven_close_amount" .. id);
+    end
+    return be;
+end
+
 function CreatePositionStrategy(source, side, id)
     local position_strategy = {};
     if SetCustomStop == nil then
@@ -374,15 +407,8 @@ function CreatePositionStrategy(source, side, id)
         position_strategy.Limit = instance.parameters:getDouble("limit" .. id);
     end
     if CreateCustomBreakeven == nil then
-        position_strategy.UseBreakeven = instance.parameters:getBoolean("use_breakeven" .. id);
-        position_strategy.BreakevenWhen = instance.parameters:getDouble("breakeven_when" .. id);
-        position_strategy.BreakevenTo = instance.parameters:getDouble("breakeven_to" .. id);
-        position_strategy.BreakevenTrailing = instance.parameters:getString("breakeven_trailing");
-        position_strategy.BreakevenTrailingValue = instance.parameters:getInteger("trailing" .. id);
-        if instance.parameters:getBoolean("breakeven_close" .. id) then
-            position_strategy.BreakevenCloseAmount = instance.parameters:getDouble("breakeven_close_amount" .. id);
-        end
-        if position_strategy.UseBreakeven and tick_source == nil then
+        position_strategy.be = GetBreakeven(id);
+        if position_strategy.be.UseBreakeven and tick_source == nil then
             tick_source, TICKS_SOURCE_ID = trading_logic:SubscribeHistory(position_strategy.Source.close:instrument(), "t1", true);
         end
     end
@@ -466,19 +492,7 @@ function CreatePositionStrategy(source, side, id)
         CreateExitController(result);
         local default_breakeven = CreateCustomBreakeven == nil or not CreateCustomBreakeven(self, result, period, periods_from_last);
         if default_breakeven then
-            if self.UseBreakeven then
-                local condition = breakeven:CreatePLGTCondition(self.BreakevenWhen);
-                local controller = breakeven:CreateController(condition);
-                if self.BreakevenTo ~= nil then
-                    controller:AddAction(breakeven:CreateMoveStopAction(self.BreakevenTo,
-                        self.BreakevenTrailing == "set" and self.BreakevenTrailingValue or nil)
-                    );
-                end
-                if self.BreakevenCloseAmount ~= nil then
-                    controller:AddAction(breakeven:CreatePartialClose(self.BreakevenCloseAmount));
-                end
-                controller:SetRequestID(result.RequestID);
-            end
+            AddBreakeven(self.be, result);
         end
         return result;
     end
