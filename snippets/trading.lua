@@ -1,6 +1,6 @@
 trading = {};
 trading.Name = "Trading";
-trading.Version = "4.33";
+trading.Version = "4.34";
 trading.Debug = false;
 trading.AddAmountParameter = true;
 trading.AddStopParameter = true;
@@ -15,6 +15,67 @@ trading._used_stop_orders = {};
 trading._used_limit_orders = {};
 function trading:trace(str) if not self.Debug then return; end core.host:trace(self.Name .. ": " .. str); end
 function trading:RegisterModule(modules) for _, module in pairs(modules) do self:OnNewModule(module); module:OnNewModule(self); end modules[#modules + 1] = self; self._ids_start = (#modules) * 100; end
+
+function trading:GetBreakeven(id)
+    local be = {};
+    be.UseBreakeven = instance.parameters:getBoolean("use_breakeven" .. id);
+    be.BreakevenWhen = instance.parameters:getDouble("breakeven_when" .. id);
+    be.BreakevenTo = instance.parameters:getDouble("breakeven_to" .. id);
+    be.MoveStop = instance.parameters:getBoolean("move_be_stop" .. id);
+    be.BreakevenTrailing = instance.parameters:getString("breakeven_trailing");
+    be.BreakevenTrailingValue = instance.parameters:getInteger("trailing" .. id);
+    be.PartialCloseMode = instance.parameters:getString("breakeven_close" .. id);
+    if be.PartialCloseMode ~= "no" then
+        be.PartialCloseAmount = instance.parameters:getDouble("breakeven_close_amount" .. id);
+    end
+    function be:AddBreakeven(result)
+        if self.UseBreakeven == false then
+            return;
+        end
+        if self.UseBreakeven == nil and self.PartialCloseAmount == nil then
+            return;
+        end
+    
+        local condition = breakeven:CreatePLGTCondition(self.BreakevenWhen);
+        local controller = breakeven:CreateController(condition);
+        if self.BreakevenTo ~= nil then
+            controller:AddAction(breakeven:CreateMoveStopAction(self.BreakevenTo,
+                self.BreakevenTrailing == "set" and self.BreakevenTrailingValue or nil)
+            );
+        end
+        if self.PartialCloseAmount ~= nil then
+            controller:AddAction(breakeven:CreatePartialClose(self.PartialCloseAmount, self.PartialCloseMode));
+        end
+        controller:SetRequestID(result.RequestID);
+
+        local controller = breakeven:CreateBreakeven()
+            :SetRequestID(result.RequestID)
+            :SetWhen(self.BreakevenWhen);
+        if self.MoveStop then
+            controller:SetTo(self.BreakevenTo);
+        end
+        if self.BreakevenTrailing == "set" then
+            controller:SetTrailing(self.BreakevenTrailingValue);
+        end
+    end
+    return be;
+end
+function trading:addBreakevenParameters(section_id, id, label)
+    strategy.parameters:addGroup("  Breakeven parameters #" .. label .. section_id);
+    strategy.parameters:addBoolean("use_breakeven" .. id, "Use Breakeven", "", false);
+    strategy.parameters:addDouble("breakeven_when" .. id, "Breakeven Activation Value, in pips", "", 10);
+    strategy.parameters:addBoolean("move_be_stop" .. id, "Move Stop", "", false);
+    strategy.parameters:addDouble("breakeven_to" .. id, "Breakeven To, in pips", "", 0);
+    strategy.parameters:addString("breakeven_trailing" .. id, "Trailing after breakeven", "", "default");
+    strategy.parameters:addStringAlternative("breakeven_trailing" .. id, "Do not change", "", "default");
+    strategy.parameters:addStringAlternative("breakeven_trailing" .. id, "Set trailing", "", "set");
+
+    strategy.parameters:addString("breakeven_close" .. id, "Partial close", "", "no");
+    strategy.parameters:addStringAlternative("breakeven_close" .. id, "No partial close", "", "no");
+    strategy.parameters:addStringAlternative("breakeven_close" .. id, "Partial close (% of lots)", "", "lots");
+    strategy.parameters:addStringAlternative("breakeven_close" .. id, "Partial close (% of initial lots)", "", "initial_lots");
+    strategy.parameters:addDouble("breakeven_close_amount" .. id, "Partial close amount", "", 50);
+end
 
 function trading:AddPositionParameters(parameters, id, section_id)
     if self.AddAmountParameter then
@@ -65,15 +126,7 @@ function trading:AddPositionParameters(parameters, id, section_id)
         end
     end
     if CreateCustomBreakeven == nil then
-        parameters:addGroup("  Breakeven parameters " .. section_id);
-        parameters:addBoolean("use_breakeven" .. id, "Use Breakeven", "", false);
-        parameters:addDouble("breakeven_when" .. id, "Breakeven Activation Value, in pips", "", 10);
-        parameters:addDouble("breakeven_to" .. id, "Breakeven To, in pips", "", 0);
-        parameters:addString("breakeven_trailing" .. id, "Trailing after breakeven", "", "default");
-        parameters:addStringAlternative("breakeven_trailing" .. id, "Do not change", "", "default");
-        parameters:addStringAlternative("breakeven_trailing" .. id, "Set trailing", "", "set");
-        parameters:addBoolean("breakeven_close" .. id, "Partial close on breakeven", "", false);
-        parameters:addDouble("breakeven_close_amount" .. id, "Partial close amount, %", "", 50);
+        self:addBreakevenParameters(section_id, id, "1");
     end
 end
 

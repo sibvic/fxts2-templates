@@ -1,7 +1,7 @@
 breakeven = {};
 -- public fields
 breakeven.Name = "Breakeven";
-breakeven.Version = "4.0";
+breakeven.Version = "5.0";
 breakeven.Debug = false;
 --private fields
 breakeven._moved_stops = {};
@@ -123,7 +123,7 @@ function breakeven:CreateMoveStopAction(to, trailing)
     return action;
 end
 
-function breakeven:CreatePartialClose(toClosePercent)
+function breakeven:CreatePartialClose(toClosePercent, mode)
     local action = {};
     function action:Execute(data)
         if self._command ~= nil then
@@ -137,6 +137,12 @@ function breakeven:CreatePartialClose(toClosePercent)
         end
         return self:doClose(data);
     end
+    function controller:getLots(data, trade)
+        if self._mode == "initial_lots" then
+            return data:GetInitialLots();
+        end
+        return trade.Lot;
+    end
     -- private start
     function action:doClose(data)
         local trade = data:GetTrade();
@@ -147,11 +153,12 @@ function breakeven:CreatePartialClose(toClosePercent)
             return true;
         end
         local base_size = core.host:execute("getTradingProperty", "baseUnitSize", trade.Instrument, trade.AccountID);
-        local to_close = breakeven:round(trade.Lot * self._toClosePercent / 100.0 / base_size) * base_size;
+        local to_close = breakeven:round(self:getLots(data, trade) * self._toClosePercent / 100.0 / base_size) * base_size;
         self._command = trading:PartialClose(trade, to_close);
         return false;
     end
     action._toClosePercent = toClosePercent;
+    action._mode = mode;
     -- private end
     return action;
 end
@@ -171,6 +178,8 @@ function breakeven:CreateController(condition)
             end
         end
     end
+    function controller:GetInitialLots()
+    end
     function controller:Save()
     end
     function controller:Restore(tradeID)
@@ -178,6 +187,9 @@ function breakeven:CreateController(condition)
     function controller:SetTrade(trade)
         self._trade = trade;
         self.TradeID = trade.TradeID;
+        self._initial_limit = self._trade.Limit;
+        self._initial_stop = self._trade.Stop;
+        self._initial_lot = self._trade.Lot;
         return self;
     end
     function controller:GetOffer()
@@ -205,13 +217,10 @@ function breakeven:CreateController(condition)
     end
     function controller:GetTrade()
         if self._trade == nil and self._request_id ~= nil then
-            self._trade = core.host:findTable("trades"):find("OpenOrderReqID", self._request_id);
+            self:SetTrade(core.host:findTable("trades"):find("OpenOrderReqID", self._request_id));
             if self._trade == nil then
                 return nil;
             end
-            self.TradeID = self._trade.TradeID;
-            self._initial_limit = self._trade.Limit;
-            self._initial_stop = self._trade.Stop;
         end
         return self._trade;
     end
@@ -787,43 +796,6 @@ function breakeven:CreateOnCandleClose()
     return controller;
 end
 
-function breakeven:PartialClose()
-    local controller = self:CreateBaseController();
-    controller._trailing = 0;
-    function controller:SetWhen(when)
-        self._when = when;
-        return self;
-    end
-    function controller:SetPartialClose(amountPercent)
-        self._close_percent = amountPercent;
-        return self;
-    end
-    function controller:DoPartialClose()
-        
-    end
-    function controller:DoBreakeven()
-        if self._close_percent == nil then
-            return true;
-        end
-        local trade = self:GetTrade();
-        if trade == nil then
-            return true;
-        end
-        if not trade:refresh() then
-            self._close_percent = nil;
-            return false;
-        end
-        if trade.PL >= self._when then
-            local base_size = core.host:execute("getTradingProperty", "baseUnitSize", trade.Instrument, trade.AccountID);
-            local to_close = breakeven:round(trade.Lot * self._close_percent / 100.0 / base_size) * base_size;
-            trading:PartialClose(trade, to_close);
-            self._close_percent = nil;
-        end
-        return true;
-    end
-    self._controllers[#self._controllers + 1] = controller;
-    return controller;
-end
 
 function breakeven:CreateBreakeven()
     local controller = self:CreateBaseController();
