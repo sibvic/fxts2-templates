@@ -53,9 +53,21 @@ end
 function RestoreExitControllerForTrade(trade)
 end
 
+function CreateCustomStop()
+    local stop = {};
+    function stop:CreateStopParameters(params, id) 
+        return false; 
+    end
+    function stop:SetCustomStop(position_desc, command, period, periods_from_last, source) 
+        return false; 
+    end
+    function stop:SaveCustomStopParameters(position_desc, id) 
+    end
+    return stop;
+end
+
 function OnNewBar(source, period) end
 function CreateParameters() end
-function CreateStopParameters(params, id) return false; end
 function CreateLimitParameters(params, id) return false; end
 function CreateEntryIndicators(source) end
 function CreateExitIndicators(source) end
@@ -75,9 +87,7 @@ end
 -- Entry rate for the entry orders
 -- Return nil for market orders
 function GetEntryRate(source, bs, period) return nil; end
-function SetCustomStop(position_desc, command, period, periods_from_last, source) return false; end
 function SetCustomLimit(position_desc, command, period, periods_from_last, source) return false; end
-function SaveCustomStopParameters(position_desc, id) end
 function SaveCustomLimitParameters(position_desc, id) end
 function CreateCustomBreakeven(position_desc, result, period, periods_from_last) return false; end
 
@@ -101,6 +111,10 @@ function CreateCustomActions()
         local exitLongAction = {};
         exitLongAction.ActOnSwitch = false;
         exitLongAction.Cache = {};
+        exitLongAction.AddHeaders = function (headers, data)
+        end
+        exitLongAction.AddLog = function (source, period, periodFromLast, data, values)
+        end
         exitLongAction.IsPass = function (source, period, periodFromLast, data)
             return false; -- TODO: implement
         end
@@ -108,6 +122,10 @@ function CreateCustomActions()
         local exitShortAction = {};
         exitShortAction.ActOnSwitch = false;
         exitShortAction.Cache = {};
+        exitShortAction.AddHeaders = function (headers, data)
+        end
+        exitShortAction.AddLog = function (source, period, periodFromLast, data, values)
+        end
         exitShortAction.IsPass = function (source, period, periodFromLast, data)
             return false; -- TODO: implement
         end
@@ -289,8 +307,10 @@ local add_log;
 local log_file;
 local use_mandatory_closing;
 local headers = {};
+local custom_stop;
 
 function Prepare(name_only)
+    custom_stop = CreateCustomStop();
     trading_logic.HistoryPreloadBars = HISTORY_PRELOAD_BARS;
     trading_logic.RequestBidAsk = RequestBidAsk;
     add_log = instance.parameters.add_log;
@@ -362,14 +382,14 @@ end
 
 function CreatePositionStrategy(source, side, id)
     local position_strategy = {};
-    if SetCustomStop == nil then
+    if custom_stop == nil then
         position_strategy.StopType = instance.parameters:getString("stop_type" .. id);
-    elseif SaveCustomStopParameters ~= nil then
-        SaveCustomStopParameters(position_strategy, id);
+    elseif custom_stop ~= nil then
+        custom_stop:SaveCustomStopParameters(position_strategy, id);
     end
     if SetCustomLimit == nil then
         position_strategy.LimitType = instance.parameters:getString("limit_type" .. id);
-        assert(position_strategy.LimitType ~= "stop" or position_strategy.StopType == "pips" or CreateStopParameters ~= nil, "To use limit based on stop you need to set stop in pips");
+        assert(position_strategy.LimitType ~= "stop" or position_strategy.StopType == "pips" or custom_stop ~= nil, "To use limit based on stop you need to set stop in pips");
     elseif SaveCustomLimitParameters ~= nil then
         SaveCustomLimitParameters(position_strategy, id);
     end
@@ -379,7 +399,7 @@ function CreatePositionStrategy(source, side, id)
     position_strategy.Source = source;
     position_strategy.Amount = instance.parameters:getInteger("amount" .. id);
     position_strategy.Amount_Type = instance.parameters:getString("amount_type" .. id);
-    if SetCustomStop == nil then
+    if custom_stop == nil then
         position_strategy.Stop = instance.parameters:getDouble("stop" .. id);
         if position_strategy.StopType == "atr" then
             position_strategy.StopATR = core.indicators:create("ATR", source, position_strategy.Stop);
@@ -460,7 +480,7 @@ function CreatePositionStrategy(source, side, id)
         elseif self.Amount_Type == "margin" then
             command:SetPercentOfMarginAmount(self.Amount)
         end
-        local default_stop = SetCustomStop == nil or not SetCustomStop(self, command, period, periods_from_last, source);
+        local default_stop = custom_stop == nil or not custom_stop:SetCustomStop(self, command, period, periods_from_last, source);
         local default_limit = SetCustomLimit == nil or not SetCustomLimit(self, command, period, periods_from_last, source);
         if default_stop then
             local stop_value;
