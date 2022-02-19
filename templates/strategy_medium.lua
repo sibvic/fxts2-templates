@@ -214,6 +214,9 @@ function ParseTime(time)
 end
 
 function InRange(now, openTime, closeTime)
+    now = math.floor(now * 86400 + 0.5);
+    openTime = math.floor(openTime * 86400 + 0.5);
+    closeTime = math.floor(closeTime * 86400 + 0.5);
     if openTime == closeTime then
         return true;
     end
@@ -333,19 +336,25 @@ function PositionsLimitHit()
     return count >= position_limit;
 end
 
+local closed_orders = {};
 function DeleteOrders()
+    local closed = false;
     local enum = core.host:findTable("orders"):enumerator()
     local row = enum:next()
     while row ~= nil do
         if row.AccountID == Account 
             and row.Instrument == main_source:instrument() 
-            and (row.QTXT == custom_id or custom_id == "")
+            and closed_orders[row.OrderID] ~= true
         then
             local valuemap = core.valuemap()
             valuemap.Command = "DeleteOrder"
             valuemap.OrderID = row.OrderID
             success, msg = terminal:execute(4, valuemap)
+            closed_orders[row.OrderID] = success;
             if not (success) then
+                if log_file ~= nil then
+                    log_file:write(msg .. "\n");
+                end
                 terminal:alertMessage(
                     instance.bid:instrument(),
                     instance.bid[NOW],
@@ -353,9 +362,11 @@ function DeleteOrders()
                     instance.bid:date(NOW)
                 )
             end
+            closed = true;
         end
         row = enum:next()
     end
+    return false;
 end
 
 function CloseTrades(side)

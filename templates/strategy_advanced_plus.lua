@@ -572,6 +572,9 @@ function ParseTime(time)
 end
 
 function InRange(now, openTime, closeTime)
+    now = math.floor(now * 86400 + 0.5);
+    openTime = math.floor(openTime * 86400 + 0.5);
+    closeTime = math.floor(closeTime * 86400 + 0.5);
     if openTime == closeTime then
         return true;
     end
