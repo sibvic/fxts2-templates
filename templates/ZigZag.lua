@@ -52,7 +52,6 @@ function Prepare(nameOnly)
 end
 
 function CreateZigZag(stream, Depth, Deviation, Backstep, ZigC, ZagC)
-    local searchBoth = 0
     local searchPeak = 1
     local searchLawn = -1
     local zz = {};
