@@ -106,6 +106,14 @@ Email to send the alert to.
 
 strategy_simple + breakeven feature
 
+### Parameters
+
+**Use Breakeven**: Turns on/off breakeven logic
+
+**Breakeven Activation Value, in pips**: Profit level when the stop should be moved to the breakeven level
+
+**Breakeven To, in pips**: Breakeven level (target pips of profit for the stop order)
+
 ## strategy_simple_OCO
 
 strategy_simple with OCO orders.
