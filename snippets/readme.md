@@ -171,3 +171,19 @@ Provides persistent storage.
 ## MT4
 
 Functions for partial emulation of MT4 features. Makes it easier to convert indicators and EA from MT4.
+
+## Array
+
+Pine script-like array
+
+## Line
+
+Pine script-like line
+
+## Label
+
+Pine script-like label
+
+## SafeMath
+
+Used for conversion from Pine Script. Set of function which can handle nil as a parameter (PS's na-like syntax)
