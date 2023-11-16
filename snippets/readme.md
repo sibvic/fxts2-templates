@@ -187,3 +187,19 @@ Pine script-like label
 ## SafeMath
 
 Used for conversion from Pine Script. Set of function which can handle nil as a parameter (PS's na-like syntax)
+
+## BarsSince
+
+Pine script-like barssince implementation.
+
+## ValueWhen
+
+Pine script-like valuewhen implementation.
+
+## Box
+
+Pine script-like box implementation.
+
+## Graphics
+
+Utility functions for graphics and drawing.

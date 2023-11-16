@@ -1,23 +1,5 @@
 Line = {};
 Line.AllLines = {};
-Line.NextId = 10;
-Line.Pens = {};
-function Line:FindPen(width, color, context)
-    for i, pen in ipairs(Line.Pens) do
-        if pen.Width == width and pen.Color == color then
-            context:createPen(pen.Id, context:convertPenStyle(core.LINE_SOLID), width, color);
-            return pen.Id;
-        end
-    end
-    local newPen = {};
-    newPen.Id = Line.NextId;
-    newPen.Width = width;
-    newPen.Color = color;
-    context:createPen(newPen.Id, context:convertPenStyle(core.LINE_SOLID), width, color);
-    Line.NextId = Line.NextId + 1;
-    Line.Pens[#Line.Pens + 1] = newPen;
-    return newPen.Id;
-end
 function Line:New(x1, y1, x2, y2)
     local newLine = {};
     newLine.X1 = x1;
@@ -45,7 +27,7 @@ function Line:New(x1, y1, x2, y2)
             return;
         end
         if not self.PenValid then
-            self.PenId = Line:FindPen(self.Width, self.Color, context);
+            self.PenId = Line:FindPen(self.Width, self.Color, core.LINE_SOLID, context);
             self.PenValid = true;
         end
         _, y1 = context:pointOfPrice(self.Y1);
