@@ -207,3 +207,9 @@ Utility functions for graphics and drawing.
 ## Change
 
 Pine script-like change implementation
+
+## HighestBars
+
+Pine script-like highestbars implementation
+
+## LowestBars
