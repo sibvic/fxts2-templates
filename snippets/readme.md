@@ -213,3 +213,9 @@ Pine script-like change implementation
 Pine script-like highestbars implementation
 
 ## LowestBars
+
+Pine script-like lowestbars implementation
+
+## Table
+
+Pine script-like table implementation
