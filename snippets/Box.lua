@@ -1,5 +1,8 @@
 Box = {};
 Box.AllBoxs = {};
+function Box:Clear()
+    Box.AllBoxs = {};
+end
 function Box:New(id, left, top, right, bottom)
     local newBox = {};
     newBox.Left = left;

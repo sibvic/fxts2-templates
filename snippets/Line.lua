@@ -1,5 +1,8 @@
 Line = {};
 Line.AllLines = {};
+function Line:Clear()
+    Line.AllLines = {};
+end
 function Line:New(x1, y1, x2, y2)
     local newLine = {};
     newLine.X1 = x1;
@@ -14,10 +17,12 @@ function Line:New(x1, y1, x2, y2)
         self.X2 = x;
         self.Y2 = y;
     end
+    newLine.Color = core.colors().Blue;
     function newLine:SetColor(clr)
         self.Color = clr;
         self.PenValid = false;
     end
+    newLine.Width = 1;
     function newLine:SetWidth(width)
         self.Width = width;
         self.PenValid = false;
@@ -27,7 +32,7 @@ function Line:New(x1, y1, x2, y2)
             return;
         end
         if not self.PenValid then
-            self.PenId = Line:FindPen(self.Width, self.Color, core.LINE_SOLID, context);
+            self.PenId = Graphics:FindPen(self.Width, self.Color, core.LINE_SOLID, context);
             self.PenValid = true;
         end
         _, y1 = context:pointOfPrice(self.Y1);

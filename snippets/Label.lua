@@ -1,5 +1,8 @@
 Label = {};
 Label.AllLabels = {};
+function Label:Clear()
+    Label.AllLabels = {};
+end
 function Label:New(id, period, price)
     local newLabel = {};
     newLabel.X = period;
@@ -21,8 +24,8 @@ function Label:New(id, period, price)
     end
     function newLabel:Draw(stage, context)
         local W, H = context:measureText(Label.FontId, self.Text, context.LEFT);
-        visible, y = context:pointOfPrice(newLabel.Y);
-        x1, x = context:positionOfBar(newLabel.X)
+        visible, y = context:pointOfPrice(self.Y);
+        x1, x = context:positionOfBar(self.X)
         context:drawText(Label.FontId, self.Text, self.TextColor, -1, x - W / 2, y - H / 2, x + W /2, y + H / 2, 0);
     end
     self.AllLabels[id] = newLabel;
@@ -33,8 +36,7 @@ function Label:Draw(stage, context)
         return;
     end
     if Label.FontId == nil then
-        Label.FontId = 1;
-        context:createFont(Label.FontId, "Arial", 0, context:pointsToPixels(10), context.LEFT);
+        Label.FontId = Graphics:FindFont("Arial", 0, context:pointsToPixels(10), context.LEFT, context);
     end
     for id, label in pairs(self.AllLabels) do
         label:Draw(stage, context);
