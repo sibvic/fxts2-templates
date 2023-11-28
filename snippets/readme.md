@@ -219,3 +219,7 @@ Pine script-like lowestbars implementation
 ## Table
 
 Pine script-like table implementation
+
+## Str
+
+Pine script-like implementation of str.* functions
