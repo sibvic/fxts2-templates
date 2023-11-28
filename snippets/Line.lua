@@ -44,6 +44,14 @@ function Line:New(x1, y1, x2, y2)
     self.AllLines[#self.AllLines + 1] = newLine;
     return newLine;
 end
+function Line:Delete(line)
+    for i = 1, #self.AllLines do
+        if self.AllLines[i] == line then
+            table.remove(self.AllLines, i);
+            return;
+        end
+    end
+end
 function Line:Draw(stage, context)
     if stage ~= 2 then
         return;
