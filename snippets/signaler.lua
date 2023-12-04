@@ -15,7 +15,18 @@ signaler._commands = {};
 
 function signaler:trace(str) if not self.Debug then return; end core.host:trace(self.Name .. ": " .. str); end
 function signaler:OnNewModule(module) end
-function signaler:RegisterModule(modules) for _, module in pairs(modules) do self:OnNewModule(module); module:OnNewModule(self); end modules[#modules + 1] = self; self._ids_start = (#modules) * 100; end
+function signaler:RegisterModule(modules) 
+    if modules == nil then
+        self._ids_start = 100; 
+        return;
+    end
+    for _, module in pairs(modules) do 
+        self:OnNewModule(module); 
+        module:OnNewModule(self); 
+    end 
+    modules[#modules + 1] = self; 
+    self._ids_start = (#modules) * 100; 
+end
 
 function signaler:ToJSON(item)
     local json = {};
