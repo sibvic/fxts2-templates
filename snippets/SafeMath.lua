@@ -46,3 +46,21 @@ function SafeLE(left, right)
     end
     return left <= right;
 end
+function SafeMax(left, right)
+    if left == nil or right == nil then
+        return nil;
+    end
+    return math.max(left, right);
+end
+function SafeMin(left, right)
+    if left == nil or right == nil then
+        return nil;
+    end
+    return math.min(left, right);
+end
+function SafeNegative(left)
+    if left == nil then
+        return nil;
+    end
+    return -left;
+end
