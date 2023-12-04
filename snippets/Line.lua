@@ -3,6 +3,54 @@ Line.AllLines = {};
 function Line:Clear()
     Line.AllLines = {};
 end
+function Line:SetXY1(line, x, y)
+    if line == nil then
+        return;
+    end
+    line:SetXY1(x, y);
+end
+function Line:SetXY2(line, x, y)
+    if line == nil then
+        return;
+    end
+    line:SetXY2(x, y);
+end
+function Line:SetX1(line, x)
+    if line == nil then
+        return;
+    end
+    line:SetX1(x);
+end
+function Line:SetX2(line, x)
+    if line == nil then
+        return;
+    end
+    line:SetX2(x);
+end
+function Line:SetY1(line, y)
+    if line == nil then
+        return;
+    end
+    line:SetY1(y);
+end
+function Line:SetY2(line, y)
+    if line == nil then
+        return;
+    end
+    line:SetY2(y);
+end
+function Line:SetColor(line, clr)
+    if line == nil then
+        return;
+    end
+    line:SetColor(clr);
+end
+function Line:SetWidth(line, width)
+    if line == nil then
+        return;
+    end
+    line:SetWidth(width);
+end
 function Line:New(x1, y1, x2, y2)
     local newLine = {};
     newLine.X1 = x1;
@@ -15,6 +63,18 @@ function Line:New(x1, y1, x2, y2)
     end
     function newLine:SetXY2(x, y)
         self.X2 = x;
+        self.Y2 = y;
+    end
+    function newLine:SetX1(x)
+        self.X1 = x;
+    end
+    function newLine:SetX2(x)
+        self.X2 = x;
+    end
+    function newLine:SetY1(y)
+        self.Y1 = y;
+    end
+    function newLine:SetY2(y)
         self.Y2 = y;
     end
     newLine.Color = core.colors().Blue;
