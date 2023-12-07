@@ -51,6 +51,18 @@ function Line:SetWidth(line, width)
     end
     line:SetWidth(width);
 end
+function Line:SetStyle(line, style)
+    if line == nil then
+        return;
+    end
+    line:SetStyle(style);
+end
+function Line:SetExtend(line, extend)
+    if line == nil then
+        return;
+    end
+    line:SetExtend(extend);
+end
 function Line:New(x1, y1, x2, y2)
     local newLine = {};
     newLine.X1 = x1;
@@ -60,46 +72,96 @@ function Line:New(x1, y1, x2, y2)
     function newLine:SetXY1(x, y)
         self.X1 = x;
         self.Y1 = y;
+        return self;
     end
     function newLine:SetXY2(x, y)
         self.X2 = x;
         self.Y2 = y;
+        return self;
     end
     function newLine:SetX1(x)
         self.X1 = x;
+        return self;
     end
     function newLine:SetX2(x)
         self.X2 = x;
+        return self;
     end
     function newLine:SetY1(y)
         self.Y1 = y;
+        return self;
     end
     function newLine:SetY2(y)
         self.Y2 = y;
+        return self;
+    end
+    function newLine:GetX1()
+        return self.X1;
+    end
+    function newLine:GetX2()
+        return self.X2;
+    end
+    function newLine:GetY1()
+        return self.Y1;
+    end
+    function newLine:GetY2()
+        return self.Y2;
     end
     newLine.Color = core.colors().Blue;
     function newLine:SetColor(clr)
         self.Color = clr;
-        self.PenValid = false;
+        self.PenId = nil;
+        return self;
     end
     newLine.Width = 1;
     function newLine:SetWidth(width)
         self.Width = width;
-        self.PenValid = false;
+        self.PenId = nil;
+        return self;
+    end
+    newLine.Extend = "none";
+    function newLine:SetExtend(extend)
+        self.Extend = extend;
+        return self;
+    end
+    newLine.Style = "solid";
+    function newLine:SetStyle(style)
+        self.Style = style;
+        self.PenId = nil;
+        return self;
+    end
+    function newLine:getStyleForContext()
+        if self.Style == "solid" or self.Style == "arrow_left" or self.Style == "arrow_both" or self.Style == "arrow_right" then
+            return core.LINE_SOLID;
+        elseif self.Style == "dotted" then
+            return core.LINE_DOT;
+        elseif self.Style == "dashed" then
+            return core.LINE_DASH;
+        end
+        return core.LINE_SOLID;
     end
     function newLine:Draw(stage, context)
         if self.Y1 == nil or self.Y2 == nil then
             return;
         end
-        if not self.PenValid then
-            self.PenId = Graphics:FindPen(self.Width, self.Color, core.LINE_SOLID, context);
-            self.PenValid = true;
+        if self.PenId == nil then
+            self.PenId = Graphics:FindPen(self.Width, self.Color, self:getStyleForContext(), context);
         end
         _, y1 = context:pointOfPrice(self.Y1);
         _, x1 = context:positionOfBar(self.X1);
         _, y2 = context:pointOfPrice(self.Y2);
         _, x2 = context:positionOfBar(self.X2);
         context:drawLine(self.PenId, x1, y1, x2, y2);
+        if self.Extend == "right" or self.Extend == "both" then
+            local a, c = math2d.lineEquation(x1, y1, x2, y2);
+            y3 = a * context:right() + c;
+            context:drawLine(self.PenId, x2, y2, context:right(), y3);
+        end
+        if self.Extend == "left" or self.Extend == "both" then
+            local a, c = math2d.lineEquation(x1, y1, x2, y2);
+            y3 = a * context:left() + c;
+            context:drawLine(self.PenId, x1, y1, context:left(), y3);
+        end
     end
     self.AllLines[#self.AllLines + 1] = newLine;
     return newLine;
