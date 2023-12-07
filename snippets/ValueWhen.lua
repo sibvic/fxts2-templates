@@ -11,7 +11,11 @@ function CreateValueWhen()
                 self._count = self._count + 1;
             end
             self._stream:setBookmark(self._count, period);
-            self._stream[period] = value;
+            if value == nil then
+                self._stream:setNoData(period);
+            else
+                self._stream[period] = value;
+            end
         end
         if self._count <= occurrence then
             return nil;
