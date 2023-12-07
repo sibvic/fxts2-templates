@@ -223,3 +223,7 @@ Pine script-like table implementation
 ## Str
 
 Pine script-like implementation of str.* functions
+
+## Linefill
+
+Pine script-like implementation of linefill
