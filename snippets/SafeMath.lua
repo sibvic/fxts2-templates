@@ -64,3 +64,6 @@ function SafeNegative(left)
     end
     return -left;
 end
+function Float(number)
+    return number and number or 0.0;
+end
