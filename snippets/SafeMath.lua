@@ -67,3 +67,19 @@ end
 function Float(number)
     return number and number or 0.0;
 end
+function Round(num, idp)
+    if num == nil then
+        return nil;
+    end
+    if idp and idp > 0 then
+        local mult = 10 ^ idp
+        return math.floor(num * mult + 0.5) / mult
+    end
+    return math.floor(num + 0.5)
+end
+function Nz(value, defaultValue)
+    if defaulValue == nil then
+        defaulValue = 0;
+    end
+    return value and value or defaultValue;
+end
