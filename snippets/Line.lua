@@ -3,6 +3,9 @@ Line.AllLines = {};
 function Line:Clear()
     Line.AllLines = {};
 end
+function Line:Prepare(max_lines_count)
+    Line.max_lines_count = max_lines_count;
+end
 function Line:SetXY1(line, x, y)
     if line == nil then
         return;
@@ -63,6 +66,12 @@ function Line:SetExtend(line, extend)
     end
     line:SetExtend(extend);
 end
+function Line:SetXLoc(line, x1, x2, xloc)
+    if line == nil then
+        return;
+    end
+    line:SetXLoc(x1, x2, xloc);
+end
 function Line:New(x1, y1, x2, y2)
     local newLine = {};
     newLine.X1 = x1;
@@ -87,6 +96,13 @@ function Line:New(x1, y1, x2, y2)
         self.X2 = x;
         return self;
     end
+    newLine.XLoc = "bar_index";
+    function newLine:SetXLoc(x1, x2, xloc)
+        newLine.X1 = x1;
+        newLine.X2 = x2;
+        newLine.XLoc = xloc;
+        return self;
+    end
     function newLine:SetY1(y)
         self.Y1 = y;
         return self;
@@ -109,7 +125,8 @@ function Line:New(x1, y1, x2, y2)
     end
     newLine.Color = core.colors().Blue;
     function newLine:SetColor(clr)
-        self.Color = clr;
+        self.ColorTransparency = (math.floor(clr / 16777216) % 255);
+        self.Color = clr - self.ColorTransparency * 16777216;
         self.PenId = nil;
         return self;
     end
@@ -140,30 +157,40 @@ function Line:New(x1, y1, x2, y2)
         end
         return core.LINE_SOLID;
     end
+    function newLine:converXToPoints(context, x)
+        if self.XLoc == "bar_time" then
+            return context:positionOfDate(x / 86400000);
+        end
+        _, x1 = context:positionOfBar(x);
+        return x1;
+    end
     function newLine:Draw(stage, context)
-        if self.Y1 == nil or self.Y2 == nil then
+        if self.Y1 == nil or self.Y2 == nil or self.X1 == nil or self.X2 == nil then
             return;
         end
         if self.PenId == nil then
             self.PenId = Graphics:FindPen(self.Width, self.Color, self:getStyleForContext(), context);
         end
+        x1 = self:converXToPoints(context, self.X1);
+        x2 = self:converXToPoints(context, self.X2);
         _, y1 = context:pointOfPrice(self.Y1);
-        _, x1 = context:positionOfBar(self.X1);
         _, y2 = context:pointOfPrice(self.Y2);
-        _, x2 = context:positionOfBar(self.X2);
-        context:drawLine(self.PenId, x1, y1, x2, y2);
+        context:drawLine(self.PenId, x1, y1, x2, y2, self.ColorTransparency);
         if self.Extend == "right" or self.Extend == "both" then
             local a, c = math2d.lineEquation(x1, y1, x2, y2);
             y3 = a * context:right() + c;
-            context:drawLine(self.PenId, x2, y2, context:right(), y3);
+            context:drawLine(self.PenId, x2, y2, context:right(), y3, self.ColorTransparency);
         end
         if self.Extend == "left" or self.Extend == "both" then
             local a, c = math2d.lineEquation(x1, y1, x2, y2);
             y3 = a * context:left() + c;
-            context:drawLine(self.PenId, x1, y1, context:left(), y3);
+            context:drawLine(self.PenId, x1, y1, context:left(), y3, self.ColorTransparency);
         end
     end
     self.AllLines[#self.AllLines + 1] = newLine;
+    if #self.AllLines > self.max_lines_count then
+        table.remove(self.AllLines, 1);
+    end
     return newLine;
 end
 function Line:Delete(line)
