@@ -16,7 +16,7 @@ function Box:New(id, seriesId, left, top, right, bottom)
     newBox.BorderStyle = core.LINE_SOLID;
     newBox.BgColor = core.colors().Blue;
     function newBox:SetBgColor(clr)
-        self.BgColorTransparency = (math.floor(clr / 16777216) % 256);
+        self.BgColorTransparency = (math.floor(clr / 16777216) % 255);
         self.BgColor = clr - self.BgColorTransparency * 16777216;
         self.BrushId = nil;
         return self;

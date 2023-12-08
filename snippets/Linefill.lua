@@ -21,7 +21,7 @@ function Linefill:New(line1, line2)
     newLinefill.Color = core.colors().Blue;
     function newLinefill:SetColor(clr, transparency)
         self.Color = clr;
-        self.ColorTransparency = transparency and transparency or (math.floor(clr / 16777216) % 256);
+        self.ColorTransparency = transparency and transparency or (math.floor(clr / 16777216) % 255);
         self.PenId = nil;
         self.BrushId = nil;
     end

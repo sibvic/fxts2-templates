@@ -58,8 +58,8 @@ function Label:New(id, period, price)
     end
     newLabel.BGColor = nil;
     function newLabel:SetColor(clr)
-        self.BgColorTransparency = (math.floor(clr / 16777216) % 256);
-        self.BGColor = clr;
+        self.BgColorTransparency = (math.floor(clr / 16777216) % 255);
+        self.BGColor = clr - self.BgColorTransparency * 16777216;
         self.BGPenId = nil;
         self.BGBrushId = nil;
         return self;
