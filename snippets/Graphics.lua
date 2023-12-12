@@ -52,3 +52,8 @@ function Color(color)
     end
     return color;
 end
+function Graphics:SplitColorAndTransparency(clr)
+    local transparency = (math.floor(clr / 16777216) % 255);
+    local color = clr - transparency * 16777216;
+    return color, transparency;
+end

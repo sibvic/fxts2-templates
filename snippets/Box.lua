@@ -16,14 +16,17 @@ function Box:New(id, seriesId, left, top, right, bottom)
     newBox.BorderStyle = core.LINE_SOLID;
     newBox.BgColor = core.colors().Blue;
     function newBox:SetBgColor(clr)
-        self.BgColorTransparency = (math.floor(clr / 16777216) % 255);
-        self.BgColor = clr - self.BgColorTransparency * 16777216;
+        color, transparency = Graphics:SplitColorAndTransparency(clr);
+        self.BgColorTransparency = transparency;
+        self.BgColor = color;
         self.BrushId = nil;
         return self;
     end
     newBox.BorderColor = core.colors().Blue;
     function newBox:SetBorderColor(clr)
-        self.BorderColor = clr;
+        color, transparency = Graphics:SplitColorAndTransparency(clr);
+        self.BorderColor_transparency = transparency;
+        self.BorderColor = color;
         self.PenId = nil;
         return self;
     end
