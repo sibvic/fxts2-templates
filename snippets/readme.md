@@ -231,3 +231,7 @@ Pine script-like implementation of linefill
 ## PineScriptUtils
 
 Utilities for converting Pine Script into lua.
+
+## BGColor
+
+Pine script-like implementation of barcolor

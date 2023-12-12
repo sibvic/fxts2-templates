@@ -57,3 +57,10 @@ function Graphics:SplitColorAndTransparency(clr)
     local color = clr - transparency * 16777216;
     return color, transparency;
 end
+function Graphics:AddTransparency(clr, transp)
+    if clr == nil then
+        return nil;
+    end
+    color, _ = Graphics:SplitColorAndTransparency(clr);
+    return color + math.floor(transp / 100 * 255) * 16777216
+end
