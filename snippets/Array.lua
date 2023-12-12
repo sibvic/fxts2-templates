@@ -1,4 +1,10 @@
 Array = {};
+function Array:Clear(array)
+    if array == nil then
+        return;
+    end
+    array:Clear();
+end
 function Array:Max(array)
     local maxVal = array:Get(0);
     for i = 1, array:Size() - 1 do
@@ -49,6 +55,9 @@ function Array:NewArray(size, initialValue)
     function newArray:Max() return Array:Max(self); end
     function newArray:Min() return Array:Min(self); end
     function newArray:Size() return #self.arr; end
+    function newArray:Clear()
+        self.arr = {};
+    end
     function newArray:Fill(value, from, to)
         if to == nil then
             to = #self.arr - 1;
