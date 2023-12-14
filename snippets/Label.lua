@@ -78,8 +78,13 @@ function Label:New(id, seriesId, period, price)
     end
     newLabel.BGColor = nil;
     function newLabel:SetColor(clr)
-        self.BgColorTransparency = (math.floor(clr / 16777216) % 256);
-        self.BGColor = clr - self.BgColorTransparency * 16777216;
+        if clr ~= nil then
+            self.BgColorTransparency = (math.floor(clr / 16777216) % 256);
+            self.BGColor = clr - self.BgColorTransparency * 16777216;
+        else
+            self.BgColorTransparency = nil;
+            self.BGColor = nil;
+        end
         self.BGPenId = nil;
         self.BGBrushId = nil;
         return self;
@@ -95,10 +100,16 @@ function Label:New(id, seriesId, period, price)
         return self;
     end
     function newLabel:getCoordinates(context, W, H)
-        visible, y = context:pointOfPrice(self.Y);
-        x1, x = context:positionOfBar(self.X)
+        local visible, y = context:pointOfPrice(self.Y);
+        local x1, x = context:positionOfBar(self.X)
         if self.Style == "left" then
             return x, y - H / 2, x + W, y + H / 2;
+        end
+        if self.Style == "down" then
+            return x - W / 2, y - H, x + W / 2, y;
+        end
+        if self.Style == "up" then
+            return x - W / 2, y, x + W / 2, y + H;
         end
         return x - W / 2, y - H / 2, x + W / 2, y + H / 2;
     end
@@ -107,7 +118,7 @@ function Label:New(id, seriesId, period, price)
             return;
         end
         local W, H = context:measureText(Label.FontId, self.Text, context.LEFT);
-        x_from, y_from, x_to, y_to = self:getCoordinates(context, W, H);
+        local x_from, y_from, x_to, y_to = self:getCoordinates(context, W, H);
         if self.BGColor ~= nil then
             if self.BGPenId == nil then
                 self.BGPenId = Graphics:FindPen(1, self.BGColor, core.LINE_SOLID, context);
