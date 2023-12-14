@@ -65,7 +65,13 @@ function SafeNegative(left)
     return -left;
 end
 function Float(number)
-    return number and number or 0.0;
+    return number and number or nil;
+end
+function Int(number)
+    return number and number or nil;
+end
+function Color(color)
+    return color and color or nil;
 end
 function Round(num, idp)
     if num == nil then
