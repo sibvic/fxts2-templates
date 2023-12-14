@@ -161,7 +161,7 @@ function Line:New(x1, y1, x2, y2)
         if self.XLoc == "bar_time" then
             return context:positionOfDate(x / 86400000);
         end
-        _, x1 = context:positionOfBar(x);
+        local _, x1 = context:positionOfBar(x);
         return x1;
     end
     function newLine:Draw(stage, context)
@@ -171,19 +171,19 @@ function Line:New(x1, y1, x2, y2)
         if self.PenId == nil then
             self.PenId = Graphics:FindPen(self.Width, self.Color, self:getStyleForContext(), context);
         end
-        x1 = self:converXToPoints(context, self.X1);
-        x2 = self:converXToPoints(context, self.X2);
-        _, y1 = context:pointOfPrice(self.Y1);
-        _, y2 = context:pointOfPrice(self.Y2);
+        local x1 = self:converXToPoints(context, self.X1);
+        local x2 = self:converXToPoints(context, self.X2);
+        local _, y1 = context:pointOfPrice(self.Y1);
+        local _, y2 = context:pointOfPrice(self.Y2);
         context:drawLine(self.PenId, x1, y1, x2, y2, self.ColorTransparency);
         if self.Extend == "right" or self.Extend == "both" then
             local a, c = math2d.lineEquation(x1, y1, x2, y2);
-            y3 = a * context:right() + c;
+            local y3 = a * context:right() + c;
             context:drawLine(self.PenId, x2, y2, context:right(), y3, self.ColorTransparency);
         end
         if self.Extend == "left" or self.Extend == "both" then
             local a, c = math2d.lineEquation(x1, y1, x2, y2);
-            y3 = a * context:left() + c;
+            local y3 = a * context:left() + c;
             context:drawLine(self.PenId, x1, y1, context:left(), y3, self.ColorTransparency);
         end
     end
