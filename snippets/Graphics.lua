@@ -46,21 +46,28 @@ function Graphics:FindFont(font, xSize, ySize, corner, context)
     Graphics.Fonts[#Graphics.Fonts + 1] = newFont;
     return newFont.Id;
 end
-function Color(color)
-    if color == nil then
-        return core.colors().Black + 4294967296;
-    end
-    return color;
-end
 function Graphics:SplitColorAndTransparency(clr)
     local transparency = (math.floor(clr / 16777216) % 255);
     local color = clr - transparency * 16777216;
     return color, transparency;
+end
+function Graphics:GetColor(clr)
+    local color, transparency = self:SplitColorAndTransparency(clr);
+    return color;
+end
+function Graphics:GetTransparency(clr)
+    local color, transparency = self:SplitColorAndTransparency(clr);
+    return transparency;
+end
+function Graphics:GetTransparencyPercent(clr)
+    local color, transparency = self:SplitColorAndTransparency(clr);
+    core.host:trace(math.floor(transparency * 100.0 / 255.0 + 0.5));
+    return math.floor(transparency * 100.0 / 255.0 + 0.5);
 end
 function Graphics:AddTransparency(clr, transp)
     if clr == nil then
         return nil;
     end
     color, _ = Graphics:SplitColorAndTransparency(clr);
-    return color + math.floor(transp / 100 * 255) * 16777216
+    return color + math.floor(transp / 100 * 255) * 16777216;
 end
