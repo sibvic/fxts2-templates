@@ -130,3 +130,6 @@ end
 function Array:NewString(size, initialValue)
     return Array:NewArray(size, initialValue);
 end
+function Array:NewBox(size, initialValue)
+    return Array:NewArray(size, initialValue);
+end
