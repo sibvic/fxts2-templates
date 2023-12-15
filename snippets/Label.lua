@@ -136,7 +136,7 @@ function Label:New(id, seriesId, period, price)
     self.AllLabels[id .. "_" .. seriesId] = newLabel;
     self.AllLabelsInOrder[#self.AllLabelsInOrder + 1] = newLabel
     if #self.AllLabelsInOrder > self.max_labels_count then
-        table.remove(self.AllLines, 1);
+        Label:Delete(self.AllLabelsInOrder[1]);
     end
     if self.AllSeries[seriesId] == nil then
         self.AllSeries[seriesId] = {};
