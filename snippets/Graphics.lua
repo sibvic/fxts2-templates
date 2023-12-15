@@ -61,7 +61,6 @@ function Graphics:GetTransparency(clr)
 end
 function Graphics:GetTransparencyPercent(clr)
     local color, transparency = self:SplitColorAndTransparency(clr);
-    core.host:trace(math.floor(transparency * 100.0 / 255.0 + 0.5));
     return math.floor(transparency * 100.0 / 255.0 + 0.5);
 end
 function Graphics:AddTransparency(clr, transp)
