@@ -11,6 +11,12 @@ function Box:SetRight(box, right)
     end
     box:SetRight(right);
 end
+function Box:SetLeft(box, left)
+    if box == nil then
+        return;
+    end
+    box:SetLeft(left);
+end
 function Box:GetBottom(box)
     if box == nil then
         return nil;
@@ -22,6 +28,18 @@ function Box:GetTop(box)
         return nil;
     end
     return box:GetTop();
+end
+function Box:GetLeft(box)
+    if box == nil then
+        return nil;
+    end
+    return box:GetLeft();
+end
+function Box:GetRight(box)
+    if box == nil then
+        return nil;
+    end
+    return box:GetRight();
 end
 function Box:SetText(box, text)
     if box == nil then
@@ -51,6 +69,13 @@ function Box:New(id, seriesId, left, top, right, bottom)
     local newBox = {};
     newBox.SeriesId = seriesId;
     newBox.Left = left;
+    function newBox:SetLeft(left)
+        self.Left = left;
+        return self;
+    end
+    function newBox:GetLeft()
+        return self.Left;
+    end
     newBox.Top = top;
     function newBox:GetTop()
         return self.Top;
@@ -59,6 +84,9 @@ function Box:New(id, seriesId, left, top, right, bottom)
     function newBox:SetRight(right)
         self.Right = right;
         return self;
+    end
+    function newBox:GetRight()
+        return self.Right;
     end
     newBox.Bottom = bottom;
     function newBox:GetBottom()
