@@ -47,6 +47,30 @@ function Line:SetY2(line, y)
     end
     line:SetY2(y);
 end
+function Line:GetX1(line)
+    if line == nil then
+        return;
+    end
+    return line:GetX1();
+end
+function Line:GetX2(line)
+    if line == nil then
+        return;
+    end
+    return line:GetX2();
+end
+function Line:GetY1(line)
+    if line == nil then
+        return;
+    end
+    return line:GetY1();
+end
+function Line:GetY2(line)
+    if line == nil then
+        return;
+    end
+    return line:GetY2();
+end
 function Line:SetColor(line, clr)
     if line == nil then
         return;
