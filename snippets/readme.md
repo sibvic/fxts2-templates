@@ -235,3 +235,7 @@ Utilities for converting Pine Script into lua.
 ## BGColor
 
 Pine script-like implementation of barcolor
+
+## Fixnan.lua
+
+Pine script-like implementation of fixnan
