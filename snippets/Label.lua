@@ -22,6 +22,12 @@ function Label:SetText(label, text)
     end
     label:SetText(text);
 end
+function Label:SetSize(label, size)
+    if label == nil then
+        return;
+    end
+    label:SetSize(size);
+end
 function Label:SetX(label, x)
     if label == nil then
         return;
@@ -113,11 +119,25 @@ function Label:New(id, seriesId, period, price)
         end
         return x1 - W / 2, y - H / 2, x1 + W / 2, y + H / 2;
     end
+    newLabel.Size = "auto";
+    function newLabel:SetSize(size)
+        self.Size = size;
+        return self;
+    end
     function newLabel:GetDefaultSize()
         if self.Size == "tiny" then
-            return 5, 5;
+            return 7, 7;
         end
-        return 10, 10;
+        if self.Size == "auto" or self.Size == "small" then
+            return 10, 10;
+        end
+        if self.Size == "normal" then
+            return 12, 12;
+        end
+        if self.Size == "large" then
+            return 14, 14;
+        end
+        return 16, 16;
     end
     function newLabel:Draw(stage, context)
         if self.X == nil or self.Y == nil then
