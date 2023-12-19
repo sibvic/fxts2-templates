@@ -1,5 +1,10 @@
 Line = {};
 Line.AllLines = {};
+function Line:GetAll()
+    local array = {};
+    array.arr = Line.AllLines;
+    return array;
+end
 function Line:Clear()
     Line.AllLines = {};
 end
