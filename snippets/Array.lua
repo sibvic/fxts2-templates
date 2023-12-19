@@ -31,6 +31,12 @@ function Array:Min(array)
     end
     return minVal;
 end
+function Array:Pop(array)
+    if array == nil then
+        return nil;
+    end
+    return array:Pop();
+end
 function Array:Set(array, index, value)
     if array == nil then
         return;
@@ -52,21 +58,29 @@ end
 function Array:NewArray(size, initialValue)
     local newArray = {};
     newArray.arr = {};
+    newArray.size = size;
     for i = 1, size, 1 do
         newArray.arr[i] = initialValue;
     end
-    function newArray:Push(item) self.arr[#self.arr + 1] = item; end
+    function newArray:Push(item) self.size = self.size + 1; self.arr[#self.arr + 1] = item; end
     function newArray:Get(index) return self.arr[index + 1]; end
     function newArray:Set(index, value) self.arr[index + 1] = value; end
     function newArray:Max() return Array:Max(self); end
     function newArray:Min() return Array:Min(self); end
-    function newArray:Size() return #self.arr; end
+    function newArray:Size() return self.size; end
     function newArray:Clear()
         self.arr = {};
+        self.size = 0;
+    end
+    function newArray:Pop()
+        local lastVal = self.arr[self.size];
+        table.remove(self.arr, self.size);
+        self.size = self.size - 1;
+        return lastVal;
     end
     function newArray:Fill(value, from, to)
         if to == nil then
-            to = #self.arr - 1;
+            to = self.size - 1;
         end
         for i = from, to, 1 do
             self.arr[i + 1] = value;
@@ -89,16 +103,18 @@ function Array:NewArray(size, initialValue)
     end
     function newArray:Unshift(value)
         local nextValue = value;
-        for i = 1, #self.arr, 1 do
+        for i = 1, self.size, 1 do
             local current = self.arr[i];
             self.arr[i] = nextValue;
             nextValue = current;
         end
-        self.arr[#self.arr + 1] = nextValue;
+        self.arr[self.size + 1] = nextValue;
+        self.size = self.size + 1;
     end
     function newArray:Shift()
         local value = self.arr[1];
         table.remove(self.arr, 1);
+        self.size = self.size - 1;
         return value;
     end
     function newArray:Slice(from, to)
