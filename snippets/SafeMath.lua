@@ -58,6 +58,12 @@ function SafeMin(left, right)
     end
     return math.min(left, right);
 end
+function SafeAbs(value)
+    if value == nil then
+        return nil;
+    end
+    return math.abs(value);
+end
 function SafeNegative(left)
     if left == nil then
         return nil;
@@ -99,6 +105,9 @@ end
 function Color(color)
     return color and color or nil;
 end
+function ToLine(line)
+    return line;
+end
 function Round(num, idp)
     if num == nil then
         return nil;
@@ -110,8 +119,8 @@ function Round(num, idp)
     return math.floor(num + 0.5)
 end
 function Nz(value, defaultValue)
-    if defaulValue == nil then
-        defaulValue = 0;
+    if defaultValue == nil then
+        defaultValue = 0;
     end
     return value and value or defaultValue;
 end
