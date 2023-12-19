@@ -16,6 +16,15 @@ function SafePlus(left, right)
     end
     return left + right;
 end
+function SafeConcat(left, right)
+    if left == nil then
+        return right;
+    end
+    if right == nil then
+        return left;
+    end
+    return left .. right;
+end
 function SafeDivide(left, right)
     if left == nil or right == nil or right == 0 then
         return nil;
