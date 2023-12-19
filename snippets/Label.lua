@@ -103,21 +103,32 @@ function Label:New(id, seriesId, period, price)
         local visible, y = context:pointOfPrice(self.Y);
         local x1, x = context:positionOfBar(self.X)
         if self.Style == "left" then
-            return x, y - H / 2, x + W, y + H / 2;
+            return x1, y - H / 2, x1 + W, y + H / 2;
         end
         if self.Style == "down" then
-            return x - W / 2, y - H, x + W / 2, y;
+            return x1 - W / 2, y - H, x1 + W / 2, y;
         end
         if self.Style == "up" then
-            return x - W / 2, y, x + W / 2, y + H;
+            return x1 - W / 2, y, x1 + W / 2, y + H;
         end
-        return x - W / 2, y - H / 2, x + W / 2, y + H / 2;
+        return x1 - W / 2, y - H / 2, x1 + W / 2, y + H / 2;
+    end
+    function newLabel:GetDefaultSize()
+        if self.Size == "tiny" then
+            return 5, 5;
+        end
+        return 10, 10;
     end
     function newLabel:Draw(stage, context)
         if self.X == nil or self.Y == nil then
             return;
         end
-        local W, H = context:measureText(Label.FontId, self.Text, context.LEFT);
+        local W, H;
+        if self.Text == nil or self.Text == "" then
+            W, H = self:GetDefaultSize()
+        else
+            W, H = context:measureText(Label.FontId, self.Text, context.LEFT);
+        end
         local x_from, y_from, x_to, y_to = self:getCoordinates(context, W, H);
         if self.BGColor ~= nil then
             if self.BGPenId == nil then
@@ -125,6 +136,25 @@ function Label:New(id, seriesId, period, price)
             end
             if self.BGBrushId == nil then
                 self.BGBrushId = Graphics:FindBrush(self.BGColor, context);
+            end
+            if self.Style == "down" then
+                local ySize = math.abs(y_from - y_to);
+                y_from = y_from - ySize / 2;
+                y_to = y_to - ySize / 2;
+                local points = context:createPoints();
+                points:add(x_from, y_to);
+                points:add(x_to, y_to);
+                points:add((x_to + x_from) / 2, y_to + ySize / 2);
+                context:drawPolygon(self.BGPenId, self.BGBrushId, points, self.BgColorTransparency)
+            elseif self.Style == "up" then
+                local ySize = math.abs(y_from - y_to);
+                y_from = y_from + ySize / 2;
+                y_to = y_to + ySize / 2;
+                local points = context:createPoints();
+                points:add(x_from, y_from - 1);
+                points:add(x_to, y_from - 1);
+                points:add((x_to + x_from) / 2, y_from - ySize / 2);
+                context:drawPolygon(self.BGPenId, self.BGBrushId, points, self.BgColorTransparency)
             end
             context:drawRectangle(self.BGPenId, self.BGBrushId, x_from - 1, y_from - 1, x_to + 1, y_to + 1, self.BgColorTransparency)
         end
