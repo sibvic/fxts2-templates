@@ -1,5 +1,8 @@
 Str = {};
 function Str:ToString(value, pattern)
+    if pattern == nil then
+        return tostring(value);
+    end
     local luaPattern = "";
     local waitNumber = false;
     local digits = 0;
