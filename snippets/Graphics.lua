@@ -4,6 +4,9 @@ Graphics.Pens = {};
 Graphics.Brushes = {};
 Graphics.Fonts = {};
 function Graphics:FindPen(width, color, style, context)
+    if color == nil then
+        return -1;
+    end
     for i, pen in ipairs(Graphics.Pens) do
         if pen.Width == width and pen.Color == color then
             context:createPen(pen.Id, context:convertPenStyle(style), width, color);
@@ -14,7 +17,7 @@ function Graphics:FindPen(width, color, style, context)
     newPen.Id = Graphics.NextId;
     newPen.Width = width;
     newPen.Color = color;
-    
+
     context:createPen(newPen.Id, context:convertPenStyle(style), width, color);
     Graphics.NextId = Graphics.NextId + 1;
     Graphics.Pens[#Graphics.Pens + 1] = newPen;
@@ -47,6 +50,9 @@ function Graphics:FindFont(font, xSize, ySize, corner, context)
     return newFont.Id;
 end
 function Graphics:SplitColorAndTransparency(clr)
+    if clr == nil then
+        return nil, nil;
+    end
     local transparency = (math.floor(clr / 16777216) % 255);
     local color = clr - transparency * 16777216;
     return color, transparency;
