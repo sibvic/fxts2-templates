@@ -236,6 +236,10 @@ Utilities for converting Pine Script into lua.
 
 Pine script-like implementation of barcolor
 
-## Fixnan.lua
+## Fixnan
 
 Pine script-like implementation of fixnan
+
+## Stochastic
+
+Pine script-like implementation of stoch
