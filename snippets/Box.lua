@@ -5,13 +5,65 @@ function Box:Clear()
     Box.AllBoxs = {};
     Box.AllSeries = {};
 end
+function Box:SetRight(box, right)
+    if box == nil then
+        return;
+    end
+    box:SetRight(right);
+end
+function Box:GetBottom(box)
+    if box == nil then
+        return nil;
+    end
+    return box:GetBottom();
+end
+function Box:GetTop(box)
+    if box == nil then
+        return nil;
+    end
+    return box:GetTop();
+end
+function Box:SetText(box, text)
+    if box == nil then
+        return;
+    end
+    box:SetText(text);
+end
+function Box:SetTextColor(box, text_color)
+    if box == nil then
+        return;
+    end
+    box:SetTextColor(text_color);
+end
+function Box:SetTextHAlign(box, text_halign)
+    if box == nil then
+        return;
+    end
+    box:SetTextHAlign(text_halign);
+end
+function Box:SetTextSize(box, text_size)
+    if box == nil then
+        return;
+    end
+    box:SetTextSize(text_size);
+end
 function Box:New(id, seriesId, left, top, right, bottom)
     local newBox = {};
     newBox.SeriesId = seriesId;
     newBox.Left = left;
     newBox.Top = top;
+    function newBox:GetTop()
+        return self.Top;
+    end
     newBox.Right = right;
+    function newBox:SetRight(right)
+        self.Right = right;
+        return self;
+    end
     newBox.Bottom = bottom;
+    function newBox:GetBottom()
+        return self.Bottom;
+    end
     newBox.BorderWidth = 1;
     newBox.BorderStyle = core.LINE_SOLID;
     newBox.BgColor = core.colors().Blue;
@@ -28,6 +80,26 @@ function Box:New(id, seriesId, left, top, right, bottom)
         self.BorderColor_transparency = transparency;
         self.BorderColor = color;
         self.PenId = nil;
+        return self;
+    end
+    newBox.Text = nil;
+    function newBox:SetText(text)
+        self.Text = text;
+        return self;
+    end
+    newBox.TextColor = nil;
+    function newBox:SetTextColor(text_color)
+        self.TextColor = text_color;
+        return self;
+    end
+    newBox.TextHAlign = nil;
+    function newBox:SetTextHAlign(text_halign)
+        self.TextHAlign = text_halign;
+        return self;
+    end
+    newBox.TextSize = nil;
+    function newBox:SetTextSize(text_size)
+        self.TextSize = text_size;
         return self;
     end
     function newBox:Draw(stage, context)
@@ -73,9 +145,9 @@ function Box:removeFromSeries(box)
     end
 end
 function Box:removeFromAllBoxes(box)
-    for i = 1, #self.AllBoxs do
-        if self.AllBoxs[i] == box then
-            table.remove(self.AllBoxs, i);
+    for key, value in pairs(self.AllBoxs) do
+        if value == box then
+            self.AllBoxs[key] = nil;
             return;
         end
     end
