@@ -1,4 +1,10 @@
 Array = {};
+function Array:Enum(array)
+    if array == nil then
+        return {};
+    end
+    return array.arr;
+end
 function Array:Clear(array)
     if array == nil then
         return;
@@ -90,9 +96,10 @@ function Array:NewArray(size, initialValue)
         end
         self.arr[#self.arr + 1] = nextValue;
     end
-    function newArray:Shift(value)
+    function newArray:Shift()
+        local value = self.arr[1];
         table.remove(self.arr, 1);
-        self.arr[#self.arr + 1] = nextValue;
+        return value;
     end
     function newArray:Slice(from, to)
         local slice = {};
