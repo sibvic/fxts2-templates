@@ -119,7 +119,6 @@ function signaler:AsyncOperationFinished(cookie, success, message, message1, mes
         end
     end
 end
-
 function signaler:FormatEmail(source, period, message)
     --format email subject
     local subject = message .. "(" .. source:instrument() .. ")";
@@ -135,8 +134,7 @@ function signaler:FormatEmail(source, period, message)
         .. delim .. signalDescr .. delim .. symbolDescr .. delim .. messageDescr .. delim .. dateDescr .. delim .. priceDescr;
     return subject, text;
 end
-
-function signaler:Signal(message, source)
+function signaler:getSource(source)
     if source == nil then
         if instance.source ~= nil then
             source = instance.source;
@@ -147,6 +145,26 @@ function signaler:Signal(message, source)
             source = pane.Data:getStream(0);
         end
     end
+    return source;
+end
+function signaler:SignalEx(message, period, source)
+    source = self:getSource(getSource);
+    local interval = string.find(message, "{{interval}}");
+    if interval ~= nil then
+        message = string.sub(message, 1, interval - 1)
+            .. source:barSize()
+            .. string.sub(message, interval + string.len("{{interval}}"));
+    end
+    local close = string.find(message, "{{close}}");
+    if close ~= nil then
+        message = string.sub(message, 1, interval - 1)
+            .. win32.formatNumber(source.close[period], false, source:getDisplayPrecision())
+            .. string.sub(message, interval + string.len("{{close}}"));
+    end
+    self:Signal(message, source);
+end
+function signaler:Signal(message, source)
+    source = self:getSource(getSource);
     if self._show_alert then
         terminal:alertMessage(source:instrument(), source[NOW], message, source:date(NOW));
     end
