@@ -243,3 +243,7 @@ Pine script-like implementation of fixnan
 ## Stochastic
 
 Pine script-like implementation of stoch
+
+## SymInfo
+
+Pine script-like syminfo.* functions
