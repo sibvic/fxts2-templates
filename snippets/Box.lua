@@ -65,6 +65,12 @@ function Box:SetTextSize(box, text_size)
     end
     box:SetTextSize(text_size);
 end
+function Box:SetBorderStyle(box, style)
+    if box == nil then
+        return;
+    end
+    box:SetBorderStyle(style);
+end
 function Box:New(id, seriesId, left, top, right, bottom)
     local newBox = {};
     newBox.SeriesId = seriesId;
@@ -93,7 +99,6 @@ function Box:New(id, seriesId, left, top, right, bottom)
         return self.Bottom;
     end
     newBox.BorderWidth = 1;
-    newBox.BorderStyle = core.LINE_SOLID;
     newBox.BgColor = core.colors().Blue;
     function newBox:SetBgColor(clr)
         color, transparency = Graphics:SplitColorAndTransparency(clr);
@@ -107,6 +112,20 @@ function Box:New(id, seriesId, left, top, right, bottom)
         color, transparency = Graphics:SplitColorAndTransparency(clr);
         self.BorderColor_transparency = transparency;
         self.BorderColor = color;
+        self.PenId = nil;
+        return self;
+    end
+    newBox.BorderStyle = "solid";
+    newBox.BorderStyleIndicore = core.LINE_SOLID;
+    function newBox:SetBorderStyle(style)
+        self.BorderStyle = style;
+        if style == "solid" or style == "arrow_right" or style == "arrow_left" or style == "arrow_both" then
+            newBox.BorderStyleIndicore = core.LINE_SOLID;
+        elseif style == "dotted" then
+            newBox.BorderStyleIndicore = core.LINE_DOT;
+        elseif style == "dashed" then
+            newBox.BorderStyleIndicore = core.LINE_DASH;
+        end
         self.PenId = nil;
         return self;
     end
@@ -130,12 +149,15 @@ function Box:New(id, seriesId, left, top, right, bottom)
         self.TextSize = text_size;
         return self;
     end
+    function newBox:getCoordinates(context, x, y, W, H)
+        return x - W / 2, y - H / 2, x + W / 2, y + H / 2;
+    end
     function newBox:Draw(stage, context)
         if self.Top == nil or self.Left == nil or self.Bottom == nil or self.Right == nil then
             return;
         end
         if self.PenId == nil then
-            self.PenId = Graphics:FindPen(self.BorderWidth, self.BorderColor, self.BorderStyle, context);
+            self.PenId = Graphics:FindPen(self.BorderWidth, self.BorderColor, self.BorderStyleIndicore, context);
         end
         if self.BrushId == nil then
             self.BrushId = Graphics:FindBrush(self.BgColor, context);
@@ -146,6 +168,14 @@ function Box:New(id, seriesId, left, top, right, bottom)
         _, x2 = context:positionOfBar(self.Right);
         context:drawRectangle(self.PenId, self.BrushId, x1, y1, x2, y2, self.BgColorTransparency)
         context:drawRectangle(self.PenId, -1, x1, y1, x2, y2)
+        if self.Text ~= nil and self.Text ~= "" then
+            if self.FontId == nil then
+                self.FontId = Graphics:FindFont("Arial", 10, 0, context.LEFT, context);
+            end
+            local W, H = context:measureText(self.FontId, self.Text, context.LEFT);
+            local x_from, y_from, x_to, y_to = self:getCoordinates(context, (x1 + x2) / 2, (y1 + y2) / 2, W, H);
+            context:drawText(self.FontId, self.Text, self.TextColor, -1, x_from, y_from, x_to, y_to, 0);
+        end
     end
     function newBox:Get(index)
         return Box.AllSeries[self.SeriesId][index + 1];
