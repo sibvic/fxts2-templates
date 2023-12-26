@@ -247,3 +247,7 @@ Pine script-like implementation of stoch
 ## SymInfo
 
 Pine script-like syminfo.* functions
+
+## BarState
+
+Pine script-like barstate.* functions
