@@ -24,6 +24,9 @@ function Graphics:FindPen(width, color, style, context)
     return newPen.Id;
 end
 function Graphics:FindBrush(color, context)
+    if color == nil then
+        return -1;
+    end
     for i, brush in ipairs(Graphics.Brushes) do
         if brush.Color == color then
             context:createSolidBrush(brush.Id, color)
