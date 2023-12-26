@@ -11,6 +11,12 @@ function Array:Clear(array)
     end
     array:Clear();
 end
+function Array:Remove(array, index)
+    if array == nil then
+        return;
+    end
+    return array:Remove(index);
+end
 function Array:Max(array)
     local maxVal = array:Get(0);
     for i = 1, array:Size() - 1 do
@@ -114,6 +120,12 @@ function Array:NewArray(size, initialValue)
     function newArray:Shift()
         local value = self.arr[1];
         table.remove(self.arr, 1);
+        self.size = self.size - 1;
+        return value;
+    end
+    function newArray:Remove(index)
+        local value = self.arr[index];
+        table.remove(self.arr, index);
         self.size = self.size - 1;
         return value;
     end
