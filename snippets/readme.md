@@ -251,3 +251,7 @@ Pine script-like syminfo.* functions
 ## BarState
 
 Pine script-like barstate.* functions
+
+## Timeframe
+
+Pine script-like timeframe.* functions

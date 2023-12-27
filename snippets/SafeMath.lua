@@ -133,3 +133,9 @@ function Nz(value, defaultValue)
     end
     return value and value or defaultValue;
 end
+function Triary(condition, trueValue, falseValue)
+    if condition == nil or condition == false then
+        return falseValue;
+    end
+    return trueValue;
+end
