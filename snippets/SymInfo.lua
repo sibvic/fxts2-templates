@@ -39,3 +39,6 @@ function SymInfo:GetCurrency()
     end
     return offer.Instrument;
 end
+function SymInfo:GetTicker()
+    return instance.source:instrument();
+end
