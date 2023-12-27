@@ -90,6 +90,12 @@ function Str:ToString(value, pattern)
     
     return string.format(luaPattern, value);
 end
+function Str:Length(str)
+    if str == nil then
+        return 0;
+    end
+    return string.len(str);
+end
 function SafeSetString(str, period, value)
     if str == nil then
         return;
