@@ -21,7 +21,7 @@ function Array:Max(array)
     local maxVal = array:Get(0);
     for i = 1, array:Size() - 1 do
         local val = array:Get(i);
-        if maxVal == nil or maxVal < val then
+        if maxVal == nil or (val ~= nil and maxVal < val) then
             maxVal = val;
         end
     end
@@ -31,7 +31,7 @@ function Array:Min(array)
     local minVal = array:Get(0);
     for i = 1, array:Size() - 1 do
         local val = array:Get(i);
-        if minVal == nil or minVal > val then
+        if minVal == nil or (val ~= nil and minVal > val) then
             minVal = val;
         end
     end
