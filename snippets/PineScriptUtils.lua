@@ -1,4 +1,22 @@
 PineScriptUtils = {};
+PineScriptUtils.Sources = {};
+function PineScriptUtils:CreateSource(source, sourceType)
+    if sourceType ~= "ohlc4" then
+        return source[sourceType];
+    end
+    local newSource = {};
+    newSource.Stream = instance:addInternalStream(0, 0);
+    function newSource:Update(period, mode)
+        self.Stream[period] = (source.open[period] + source.high[period] + source.low[period] + source.close[period]) / 4;
+    end
+    self.Sources[#self.Sources + 1] = newSource;
+    return newSource.Stream;
+end
+function PineScriptUtils:UpdateSources(period, mode)
+    for i, src in ipairs(self.Sources) do
+        src:Update(period, mode);
+    end
+end
 function PineScriptUtils:TimeframeFromLength(length)
     if length == "t" then
         return "t1"
