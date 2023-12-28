@@ -11,6 +11,30 @@ function Array:Clear(array)
     end
     array:Clear();
 end
+function Array:Copy(array)
+    if array == nil then
+        return;
+    end
+    return array:Copy();
+end
+function Array:Get(array, index)
+    if array == nil then
+        return;
+    end
+    return array:Get(index);
+end
+function Array:Join(array, separator)
+    if array == nil then
+        return;
+    end
+    return array:Join(separator);
+end
+function Array:Reverse(array)
+    if array == nil then
+        return;
+    end
+    return array:Reverse();
+end
 function Array:Remove(array, index)
     if array == nil then
         return;
@@ -107,6 +131,21 @@ function Array:NewArray(size, initialValue)
         end
         return sum;
     end
+    function newArray:Copy()
+        local arrayCopy = Array:NewArray(self.size, nil);
+        for i = 1, self.size, 1 do
+            arrayCopy.arr[i] = self.arr[i];
+        end
+        return arrayCopy;
+    end
+    function newArray:Reverse()
+        local half = math.floor(self.size / 2);
+        for i = 1, half, 1 do
+            local swapped = self.arr[self.size - i + 1];
+            self.arr[self.size - i + 1] = self.arr[i];
+            self.arr[i] = swapped;
+        end
+    end
     function newArray:Unshift(value)
         local nextValue = value;
         for i = 1, self.size, 1 do
@@ -116,6 +155,18 @@ function Array:NewArray(size, initialValue)
         end
         self.arr[self.size + 1] = nextValue;
         self.size = self.size + 1;
+    end
+    function newArray:Join(separator)
+        if self.size == 0 then
+            return "";
+        end
+        local str = tostring(self.arr[1]);
+        for i = 2, self.size, 1 do
+            if self.arr[i] ~= nil then
+                str = str .. separator .. tostring(self.arr[i]);
+            end
+        end
+        return str;
     end
     function newArray:Shift()
         local value = self.arr[1];
