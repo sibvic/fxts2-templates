@@ -1,5 +1,5 @@
 Graphics = {};
-Graphics.NextId = 2;
+Graphics.NextId = 1;
 Graphics.Pens = {};
 Graphics.Brushes = {};
 Graphics.Fonts = {};
@@ -42,12 +42,16 @@ function Graphics:FindBrush(color, context)
     return newBrush.Id;
 end
 function Graphics:FindFont(font, xSize, ySize, corner, context)
-    if Graphics.Fonts[1] ~= nil then
-        return Graphics.Fonts[1].Id;
+    for i, font in ipairs(self.Fonts) do
+        if font.xSize == xSize and font.Name == font then
+            return font.Id;
+        end
     end
     local newFont = {};
     newFont.Id = Graphics.NextId;
-    context:createFont(newFont.Id, "Arial", 0, context:pointsToPixels(10), context.LEFT);
+    newFont.xSize = xSize;
+    newFont.Name = font;
+    context:createFont(newFont.Id, font, 0, xSize, context.LEFT);
     Graphics.NextId = Graphics.NextId + 1;
     Graphics.Fonts[#Graphics.Fonts + 1] = newFont;
     return newFont.Id;
