@@ -96,6 +96,35 @@ function Str:Length(str)
     end
     return string.len(str);
 end
+function Str:ReplaceAll(str, from, to)
+    if str == nil then
+        return nil;
+    end
+    return string.gsub(str, from, to);
+end
+function Str:Upper(str)
+    if str == nil then
+        return nil;
+    end
+    return string.upper(str);
+end
+function Str:StartsWith(str, item)
+    if str == nil then
+        return nil;
+    end
+    return string.find(str, item) == 1;
+end
+function Str:Split(str, separator)
+    if str == nil then
+        return nil;
+    end
+    local items, c = core.parseCsv(str, separator);
+    local arr = Array:NewString(0);
+    for i = 0, c - 1 do
+        arr:Push(items[i]);
+    end
+    return arr;
+end
 function SafeSetString(str, period, value)
     if str == nil then
         return;
