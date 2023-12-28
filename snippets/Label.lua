@@ -143,11 +143,15 @@ function Label:New(id, seriesId, period, price)
         if self.X == nil or self.Y == nil then
             return;
         end
+        if self.FontId == nil then
+            local defFontSize = self:GetDefaultSize();
+            self.FontId = Graphics:FindFont("Arial", 0, defFontSize, context.LEFT, context);
+        end
         local W, H;
         if self.Text == nil or self.Text == "" then
             W, H = self:GetDefaultSize()
         else
-            W, H = context:measureText(Label.FontId, self.Text, context.LEFT);
+            W, H = context:measureText(self.FontId, self.Text, context.LEFT);
         end
         local x_from, y_from, x_to, y_to = self:getCoordinates(context, W, H);
         if self.BGColor ~= nil then
@@ -165,7 +169,8 @@ function Label:New(id, seriesId, period, price)
                 points:add(x_from, y_to);
                 points:add(x_to, y_to);
                 points:add((x_to + x_from) / 2, y_to + ySize / 2);
-                context:drawPolygon(self.BGPenId, self.BGBrushId, points, self.BgColorTransparency)
+                context:drawPolygon(self.BGPenId, self.BGBrushId, points, self.BgColorTransparency);
+                context:drawRectangle(self.BGPenId, self.BGBrushId, x_from - 1, y_from - 1, x_to + 1, y_to + 1, self.BgColorTransparency);
             elseif self.Style == "up" then
                 local ySize = math.abs(y_from - y_to);
                 y_from = y_from + ySize / 2;
@@ -174,11 +179,14 @@ function Label:New(id, seriesId, period, price)
                 points:add(x_from, y_from - 1);
                 points:add(x_to, y_from - 1);
                 points:add((x_to + x_from) / 2, y_from - ySize / 2);
-                context:drawPolygon(self.BGPenId, self.BGBrushId, points, self.BgColorTransparency)
+                context:drawPolygon(self.BGPenId, self.BGBrushId, points, self.BgColorTransparency);
+                context:drawRectangle(self.BGPenId, self.BGBrushId, x_from - 1, y_from - 1, x_to + 1, y_to + 1, self.BgColorTransparency);
+            elseif self.Style == "none" then
+            else
+                context:drawRectangle(self.BGPenId, self.BGBrushId, x_from - 1, y_from - 1, x_to + 1, y_to + 1, self.BgColorTransparency);
             end
-            context:drawRectangle(self.BGPenId, self.BGBrushId, x_from - 1, y_from - 1, x_to + 1, y_to + 1, self.BgColorTransparency)
         end
-        context:drawText(Label.FontId, self.Text, self.TextColor, -1, x_from, y_from, x_to, y_to, 0);
+        context:drawText(self.FontId, self.Text, self.TextColor, -1, x_from, y_from, x_to, y_to, 0);
     end
     function newLabel:Get(index)
         return Label.AllSeries[self.SeriesId][index + 1];
@@ -229,9 +237,6 @@ end
 function Label:Draw(stage, context)
     if stage ~= 2 then
         return;
-    end
-    if Label.FontId == nil then
-        Label.FontId = Graphics:FindFont("Arial", 0, context:pointsToPixels(10), context.LEFT, context);
     end
     for id, label in pairs(self.AllLabels) do
         label:Draw(stage, context);
