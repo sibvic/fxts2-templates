@@ -273,22 +273,28 @@ function ExtUpdate(id, source, period)
     if not InRange(now, OpenTime, CloseTime) then
         return;
     end
-    if IsEntryLong(main_source, entry_period) and last_entry ~= main_source:date(NOW) and not PositionsLimitHit() then
+    if IsEntryLong(main_source, entry_period) and last_entry ~= main_source:date(NOW) then
         if AllowTrade then
+            local closed = {};
             if close_on_opposite then
-                CloseTrades("S");
+                closed = CloseTrades("S");
             end
-            OpenTrade("B");
+            if not PositionsLimitHit(closed) then
+                OpenTrade("B");
+            end
         end
         Signal("Entry long", main_source);
         last_entry = main_source:date(NOW);
     end
-    if IsEntryShort(main_source, entry_period) and last_entry ~= main_source:date(NOW) and not PositionsLimitHit() then
+    if IsEntryShort(main_source, entry_period) and last_entry ~= main_source:date(NOW) then
         if AllowTrade then
+            local closed = {};
             if close_on_opposite then
-                CloseTrades("B");
+                closed = CloseTrades("B");
             end
-            OpenTrade("S");
+            if not PositionsLimitHit(closed) then
+                OpenTrade("S");
+            end
         end
         Signal("Entry short", main_source);
         last_entry = main_source:date(NOW);
@@ -308,7 +314,19 @@ function DoMandatoryClosing()
     end
 end
 
-function PositionsLimitHit()
+function HasId(list, id)
+    if list == nil then
+        return false;
+    end
+    for i, id_in_list in ipairs(list) do
+        if id_in_list == id then
+            return true;
+        end
+    end
+    return false;
+end
+
+function PositionsLimitHit(already_closed)
     if not use_position_limit then
         return false;
     end
@@ -318,6 +336,7 @@ function PositionsLimitHit()
     while row ~= nil do
         if row.Instrument == main_source:instrument() 
             and (row.QTXT == custom_id or custom_id == "")
+            and not HasId(already_closed, row.TradeID)
         then
             count = count + 1;
         end
@@ -370,6 +389,7 @@ function DeleteOrders()
 end
 
 function CloseTrades(side)
+    local closed = {};
     local enum = core.host:findTable("trades"):enumerator();
     local row = enum:next();
     while row ~= nil do
@@ -378,9 +398,11 @@ function CloseTrades(side)
             and (row.QTXT == custom_id or custom_id == "")
         then
             CloseTrade(row);
+            closed[#closed + 1] = row.TradeID;
         end
         row = enum:next();
     end
+    return closed;
 end
 
 function ExtAsyncOperationFinished(cookie, success, message, message1, message2)
@@ -495,6 +517,9 @@ function Signal(message, source)
 end
 
 dofile(core.app_path() .. "\\strategies\\standard\\include\\helper.lua");
-dofile(core.app_path() .. "\\strategies\\custom\\snippets\\breakeven.lua")
-dofile(core.app_path() .. "\\strategies\\custom\\snippets\\tables_monitor.lua")
-dofile(core.app_path() .. "\\strategies\\custom\\snippets\\trading.lua")
+dofile(core.app_path() .. "\\snippets\\breakeven.lua")
+breakeven:RegisterModule(Modules);
+dofile(core.app_path() .. "\\snippets\\tables_monitor.lua")
+tables_monitor:RegisterModule(Modules);
+dofile(core.app_path() .. "\\snippets\\trading.lua")
+trading:RegisterModule(Modules);
