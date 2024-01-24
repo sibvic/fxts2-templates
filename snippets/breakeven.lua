@@ -898,4 +898,6 @@ function breakeven:CreateTrailingOnProfitController()
     self._controllers[#self._controllers + 1] = controller;
     return controller;
 end
-breakeven:RegisterModule(Modules);
+if Modules ~= nil then
+    breakeven:RegisterModule(Modules);
+end

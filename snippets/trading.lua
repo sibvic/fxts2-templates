@@ -1282,4 +1282,6 @@ end
 function trading:GetTradeMetadata(trade)
     return self:GetMetadata(trade.QTXT);
 end
-trading:RegisterModule(Modules);
+if Modules ~= nil then
+    trading:RegisterModule(Modules);
+end

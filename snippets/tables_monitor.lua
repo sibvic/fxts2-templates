@@ -64,4 +64,6 @@ function tables_monitor:AsyncOperationFinished(cookie, success, message, message
     end
 end
 function tables_monitor:ExtUpdate(id, source, period) end
-tables_monitor:RegisterModule(Modules);
+if Modules ~= nil then
+    tables_monitor:RegisterModule(Modules);
+end
