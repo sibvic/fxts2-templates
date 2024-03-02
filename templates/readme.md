@@ -54,7 +54,7 @@ Whether to use trailing for the stop order. Used with "Trailing in pips" paramet
 
 Trailing stop in pips. Use "1" for dynamic trailing or >= 10 for the fixed trailing step.
 
-#### Setp limit
+#### Set limit
 
 Whether to set the limit for the opened trades. Used with "Limit, pips" parameter.
 
@@ -381,3 +381,7 @@ Draws 2d chart for two indicators. x = first indicator and y = the second.
 ## Dashboard_currencies and Dashboard_currencies_view
 
 Dashboard shows currency relation in a table.
+
+## trading_indicator_adaptive
+
+Read more at [trading_indicator_adaptive](trading_indicator_adaptive.md)

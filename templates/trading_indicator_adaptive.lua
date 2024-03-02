@@ -1,5 +1,7 @@
 local PositionsCount = 1;
 
+dofile(core.app_path() .. "\\strategies\\custom\\snippets\\logger.lua")
+
 local INDICATOR_VERSION = "1";
 -- END OF CUSTOMIZATION SECTION
 
@@ -19,6 +21,7 @@ function CreateCustomActions()
         return false; -- TODO: Add condition
     end
     action1.ActOnSwitch = true;
+    action1.Name = "Action 1";
     if isEntry1 then
         EntryActions[#EntryActions + 1] = action1;
     else
@@ -29,6 +32,7 @@ function CreateCustomActions()
         return false; -- TODO: Add condition
     end
     action2.ActOnSwitch = true;
+    action2.Name = "Action 2";
     if isEntry2 then
         EntryActions[#EntryActions + 1] = action2;
     else
@@ -39,13 +43,15 @@ end
 
 function Init()
     --TODO: indicator parameters here
-    AddAction(1, "Condition 1");
-    AddAction(2, "Condition 2");
     -- TODO: Add more actions if required
+    -- AddAction(1, "Condition 1");
+    -- AddAction(2, "Condition 2");
 
     trading:Init(indicator.parameters, PositionsCount);
     indicator.parameters:addGroup("Alerts");
     signaler:Init(indicator.parameters);
+    indicator.parameters:addBoolean("add_log", "Add log info to signals", "", false);
+    indicator.parameters:addFile("log_file", "Log file (csv)", "You can open it in Excel", core.app_path() .. "\\log\\trading_indicator_adaptive.csv");
 end
 
 function CreateAction(id)
@@ -67,6 +73,7 @@ end
 local buy_positions = {};
 local sell_positions = {};
 local last_serial;
+local add_log;
 
 function Prepare(nameOnly)
     for _, module in pairs(Modules) do module:Prepare(nameOnly); end
@@ -75,6 +82,7 @@ function Prepare(nameOnly)
     if (nameOnly) then
         return
     end
+    add_log = instance.parameters.add_log;
     CreateCustomActions();
 
     --TODO: insert streams creation
@@ -88,6 +96,12 @@ function Prepare(nameOnly)
                 sell_positions[#sell_positions + 1] = CreatePositionStrategy(source, "S", "_" .. i);
             end
         end
+    end
+    if add_log then
+        logger:Start(instance.parameters.log_file);
+        logger:AddHeader("bar_date");
+        logger:AddHeader("action");
+        logger:FlushHeaders();
     end
 end
 
@@ -304,18 +318,26 @@ function Update(period, mode)
     if period < source:size() - 1 or last_serial_action == source:serial(period) then
         return;
     end
+    
+    if add_log ~= nil then
+        logger:Clear();
+        logger:AddValue("bar_date", core.formatDate(source:date(period)));
+    end
     last_serial_action = source:serial(period);
     for _, action in ipairs(EntryActions) do
         if action.IsPass(source, period) and (not action.ActOnSwitch or not action.IsPass(source, period - 1)) then
+            logger:AddValue("action", action.Name);
             action.Execute(source, period);
         end
     end
 
     for _, action in ipairs(ExitActions) do
         if action.IsPass(source, period) and (not action.ActOnSwitch or not action.IsPass(source, period - 1)) then
+            logger:AddValue("action", action.Name);
             action.Execute(source, period);
         end
     end
+    if add_log then logger:FlushValues(); end
 end
 
 function AsyncOperationFinished(cookie, success, message, message1, message2)
