@@ -5,11 +5,39 @@ function Box:Clear()
     Box.AllBoxs = {};
     Box.AllSeries = {};
 end
+function Box:SetLeftTop(box, left, top)
+    if box == nil then
+        return;
+    end
+    core.host:trace("L" .. tostring(left));
+    box:SetLeft(left);
+    box:SetTop(top);
+end
+function Box:SetRightBottom(box, right, bottom)
+    if box == nil then
+        return;
+    end
+    core.host:trace("L" .. tostring(right));
+    box:SetRight(right);
+    box:SetBottom(bottom);
+end
 function Box:SetRight(box, right)
     if box == nil then
         return;
     end
     box:SetRight(right);
+end
+function Box:SetTop(box, top)
+    if box == nil then
+        return;
+    end
+    box:SetTop(top);
+end
+function Box:SetBottom(box, bottom)
+    if box == nil then
+        return;
+    end
+    box:SetBottom(bottom);
 end
 function Box:SetLeft(box, left)
     if box == nil then
@@ -83,6 +111,10 @@ function Box:New(id, seriesId, left, top, right, bottom)
         return self.Left;
     end
     newBox.Top = top;
+    function newBox:SetTop(top)
+        self.Top = top;
+        return self;
+    end
     function newBox:GetTop()
         return self.Top;
     end
@@ -95,6 +127,10 @@ function Box:New(id, seriesId, left, top, right, bottom)
         return self.Right;
     end
     newBox.Bottom = bottom;
+    function newBox:SetBottom(bottom)
+        self.Bottom = bottom;
+        return self;
+    end
     function newBox:GetBottom()
         return self.Bottom;
     end
