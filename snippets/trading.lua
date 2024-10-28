@@ -60,21 +60,21 @@ function trading:GetBreakeven(id)
     end
     return be;
 end
-function trading:addBreakevenParameters(section_id, id, label)
-    strategy.parameters:addGroup("  Breakeven parameters #" .. label .. section_id);
-    strategy.parameters:addBoolean("use_breakeven" .. id, "Use Breakeven", "", false);
-    strategy.parameters:addDouble("breakeven_when" .. id, "Breakeven Activation Value, in pips", "", 10);
-    strategy.parameters:addBoolean("move_be_stop" .. id, "Move Stop", "", false);
-    strategy.parameters:addDouble("breakeven_to" .. id, "Breakeven To, in pips", "", 0);
-    strategy.parameters:addString("breakeven_trailing" .. id, "Trailing after breakeven", "", "default");
-    strategy.parameters:addStringAlternative("breakeven_trailing" .. id, "Do not change", "", "default");
-    strategy.parameters:addStringAlternative("breakeven_trailing" .. id, "Set trailing", "", "set");
+function trading:addBreakevenParameters(parameters, section_id, id, label)
+    parameters:addGroup("  Breakeven parameters #" .. label .. section_id);
+    parameters:addBoolean("use_breakeven" .. id, "Use Breakeven", "", false);
+    parameters:addDouble("breakeven_when" .. id, "Breakeven Activation Value, in pips", "", 10);
+    parameters:addBoolean("move_be_stop" .. id, "Move Stop", "", false);
+    parameters:addDouble("breakeven_to" .. id, "Breakeven To, in pips", "", 0);
+    parameters:addString("breakeven_trailing" .. id, "Trailing after breakeven", "", "default");
+    parameters:addStringAlternative("breakeven_trailing" .. id, "Do not change", "", "default");
+    parameters:addStringAlternative("breakeven_trailing" .. id, "Set trailing", "", "set");
 
-    strategy.parameters:addString("breakeven_close" .. id, "Partial close", "", "no");
-    strategy.parameters:addStringAlternative("breakeven_close" .. id, "No partial close", "", "no");
-    strategy.parameters:addStringAlternative("breakeven_close" .. id, "Partial close (% of lots)", "", "lots");
-    strategy.parameters:addStringAlternative("breakeven_close" .. id, "Partial close (% of initial lots)", "", "initial_lots");
-    strategy.parameters:addDouble("breakeven_close_amount" .. id, "Partial close amount", "", 50);
+    parameters:addString("breakeven_close" .. id, "Partial close", "", "no");
+    parameters:addStringAlternative("breakeven_close" .. id, "No partial close", "", "no");
+    parameters:addStringAlternative("breakeven_close" .. id, "Partial close (% of lots)", "", "lots");
+    parameters:addStringAlternative("breakeven_close" .. id, "Partial close (% of initial lots)", "", "initial_lots");
+    parameters:addDouble("breakeven_close_amount" .. id, "Partial close amount", "", 50);
 end
 
 function trading:AddPositionParameters(parameters, id, section_id)
@@ -126,7 +126,7 @@ function trading:AddPositionParameters(parameters, id, section_id)
         end
     end
     if CreateCustomBreakeven == nil then
-        self:addBreakevenParameters(section_id, id, "1");
+        self:addBreakevenParameters(parameters, section_id, id, "1");
     end
 end
 
