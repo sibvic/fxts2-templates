@@ -255,3 +255,11 @@ Pine script-like barstate.* functions
 ## Timeframe
 
 Pine script-like timeframe.* functions
+
+## ChartPoint
+
+Pine script-like chart.point.* functions
+
+## Color
+
+Pine script-like color.* functions
