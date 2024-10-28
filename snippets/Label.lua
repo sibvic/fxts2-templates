@@ -1,9 +1,7 @@
 Label = {};
-Label.AllLabels = {};
 Label.AllLabelsInOrder = {};
 Label.AllSeries = {};
 function Label:Clear()
-    Label.AllLabels = {};
     Label.AllSeries = {};
     Label.AllLabelsInOrder = {};
 end
@@ -191,7 +189,6 @@ function Label:New(id, seriesId, period, price)
     function newLabel:Get(index)
         return Label.AllSeries[self.SeriesId][index + 1];
     end
-    self.AllLabels[id .. "_" .. seriesId] = newLabel;
     self.AllLabelsInOrder[#self.AllLabelsInOrder + 1] = newLabel
     if #self.AllLabelsInOrder > self.max_labels_count then
         Label:Delete(self.AllLabelsInOrder[1]);
@@ -206,7 +203,6 @@ function Label:Delete(label)
     if label == nil then
         return;
     end
-    self:removeFromAllLabels(label);
     self:removeFromAllLabelsByOrder(label);
     self:removeFromSeries(label);
 end
@@ -214,14 +210,6 @@ function Label:removeFromSeries(label)
     for i = 1, #self.AllSeries[label.SeriesId] do
         if self.AllSeries[label.SeriesId][i] == label then
             table.remove(self.AllSeries[label.SeriesId], i);
-            return;
-        end
-    end
-end
-function Label:removeFromAllLabels(label)
-    for k, v in pairs(self.AllLabels) do
-        if v == label then
-            self.AllLabels[k] = nil;
             return;
         end
     end
@@ -238,7 +226,7 @@ function Label:Draw(stage, context)
     if stage ~= 2 then
         return;
     end
-    for id, label in pairs(self.AllLabels) do
-        label:Draw(stage, context);
+    for i = 1, #self.AllLabelsInOrder do
+        self.AllLabelsInOrder[i]:Draw(stage, context);
     end
 end
