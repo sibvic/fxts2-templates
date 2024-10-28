@@ -9,7 +9,6 @@ function Box:SetLeftTop(box, left, top)
     if box == nil then
         return;
     end
-    core.host:trace("L" .. tostring(left));
     box:SetLeft(left);
     box:SetTop(top);
 end
@@ -17,7 +16,6 @@ function Box:SetRightBottom(box, right, bottom)
     if box == nil then
         return;
     end
-    core.host:trace("L" .. tostring(right));
     box:SetRight(right);
     box:SetBottom(bottom);
 end
