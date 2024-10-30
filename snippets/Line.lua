@@ -11,6 +11,12 @@ end
 function Line:Prepare(max_lines_count)
     Line.max_lines_count = max_lines_count;
 end
+function Line:GetPrice(line, x)
+    if line == nil then
+        return nil;
+    end
+    return line:GetPrice(x);
+end
 function Line:SetXY1(line, x, y)
     if line == nil then
         return;
@@ -175,6 +181,10 @@ function Line:New(x1, y1, x2, y2)
         self.Style = style;
         self.PenId = nil;
         return self;
+    end
+    function newLine:GetPrice(x)
+        local a, c = math2d.lineEquation(self.X1, self.Y1, self.X2, self.Y2);
+        return a * x + c;
     end
     function newLine:getStyleForContext()
         if self.Style == "solid" or self.Style == "arrow_left" or self.Style == "arrow_both" or self.Style == "arrow_right" then
