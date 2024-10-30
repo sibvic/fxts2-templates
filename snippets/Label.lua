@@ -20,6 +20,12 @@ function Label:SetText(label, text)
     end
     label:SetText(text);
 end
+function Label:SetTooltip(label, text)
+    if label == nil then
+        return;
+    end
+    label:SetTooltip(text);
+end
 function Label:SetSize(label, size)
     if label == nil then
         return;
@@ -96,6 +102,9 @@ function Label:New(id, seriesId, period, price)
     newLabel.TextColor = core.colors().Black;
     function newLabel:SetTextColor(clr)
         self.TextColor = clr;
+        return self;
+    end
+    function newLabel:SetTooltip(tooltip)
         return self;
     end
     newLabel.Style = "down";
