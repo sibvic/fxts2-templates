@@ -267,3 +267,7 @@ Pine script-like color.* functions
 ## Display
 
 Pine script-like display.* enums
+
+## Matrix
+
+Pine script-like matrix.* functions
