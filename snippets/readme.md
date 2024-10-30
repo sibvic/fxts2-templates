@@ -263,3 +263,7 @@ Pine script-like chart.point.* functions
 ## Color
 
 Pine script-like color.* functions
+
+## Display
+
+Pine script-like display.* enums
