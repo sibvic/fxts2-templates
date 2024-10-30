@@ -38,6 +38,13 @@ function Label:SetX(label, x)
     end
     label:SetX(x);
 end
+function Label:SetXY(label, x, y)
+    if label == nil then
+        return;
+    end
+    label:SetX(x);
+    label:SetY(y);
+end
 function Label:SetY(label, y)
     if label == nil then
         return;
