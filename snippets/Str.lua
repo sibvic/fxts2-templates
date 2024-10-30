@@ -55,8 +55,14 @@ function Str:Format(pattern, value0, value1, value2, value3, value4, value5, val
     return result;
 end
 function Str:ToString(value, pattern)
+    if value == nil then
+        return "";
+    end
     if pattern == nil then
         return tostring(value);
+    end
+    if pattern == "percent" then
+        return win32.formatNumber(value, false, 2);
     end
     local luaPattern = "";
     local waitNumber = false;
