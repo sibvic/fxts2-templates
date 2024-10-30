@@ -85,14 +85,24 @@ function Array:IndexOf(array, value)
     end
     return array:IndexOf(value);
 end
+function Array:Includes(array, value)
+    if array == nil then
+        return nil;
+    end
+    return array:Includes(value);
+end
 function Array:NewArray(size, initialValue)
     local newArray = {};
     newArray.arr = {};
-    newArray.size = size;
-    for i = 1, size, 1 do
-        newArray.arr[i] = initialValue;
+    if size ~= nil then
+        newArray.size = size;
+        for i = 1, size, 1 do
+            newArray.arr[i] = initialValue;
+        end
+    else
+        newArray.size = 0;
     end
-    function newArray:Push(item) self.size = self.size + 1; self.arr[#self.arr + 1] = item; end
+    function newArray:Push(item) self.size = self.size + 1; self.arr[#self.arr + 1] = item; return self; end
     function newArray:Get(index) return self.arr[index + 1]; end
     function newArray:Set(index, value) self.arr[index + 1] = value; end
     function newArray:Max() return Array:Max(self); end
@@ -123,6 +133,14 @@ function Array:NewArray(size, initialValue)
             end
         end
         return -1;
+    end
+    function newArray:Includes(value)
+        for i, v in ipairs(self.arr) do
+            if v == value then
+                return true;
+            end
+        end
+        return false;
     end
     function newArray:Sum()
         local sum = 0;
@@ -217,5 +235,11 @@ function Array:NewString(size, initialValue)
     return Array:NewArray(size, initialValue);
 end
 function Array:NewBox(size, initialValue)
+    return Array:NewArray(size, initialValue);
+end
+function Array:NewBool(size, initialValue)
+    return Array:NewArray(size, initialValue);
+end
+function Array:NewColor(size, initialValue)
     return Array:NewArray(size, initialValue);
 end
