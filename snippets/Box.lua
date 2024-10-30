@@ -200,6 +200,12 @@ function Box:New(id, seriesId, left, top, right, bottom)
         _, x1 = context:positionOfBar(self.Left);
         _, y2 = context:pointOfPrice(self.Bottom);
         _, x2 = context:positionOfBar(self.Right);
+        if (x1 == x2) then
+            x2 = x1 + 1;
+        end
+        if (y1 == y2) then
+            y2 = y1 + 1
+        end
         context:drawRectangle(self.PenId, self.BrushId, x1, y1, x2, y2, self.BgColorTransparency)
         context:drawRectangle(self.PenId, -1, x1, y1, x2, y2)
         if self.Text ~= nil and self.Text ~= "" then
