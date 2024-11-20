@@ -91,7 +91,7 @@ function Array:Includes(array, value)
     end
     return array:Includes(value);
 end
-function Array:NewArray(size, initialValue)
+function Array:New(size, initialValue)
     local newArray = {};
     newArray.arr = {};
     if size ~= nil then
@@ -150,7 +150,7 @@ function Array:NewArray(size, initialValue)
         return sum;
     end
     function newArray:Copy()
-        local arrayCopy = Array:NewArray(self.size, nil);
+        local arrayCopy = Array:New(self.size, nil);
         for i = 1, self.size, 1 do
             arrayCopy.arr[i] = self.arr[i];
         end
@@ -220,26 +220,26 @@ function Array:NewArray(size, initialValue)
     return newArray;
 end
 function Array:NewLine(size, initialValue)
-    return Array:NewArray(size, initialValue);
+    return Array:New(size, initialValue);
 end
 function Array:NewInt(size, initialValue)
-    return Array:NewArray(size, initialValue);
+    return Array:New(size, initialValue);
 end
 function Array:NewFloat(size, initialValue)
-    return Array:NewArray(size, initialValue);
+    return Array:New(size, initialValue);
 end
 function Array:NewLabel(size, initialValue)
-    return Array:NewArray(size, initialValue);
+    return Array:New(size, initialValue);
 end
 function Array:NewString(size, initialValue)
-    return Array:NewArray(size, initialValue);
+    return Array:New(size, initialValue);
 end
 function Array:NewBox(size, initialValue)
-    return Array:NewArray(size, initialValue);
+    return Array:New(size, initialValue);
 end
 function Array:NewBool(size, initialValue)
-    return Array:NewArray(size, initialValue);
+    return Array:New(size, initialValue);
 end
 function Array:NewColor(size, initialValue)
-    return Array:NewArray(size, initialValue);
+    return Array:New(size, initialValue);
 end
