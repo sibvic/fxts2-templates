@@ -100,6 +100,9 @@ function SafeSetFloat(stream, period, value)
     stream[period] = value;
 end
 function SafeGetFloat(stream, period)
+    if stream == nil then
+        return nil;
+    end
     if not stream:hasData(period) then
         return nil;
     end
