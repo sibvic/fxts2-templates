@@ -210,7 +210,7 @@ function Table:New(id, position, columns, rows)
         local text_x2 = text_x1 + width;
         return text_x1, text_x2;
     end
-    function newTable:drawCell(context, row, column, rowHeights, columnWidths, yStart, xStart)
+    function newTable:drawCell(context, row, column, rowHeights, columnWidths, yStart, xStart, totalRows, totalColumns)
         local rectangle_x1;
         local rectangle_x2;
         local rectangle_y1;
@@ -229,6 +229,14 @@ function Table:New(id, position, columns, rows)
         if self.BgBrushId ~= nil then
             context:drawRectangle(self.FramePenId, self.BgBrushId, rectangle_x1, rectangle_y1, rectangle_x2, rectangle_y2, self.bgcolor_transparency)
         end
+        if self.BorderPenId ~= nil then
+            if totalRows ~= row then
+                context:drawLine(self.BorderPenId, rectangle_x1, rectangle_y2, rectangle_x2, rectangle_y2);
+            end
+            if totalColumns ~= column then
+                context:drawLine(self.BorderPenId, rectangle_x2, rectangle_y1, rectangle_x2, rectangle_y2);
+            end
+        end
         context:drawText(Table.FontId, self.rows[row][column].text, self.rows[row][column].text_color, -1, 
             text_x1, text_y1, text_x2, text_y2, 0);
     end
@@ -236,27 +244,40 @@ function Table:New(id, position, columns, rows)
         if self.bgcolor ~= nil and self.BgBrushId == nil then
             self.BgBrushId = Graphics:FindBrush(self.bgcolor, context);
         end
-        if self.FramePenId == nil then
-            self.FramePenId = Graphics:FindPen(self.border_width, self.border_color, self.border_style, context);
+        if self.FramePenId == nil and self.frame_color ~= nil then
+            self.FramePenId = Graphics:FindPen(self.frame_width or 1, self.frame_color, self.frame_style or core.LINE_SOLID, context);
+        end
+        if self.BorderPenId == nil and self.border_color ~= nil then
+            self.BorderPenId = Graphics:FindPen(self.border_width or 1, self.border_color, self.border_style or core.LINE_SOLID, context);
         end
         local rowHeights, columnWidths, total_height, total_width = self:measureCells(context);
         
         local rowDirection = self:getRowDirection();
         local columnDirection = self:getColumnDirection();
-        local yStart = rowDirection == 1 and context:top() or context:bottom() - total_height;
+        local x = columnDirection == 1 and context:left() or (context:right() - total_width);
+        local y = rowDirection == 1 and context:top() or context:bottom() - total_height;
+        local maxX = x;
+        local yStart = y;
         local totalRows = #self.rows;
         for rowIt = 1, totalRows do
             local row = rowIt;
-            local xStart = columnDirection == 1 and context:left() or (context:right() - total_width); 
+            local xStart = x; 
             local totalCoumns = #self.rows[rowIt];
             for columnIt = 1, totalCoumns do
                 local column = columnIt;
                 if not self.rows[row][column].skip then
-                    self:drawCell(context, row, column, rowHeights, columnWidths, yStart, xStart);
+                    self:drawCell(context, row, column, rowHeights, columnWidths, yStart, xStart, totalRows, totalCoumns);
                 end
                 xStart = xStart + columnWidths[column];
             end
+            maxX = math.max(maxX, xStart);
             yStart = yStart + rowHeights[row];
+        end
+        if self.FramePenId ~= nil then
+            context:drawLine(self.FramePenId, x, y, x, yStart);
+            context:drawLine(self.FramePenId, maxX, y, maxX, yStart);
+            context:drawLine(self.FramePenId, x, y, maxX, y);
+            context:drawLine(self.FramePenId, x, yStart, maxX, yStart);
         end
     end
     self.AllTables[id] = newTable;
