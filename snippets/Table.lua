@@ -35,6 +35,7 @@ function Table:CellTextHAlign(table, column, row, halign)
 end
 function Table:New(id, position, columns, rows)
     local newTable = {};
+    newTable.offset = 5;
     newTable.position = position;
     newTable.border_width = 1;
     function newTable:SetBorderWidth(width)
@@ -153,6 +154,12 @@ function Table:New(id, position, columns, rows)
                 else
                     if self.rows[row][column].text ~= nil then
                         W, H = context:measureText(Table.FontId, self.rows[row][column].text, context.LEFT);
+                        if W > 0 then
+                            W = W + self.offset * 2;
+                        end
+                        if H > 0 then
+                            H = H + self.offset * 2;
+                        end
                     else
                         W, H = 0, 0;
                     end
@@ -226,6 +233,10 @@ function Table:New(id, position, columns, rows)
         local y = (rectangle_y1 + rectangle_y2) / 2;
         local text_y1 = y - self.rows[row][column].cache.H / 2;
         local text_y2 = y + self.rows[row][column].cache.H;
+        text_x1 = text_x1 + self.offset;
+        text_x2 = text_x2 - self.offset;
+        text_y1 = text_y1 + self.offset;
+        text_y2 = text_y2 - self.offset;
         if self.BgBrushId ~= nil then
             context:drawRectangle(self.FramePenId, self.BgBrushId, rectangle_x1, rectangle_y1, rectangle_x2, rectangle_y2, self.bgcolor_transparency)
         end
@@ -242,6 +253,7 @@ function Table:New(id, position, columns, rows)
     end
     function newTable:Draw(stage, context)
         if self.bgcolor ~= nil and self.BgBrushId == nil then
+            core.host:trace("BG COLOR");
             self.BgBrushId = Graphics:FindBrush(self.bgcolor, context);
         end
         if self.FramePenId == nil and self.frame_color ~= nil then
