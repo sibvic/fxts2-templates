@@ -925,6 +925,7 @@ function trading:EntryOrder(instrument)
     end
     function builder:SetPipLimit(limit_type, limit) self.valuemap.PegTypeLimit = limit_type or "M"; self.valuemap.PegPriceOffsetPipsLimit = self.valuemap.BuySell == "B" and limit or -limit; return self; end
     function builder:SetLimit(limit) self.valuemap.RateLimit = limit; return self; end
+    function builder:SetLimitByEquityTargetPercent(limit) self.EquityTargetPercent = limit; return self; end
     function builder:SetPipStop(stop_type, stop, trailing_stop) self.valuemap.PegTypeStop = stop_type or "O"; self.valuemap.PegPriceOffsetPipsStop = self.valuemap.BuySell == "B" and -stop or stop; self.valuemap.TrailStepStop = trailing_stop; return self; end
     function builder:SetStop(stop, trailing_stop) self.valuemap.RateStop = stop; self.valuemap.TrailStepStop = trailing_stop; return self; end
     function builder:UseDefaultCustomId() self.valuemap.CustomID = self.Parent.CustomID; return self; end
@@ -955,6 +956,14 @@ function trading:EntryOrder(instrument)
             self.valuemap.Quantity = math.floor(used_equity / emr) * self:_GetBaseUnitSize();
         else
             self.valuemap.Quantity = self.amount * self:_GetBaseUnitSize();
+        end
+        if self.EquityTargetPercent ~= nil then
+            self.valuemap.PegTypeLimit = "M";
+            local gained_per_pip = self.Offer.PipCost * (self.valuemap.Quantity / self:_GetBaseUnitSize());
+            local equity = core.host:findTable("accounts"):find("AccountID", self.valuemap.AcctID).Equity;
+            local target_profit = equity * (self.EquityTargetPercent  / 100.0);
+            local limit = target_profit / gained_per_pip;
+            self.valuemap.PegPriceOffsetPipsLimit = self.valuemap.BuySell == "B" and limit or -limit;
         end
         return self.valuemap;
     end

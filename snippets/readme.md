@@ -59,7 +59,7 @@ Subscribes for a source. Uses existing source if the source with the same parame
 
 ## trading
 
-Trading routines.
+Trading routines. [Read more](trading.md)
 
 ### EntryOrder function
 
