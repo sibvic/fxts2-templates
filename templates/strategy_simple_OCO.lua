@@ -216,6 +216,9 @@ function ExtUpdate(id, source, period)
     else
         entry_period = period;
     end
+    if main_source:size() <= entry_period then
+        return;
+    end
     UpdateIndicators();
 
     local now = core.host:execute("convertTime", core.TZ_EST, _ToTime, core.host:execute("getServerTime"));

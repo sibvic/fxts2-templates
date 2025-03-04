@@ -241,6 +241,9 @@ function ExtUpdate(id, source, period)
     else
         entry_period = period;
     end
+    if main_source:size() <= entry_period then
+        return;
+    end
     UpdateIndicators();
     if last_bar == nil then
         last_bar = main_source:date(entry_period);

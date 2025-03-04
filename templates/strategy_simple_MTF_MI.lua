@@ -223,6 +223,9 @@ function ExtUpdate(id, source, period)
     else
         entry_period = period;
     end
+    if main_source:size() <= entry_period then
+        return;
+    end
     UpdateIndicators(d.indicators);
     if IsEntryLong(d.main_source, entry_period, d.indicators) and d.last_entry ~= d.main_source:date(NOW) and not PositionsLimitHit(d.main_source) then
         if AllowTrade then

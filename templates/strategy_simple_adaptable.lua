@@ -279,6 +279,9 @@ function ExtUpdate(id, source, period)
     else
         entry_period = period;
     end
+    if main_source:size() <= entry_period then
+        return;
+    end
     UpdateIndicators();
     for i, action in ipairs(actions) do
         if action.IsPass(entry_period) then
