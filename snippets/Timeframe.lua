@@ -18,6 +18,23 @@ function Timeframe:Period()
     end
     return "0";
 end
+function Timeframe:Interval()
+    local bar_size = instance.source:barSize();
+    if bar_size == "t1" then
+        return "0";
+    elseif string.sub(bar_size, 1, 1) == "m" then
+        return tonumber(string.sub(bar_size, 2));
+    elseif string.sub(bar_size, 1, 1) == "H" then
+        return tonumber(string.sub(bar_size, 2));
+    elseif string.sub(bar_size, 1, 1) == "D" then
+        return "1";
+    elseif string.sub(bar_size, 1, 1) == "W" then
+        return "1";
+    elseif string.sub(bar_size, 1, 1) == "M" then
+        return "1";
+    end
+    return "0";
+end
 function Timeframe:InSeconds(period, source)
     if timeframe == "M" then
         return "M1";
