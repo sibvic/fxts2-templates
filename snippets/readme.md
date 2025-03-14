@@ -271,3 +271,7 @@ Pine script-like display.* enums
 ## Matrix
 
 Pine script-like matrix.* functions
+
+## PineStrategy
+
+Pine script-like strategy.* functions for indicator
