@@ -120,6 +120,9 @@ end
 function ToLine(line)
     return line;
 end
+function ToBox(box)
+    return box;
+end
 function Round(num, idp)
     if num == nil then
         return nil;
@@ -141,4 +144,22 @@ function Triary(condition, trueValue, falseValue)
         return falseValue;
     end
     return trueValue;
+end
+function SafeCrossesUnder(val1, val2, period)
+    if val1 == nil or val2 == nil or period < 2 then
+        return false;
+    end
+    return core.crossesUnder(val1, val2, period);
+end
+function SafeCrossesOver(val1, val2, period)
+    if val1 == nil or val2 == nil or period < 2 then
+        return false;
+    end
+    return core.crossesOver(val1, val2, period);
+end
+function SafeCrosses(val1, val2, period)
+    if val1 == nil or val2 == nil or period < 2 then
+        return false;
+    end
+    return core.crosses(val1, val2, period);
 end
