@@ -18,6 +18,17 @@ function Timeframe:Period()
     end
     return "0";
 end
+function Timeframe:IsIntraday()
+    local bar_size = instance.source:barSize();
+    if bar_size == "t1" then
+        return true;
+    elseif string.sub(bar_size, 1, 1) == "m" then
+        return true;
+    elseif string.sub(bar_size, 1, 1) == "H" then
+        return true;
+    end
+    return false;
+end
 function Timeframe:Interval()
     local bar_size = instance.source:barSize();
     if bar_size == "t1" then
