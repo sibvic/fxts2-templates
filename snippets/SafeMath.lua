@@ -87,7 +87,7 @@ function SafeSetBool(stream, period, value)
     stream[period] = value and 1 or 0;
 end
 function SafeGetBool(stream, period)
-    if not stream:hasData(period) then
+    if stream == nil or not stream:hasData(period) then
         return nil;
     end
     return stream[period] == 1;
