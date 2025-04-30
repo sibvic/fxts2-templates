@@ -12,6 +12,7 @@ signaler._advanced_alert_timer = nil;
 signaler._tz = nil;
 signaler._alerts = {};
 signaler._commands = {};
+signaler.lastIndexSerial = {};
 
 function signaler:trace(str) if not self.Debug then return; end core.host:trace(self.Name .. ": " .. str); end
 function signaler:OnNewModule(module) end
@@ -147,8 +148,14 @@ function signaler:getSource(source)
     end
     return source;
 end
-function signaler:SignalEx(message, period, source)
-    source = self:getSource(getSource);
+function signaler:SignalEx(index, message, period, source)
+    source = self:getSource(source);
+    if index ~= nil then
+        if (self.lastIndexSerial[index] == source:serial(period)) then
+            return;
+        end
+        self.lastIndexSerial[index] = source:serial(period);
+    end
     local interval = string.find(message, "{{interval}}");
     if interval ~= nil then
         message = string.sub(message, 1, interval - 1)
@@ -164,7 +171,7 @@ function signaler:SignalEx(message, period, source)
     self:Signal(message, source);
 end
 function signaler:Signal(message, source)
-    source = self:getSource(getSource);
+    source = self:getSource(source);
     if self._show_alert then
         terminal:alertMessage(source:instrument(), source[NOW], message, source:date(NOW));
     end
