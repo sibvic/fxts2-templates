@@ -384,6 +384,9 @@ function UpdateData()
     local offers = {};
     for _, symbol in ipairs(items) do
         if symbol.Indicators ~= nil and not symbol.Loading then
+            for i, indicator in ipairs(symbol.Indicators) do
+                indicator:update(core.UpdateLast);
+            end
             if offers[symbol.Pair] == nil then
                 offers[symbol.Pair] = core.host:findTable("offers"):find("Instrument", symbol.Pair);
             end
