@@ -163,3 +163,15 @@ function SafeCrosses(val1, val2, period)
     end
     return core.crosses(val1, val2, period);
 end
+function SafeCos(val)
+    if val == nil then
+        return nil;
+    end
+    return math.cos(val);
+end
+function SafeSin(val)
+    if val == nil then
+        return nil;
+    end
+    return math.sin(val);
+end
