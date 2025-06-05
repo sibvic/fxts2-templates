@@ -27,7 +27,7 @@ function IsEntryLong(source, period)
     if not indi_1.DATA:hasData(period - 1) or not indi_2.DATA:hasData(period - 1) then
         return false;
     end
-    return core.crossesOver(indi_1.DATA, indi_2.DATA, period);
+    return core.crossesOver(indi_1.DATA, indi_2.DATA, period); --optionally you can return serial of the bar (or date) to avoid multiple signals of the same bar. Date used by default
 end
 function IsEntryShort(source, period)
     if not indi_1.DATA:hasData(period - 1) or not indi_2.DATA:hasData(period - 1) then
@@ -286,32 +286,40 @@ function ExtUpdate(id, source, period)
     if not InRange(now, OpenTime, CloseTime) then
         return;
     end
-    if IsEntryLong(main_source, entry_period) and last_entry ~= main_source:date(NOW) then
-        if AllowTrade then
-            local closed_positions = 0;
-            if close_on_opposite then
-                if trade_direction == "Direct" then
-                    closed_positions = CloseTrades("S");
-                else
-                    closed_positions = CloseTrades("B");
-                end
-            end
-            if closed_positions > 0 or not PositionsLimitHit() then
-                if trade_direction == "Direct" then
-                    OpenTrade("B");
-                else
-                    OpenTrade("S");
-                end
-            end
-        end
-        if trade_direction == "Direct" then
-            Signal("Entry long", main_source);
-        else
-            Signal("Entry short", main_source);
-        end
-        last_entry = main_source:date(NOW);
+    local longSignal, longSerial = IsEntryLong(main_source, entry_period);
+    if longSerial == nil then
+        longSerial = main_source:date(NOW);
     end
-    if IsEntryShort(main_source, entry_period) and last_entry ~= main_source:date(NOW) then
+    if longSignal and last_entry ~= longSerial then
+        if AllowTrade then
+            local closed_positions = 0;
+            if close_on_opposite then
+                if trade_direction == "Direct" then
+                    closed_positions = CloseTrades("S");
+                else
+                    closed_positions = CloseTrades("B");
+                end
+            end
+            if closed_positions > 0 or not PositionsLimitHit() then
+                if trade_direction == "Direct" then
+                    OpenTrade("B");
+                else
+                    OpenTrade("S");
+                end
+            end
+        end
+        if trade_direction == "Direct" then
+            Signal("Entry long", main_source);
+        else
+            Signal("Entry short", main_source);
+        end
+        last_entry = longSerial;
+    end
+    local shortSignal, shortSerial = IsEntryShort(main_source, entry_period);
+    if shortSerial == nil then
+        shortSerial = main_source:date(NOW);
+    end
+    if shortSignal and last_entry ~= shortSerial then
         if AllowTrade then
             local closed_positions = 0;
             if close_on_opposite then
@@ -334,7 +342,7 @@ function ExtUpdate(id, source, period)
         else
             Signal("Entry long", main_source);
         end
-        last_entry = main_source:date(NOW);
+        last_entry = shortSerial;
     end
 end
 
