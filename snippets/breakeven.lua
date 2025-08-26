@@ -137,7 +137,7 @@ function breakeven:CreatePartialClose(toClosePercent, mode)
         end
         return self:doClose(data);
     end
-    function controller:getLots(data, trade)
+    function action:getLots(data, trade)
         if self._mode == "initial_lots" then
             return data:GetInitialLots();
         end
