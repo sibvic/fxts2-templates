@@ -21,6 +21,12 @@ function Table:CellTextColor(table, column, row, color)
     end
     table:CellTextColor(column, row, color)
 end
+function Table:CellBGColor(table, column, row, color)
+    if table == nil then
+        return;
+    end
+    table:CellBGColor(column, row, color)
+end
 function Table:CellTextSize(table, column, row, size)
     if table == nil then
         return;
@@ -92,6 +98,11 @@ function Table:New(id, position, columns, rows)
     function newTable:CellTextColor(column, row, color)
         local clr, transp = Graphics:SplitColorAndTransparency(color);
         self.rows[row + 1][column + 1].text_color = clr;
+        return self;
+    end
+    function newTable:CellBGColor(column, row, color)
+        local clr, transp = Graphics:SplitColorAndTransparency(color);
+        self.rows[row + 1][column + 1].bg_color = clr;
         return self;
     end
     function newTable:CellTextSize(column, row, size)
@@ -237,8 +248,15 @@ function Table:New(id, position, columns, rows)
         text_x2 = text_x2 - self.offset;
         text_y1 = text_y1 + self.offset;
         text_y2 = text_y2 - self.offset;
-        if self.BgBrushId ~= nil then
-            context:drawRectangle(self.FramePenId, self.BgBrushId, rectangle_x1, rectangle_y1, rectangle_x2, rectangle_y2, self.bgcolor_transparency)
+        local bgBrush = self.BgBrushId;
+        if self.rows[row][column].bg_color ~= nil then
+            if self.rows[row][column].bg_brushId == nil then
+                self.rows[row][column].bg_brushId = Graphics:FindBrush(self.rows[row][column].bg_color, context);
+            end
+            bgBrush = self.rows[row][column].bg_brushId;
+        end
+        if bgBrush ~= nil then
+            context:drawRectangle(self.FramePenId, bgBrush, rectangle_x1, rectangle_y1, rectangle_x2, rectangle_y2, self.bgcolor_transparency)
         end
         if self.BorderPenId ~= nil then
             if totalRows ~= row then
@@ -253,7 +271,6 @@ function Table:New(id, position, columns, rows)
     end
     function newTable:Draw(stage, context)
         if self.bgcolor ~= nil and self.BgBrushId == nil then
-            core.host:trace("BG COLOR");
             self.BgBrushId = Graphics:FindBrush(self.bgcolor, context);
         end
         if self.FramePenId == nil and self.frame_color ~= nil then
