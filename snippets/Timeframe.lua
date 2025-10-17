@@ -4,10 +4,10 @@ function Timeframe:Period()
     if bar_size == "t1" then
         return "t";
     elseif string.sub(bar_size, 1, 1) == "m" then
-        local seconds = 60 * tonumber(string.sub(bar_size, 2));
+        local seconds = tonumber(string.sub(bar_size, 2));
         return tostring(seconds);
     elseif string.sub(bar_size, 1, 1) == "H" then
-        local seconds = 60 * 60 * tonumber(string.sub(bar_size, 2));
+        local seconds = 60 * tonumber(string.sub(bar_size, 2));
         return tostring(seconds);
     elseif string.sub(bar_size, 1, 1) == "D" then
         return "D";
@@ -46,13 +46,13 @@ function Timeframe:Interval()
     end
     return "0";
 end
-function Timeframe:InSeconds(period, source)
+function Timeframe:InSeconds(timeframe, source)
     if timeframe == "M" then
-        return "M1";
+        return 86400 * 30;
     elseif timeframe == "D" then
-        return "D1";
+        return 86400;
     elseif timeframe == "t" then
-        return "t1";
+        return 1;
     else
         local minutes = tonumber(timeframe);
         if minutes == nil then
