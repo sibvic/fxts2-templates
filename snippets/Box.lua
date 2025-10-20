@@ -5,6 +5,18 @@ function Box:Clear()
     Box.AllBoxs = {};
     Box.AllSeries = {};
 end
+function Box:GetSerial(value, source, xloc)
+    if value == nil then
+        return nil;
+    end
+    if xloc == "bar_time" then
+        return value / 86400000.;
+    end
+    if value < 0 or value >= source:size() then
+        return nil;
+    end
+    return source:date(value);
+end
 function Box:SetLeftTop(box, left, top)
     if box == nil then
         return;
@@ -105,6 +117,10 @@ function Box:New(id, seriesId, left, top, right, bottom)
         self.Left = left;
         return self;
     end
+    function newBox:SetXLoc(val)
+        self.XLoc = val;
+        return self;
+    end
     function newBox:GetLeft()
         return self.Left;
     end
@@ -196,10 +212,16 @@ function Box:New(id, seriesId, left, top, right, bottom)
         if self.BrushId == nil then
             self.BrushId = Graphics:FindBrush(self.BgColor, context);
         end
+        local x1, x2;
+        if self.XLoc == "bar_index" then
+            _, x1 = context:positionOfBar(self.Left);
+            _, x2 = context:positionOfBar(self.Right);
+        else
+            _, x1 = context:positionOfDate(self.Left / 86400000.);
+            _, x2 = context:positionOfDate(self.Right / 86400000.);
+        end
         _, y1 = context:pointOfPrice(self.Top);
-        _, x1 = context:positionOfBar(self.Left);
         _, y2 = context:pointOfPrice(self.Bottom);
-        _, x2 = context:positionOfBar(self.Right);
         if (x1 == x2) then
             x2 = x1 + 1;
         end
