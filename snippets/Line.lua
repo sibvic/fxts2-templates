@@ -216,14 +216,34 @@ function Line:New(x1, y1, x2, y2)
         local _, y2 = context:pointOfPrice(self.Y2);
         context:drawLine(self.PenId, x1, y1, x2, y2, self.ColorTransparency);
         if self.Extend == "right" or self.Extend == "both" then
-            local a, c = math2d.lineEquation(x1, y1, x2, y2);
-            local y3 = a * context:right() + c;
-            context:drawLine(self.PenId, x2, y2, context:right(), y3, self.ColorTransparency);
+            if x1 == x2 then
+                if y1 >= y2 then
+                    context:drawLine(self.PenId, x1, y1, x1, context:top(), self.ColorTransparency);
+                else
+                    context:drawLine(self.PenId, x1, y1, x1, context:bottom(), self.ColorTransparency);
+                end
+            else
+                local a, c = math2d.lineEquation(x1, y1, x2, y2);
+                if a ~= nil and c ~= nil then
+                    local y3 = a * context:right() + c;
+                    context:drawLine(self.PenId, x2, y2, context:right(), y3, self.ColorTransparency);
+                end
+            end
         end
         if self.Extend == "left" or self.Extend == "both" then
-            local a, c = math2d.lineEquation(x1, y1, x2, y2);
-            local y3 = a * context:left() + c;
-            context:drawLine(self.PenId, x1, y1, context:left(), y3, self.ColorTransparency);
+            if x1 == x2 then
+                if y1 >= y2 then
+                    context:drawLine(self.PenId, x1, y2, x1, context:bottom(), self.ColorTransparency);
+                else
+                    context:drawLine(self.PenId, x1, y2, x1, context:top(), self.ColorTransparency);
+                end
+            else
+                local a, c = math2d.lineEquation(x1, y1, x2, y2);
+                if a ~= nil and c ~= nil then
+                    local y3 = a * context:left() + c;
+                    context:drawLine(self.PenId, x1, y1, context:left(), y3, self.ColorTransparency);
+                end
+            end
         end
     end
     self.AllLines[#self.AllLines + 1] = newLine;
