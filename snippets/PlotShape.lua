@@ -1,7 +1,7 @@
 PlotShape = {};
 function PlotShape:SetValue(plot, period, source, value, text, label, location, color)
     local clr, transp = Graphics:SplitColorAndTransparency(color);
-    if not value or transp == 100 then
+    if not value or transp == 100 or clr == nil then
         plot:setNoData(period);
         return;
     end
