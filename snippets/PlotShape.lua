@@ -6,21 +6,12 @@ function PlotShape:SetValue(plot, period, source, value, text, label, location, 
         return;
     end
     if location == "abovebar" or location == "top" then
-        plot:set(period, source.high[period], text, label);
-        if clr ~= nil then
-            plot:setColor(period, clr);
-        end
+        plot:set(period, source.high[period], text, label, clr);
         return;
     end
     if location == "belowbar" or location == "bottom" then
-        plot:set(period, source.low[period], text, label);
-        if clr ~= nil then
-            plot:setColor(period, clr);
-        end
+        plot:set(period, source.low[period], text, label, clr);
         return;
     end
-    plot:set(period, value, text, label);
-    if clr ~= nil then
-        plot:setColor(period, clr);
-    end
+    plot:set(period, value, text, label, clr);
 end
