@@ -210,8 +210,15 @@ function Line:New(x1, y1, x2, y2)
         if self.PenId == nil then
             self.PenId = Graphics:FindPen(self.Width, self.Color, self:getStyleForContext(), context);
         end
-        local x1 = self:converXToPoints(context, self.X1);
-        local x2 = self:converXToPoints(context, self.X2);
+        local x1;
+        local x2;
+        if (self.XLoc == "bar_time") then
+            _, x1 = context:positionOfDate(self.X1 / 86400000.0)
+            _, x2 = context:positionOfDate(self.X2 / 86400000.0)
+        else
+            x1 = self:converXToPoints(context, self.X1);
+            x2 = self:converXToPoints(context, self.X2);
+        end
         local _, y1 = context:pointOfPrice(self.Y1);
         local _, y2 = context:pointOfPrice(self.Y2);
         context:drawLine(self.PenId, x1, y1, x2, y2, self.ColorTransparency);
