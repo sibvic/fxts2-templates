@@ -8,6 +8,18 @@ end
 function Label:Prepare(max_labels_count)
     Label.max_labels_count = max_labels_count;
 end
+function Label:GetSerial(value, source, xloc)
+    if value == nil then
+        return nil;
+    end
+    if xloc == "bar_time" then
+        return value / 86400000.;
+    end
+    if value < 0 or value >= source:size() then
+        return nil;
+    end
+    return source:date(value);
+end
 function Label:Get(label, index)
     if label == nil then
         return;
@@ -37,6 +49,13 @@ function Label:SetX(label, x)
         return;
     end
     label:SetX(x);
+end
+function Label:SetXLoc(label, x, xloc)
+    if label == nil then
+        return;
+    end
+    label:SetX(x);
+    label:SetXLoc(xloc);
 end
 function Label:SetXY(label, x, y)
     if label == nil then
@@ -75,6 +94,10 @@ function Label:New(id, seriesId, period, price)
     newLabel.X = period;
     function newLabel:SetX(x)
         self.X = x;
+        return self;
+    end
+    function newLabel:SetXLoc(val)
+        self.xloc = val;
         return self;
     end
     function newLabel:GetX()
@@ -121,7 +144,12 @@ function Label:New(id, seriesId, period, price)
     end
     function newLabel:getCoordinates(context, W, H)
         local visible, y = context:pointOfPrice(self.Y);
-        local x1, x = context:positionOfBar(self.X)
+        local x1, x;
+        if self.xloc == "bar_index" then
+            x1, x = context:positionOfBar(self.X)
+        else
+            x1, x = context:positionOfDate(self.X / 86400000.);
+        end
         if self.Style == "left" then
             return x1, y - H / 2, x1 + W, y + H / 2;
         end
