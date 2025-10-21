@@ -175,3 +175,21 @@ function SafeSin(val)
     end
     return math.sin(val);
 end
+function SafeMathExMax(source, period, length)
+    if source:size() < length then
+        return nil;
+    end
+    return mathex.max(source, core.rangeTo(period, length));
+end
+function SafeMathExMin(source, period, length)
+    if source:size() < length then
+        return nil;
+    end
+    return mathex.min(source, core.rangeTo(period, length));
+end
+function SafeMathExStdev(source, period, length)
+    if source:size() < length then
+        return nil;
+    end
+    return mathex.stdev(source, core.rangeTo(period, length));
+end
