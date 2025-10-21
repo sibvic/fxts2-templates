@@ -42,6 +42,9 @@ function Array:Remove(array, index)
     return array:Remove(index);
 end
 function Array:Max(array)
+    if array == nil then
+        return;
+    end
     local maxVal = array:Get(0);
     for i = 1, array:Size() - 1 do
         local val = array:Get(i);
@@ -52,6 +55,9 @@ function Array:Max(array)
     return maxVal;
 end
 function Array:Min(array)
+    if array == nil then
+        return;
+    end
     local minVal = array:Get(0);
     for i = 1, array:Size() - 1 do
         local val = array:Get(i);
@@ -90,6 +96,24 @@ function Array:Includes(array, value)
         return nil;
     end
     return array:Includes(value);
+end
+function Array:Median(array)
+    if array == nil then
+        return nil;
+    end
+    return array:Median();
+end
+function Array:First(array, value)
+    if array == nil then
+        return nil;
+    end
+    return array:First(value);
+end
+function Array:Last(array, value)
+    if array == nil then
+        return nil;
+    end
+    return array:Last(value);
 end
 function Array:New(size, initialValue)
     local newArray = {};
@@ -148,6 +172,31 @@ function Array:New(size, initialValue)
             sum = sum + v;
         end
         return sum;
+    end
+    function newArray:Median()
+        local items = {};
+        for i, v in ipairs(self.arr) do
+            items[i] = v;
+        end
+        table.sort(items);
+        local center = self.size / 2;
+        if self.size % 2 == 1 then
+            return items[center];
+        else
+            return (items[center] + items[center + 1]) / 2;
+        end
+    end
+    function newArray:First()
+        if self.size == 0 then
+            return;
+        end
+        return self.arr[1];
+    end
+    function newArray:Last()
+        if self.size == 0 then
+            return;
+        end
+        return self.arr[self.size];
     end
     function newArray:Copy()
         local arrayCopy = Array:New(self.size, nil);
