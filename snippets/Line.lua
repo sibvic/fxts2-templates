@@ -204,7 +204,7 @@ function Line:New(x1, y1, x2, y2)
         return x1;
     end
     function newLine:Draw(stage, context)
-        if self.Y1 == nil or self.Y2 == nil or self.X1 == nil or self.X2 == nil then
+        if self.Y1 == nil or self.Y2 == nil or self.X1 == nil or self.X2 == nil or self.Width == nil then
             return;
         end
         if self.PenId == nil then
