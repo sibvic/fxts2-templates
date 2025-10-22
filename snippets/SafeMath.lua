@@ -80,6 +80,9 @@ function SafeNegative(left)
     return -left;
 end
 function SafeSetBool(stream, period, value)
+    if period == nil then
+        return;
+    end
     if value == nil then
         stream:setNoData(period);
         return;
@@ -87,12 +90,15 @@ function SafeSetBool(stream, period, value)
     stream[period] = value and 1 or 0;
 end
 function SafeGetBool(stream, period)
-    if stream == nil or not stream:hasData(period) then
+    if stream == nil or period == nil or not stream:hasData(period) then
         return nil;
     end
     return stream[period] == 1;
 end
 function SafeSetFloat(stream, period, value)
+    if period == nil then
+        return;
+    end
     if value == nil then
         stream:setNoData(period);
         return;
@@ -100,7 +106,7 @@ function SafeSetFloat(stream, period, value)
     stream[period] = value;
 end
 function SafeGetFloat(stream, period)
-    if stream == nil then
+    if stream == nil or period == nil then
         return nil;
     end
     if not stream:hasData(period) then
