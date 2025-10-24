@@ -74,10 +74,13 @@ function Graphics:GetTransparency(clr)
 end
 function Graphics:GetTransparencyPercent(clr)
     local color, transparency = self:SplitColorAndTransparency(clr);
+    if transparency == nil then
+        return nil;
+    end
     return math.floor(transparency * 100.0 / 255.0 + 0.5);
 end
 function Graphics:AddTransparency(clr, transp)
-    if clr == nil then
+    if clr == nil or transp == nil then
         return nil;
     end
     color, _ = Graphics:SplitColorAndTransparency(clr);
