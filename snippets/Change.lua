@@ -1,4 +1,4 @@
-function Change(source, period, length)
+function Change(source, length, period)
     if period < length then
         return nil;
     end
