@@ -107,6 +107,21 @@ function Line:SetXLoc(line, x1, x2, xloc)
     end
     line:SetXLoc(x1, x2, xloc);
 end
+function Line:Copy(line)
+    if line == nil then
+        return nil;
+    end
+    local newLine = Line:New(line.X1, line.Y1, line.X2, line.Y2);
+    newLine.XLoc = line.XLoc;
+    newLine.Color = line.Color;
+    newLine.Width = line.Width;
+    newLine.Extend = line.Extend;
+    newLine.Style = line.Style;
+    return newLine;
+end
+function Line:NewCP(p1, p2)
+    return Line:New(p1.x, p1.y, p2.x, p2.y);
+end
 function Line:New(x1, y1, x2, y2)
     local newLine = {};
     newLine.X1 = x1;
@@ -253,11 +268,14 @@ function Line:New(x1, y1, x2, y2)
             end
         end
     end
+    Line:AddNewLine(newLine);
+    return newLine;
+end
+function Line:AddNewLine(newLine)
     self.AllLines[#self.AllLines + 1] = newLine;
     if #self.AllLines > self.max_lines_count then
         table.remove(self.AllLines, 1);
     end
-    return newLine;
 end
 function Line:Delete(line)
     for i = 1, #self.AllLines do
