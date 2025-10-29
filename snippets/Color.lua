@@ -17,6 +17,15 @@ function Color:GetRGB(color)
     return R, G, ((color - R - G*256) /(256 * 256)) % 256;
 end
 function Color:FromGradient(value, bottom_value, top_value, bottom_color, top_color)
+    if bottom_color == nil then
+        if top_color == nil then
+            return nil;
+        end
+        bottom_color =  Graphics:AddTransparency(Graphics:GetColor(top_color), 0);
+    end
+    if top_color == nil then
+        top_color =  Graphics:AddTransparency(Graphics:GetColor(bottom_color), 0);
+    end
     if (value == nil or top_value == nil) then
         return bottom_color;
     end
