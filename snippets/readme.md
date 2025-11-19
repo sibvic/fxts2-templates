@@ -228,6 +228,10 @@ Pine script-like implementation of str.* functions
 
 Pine script-like implementation of linefill
 
+## Fill
+
+Pine script-like implementation of fill functionality. Provides utilities for creating fills between two plots by setting upper and lower channel values. The SetValue function calculates the maximum and minimum values from two input series to create a channel that can be used for visual fills on charts.
+
 ## PineScriptUtils
 
 Utilities for converting Pine Script into lua.
