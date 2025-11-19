@@ -184,6 +184,10 @@ Pine script-like line
 
 Pine script-like label
 
+## Plot
+
+Pine script-like plot implementation. Provides utilities for setting plot values with optional color support. The SetValue function sets a plot value for a given period, while SetValueWithColor sets both the value and color, handling transparency and color extraction from combined color values.
+
 ## SafeMath
 
 Used for conversion from Pine Script. Set of function which can handle nil as a parameter (PS's na-like syntax)
