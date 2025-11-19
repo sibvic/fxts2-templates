@@ -91,7 +91,7 @@ function Timestamp(year, month, day, hour, minute, second, tz)
     date.hour = hour;
     date.min = minute;
     date.sec = second;
-    return core.tableToDate(date);
+    return core.tableToDate(date) * 86400000;
 end
 
 function BarSizeInMS(barSize)
