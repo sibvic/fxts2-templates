@@ -4,11 +4,11 @@ function Timeframe:Period()
     if bar_size == "t1" then
         return "t";
     elseif string.sub(bar_size, 1, 1) == "m" then
-        local seconds = tonumber(string.sub(bar_size, 2));
-        return tostring(seconds);
+        local minutes = tonumber(string.sub(bar_size, 2));
+        return tostring(minutes * 60);
     elseif string.sub(bar_size, 1, 1) == "H" then
-        local seconds = 60 * tonumber(string.sub(bar_size, 2));
-        return tostring(seconds);
+        local minutes = 60 * tonumber(string.sub(bar_size, 2));
+        return tostring(minutes * 60);
     elseif string.sub(bar_size, 1, 1) == "D" then
         return "D";
     elseif string.sub(bar_size, 1, 1) == "W" then
