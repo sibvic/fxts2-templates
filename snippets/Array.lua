@@ -41,8 +41,23 @@ function Array:Remove(array, index)
     end
     return array:Remove(index);
 end
+function Array:Sum(array)
+    if array == nil or array:Size() == 0 then
+        return;
+    end
+    local sum = array:Get(0);
+    for i = 1, array:Size() - 1 do
+        local v = array:Get(i);
+        if (sum == nil) then
+            sum = v;
+        elseif (v ~= nil or sum == nil) then
+            sum = sum + v;
+        end
+    end
+    return sum;
+end
 function Array:Max(array)
-    if array == nil then
+    if array == nil or array:Size() == 0 then
         return;
     end
     local maxVal = array:Get(0);
@@ -55,7 +70,7 @@ function Array:Max(array)
     return maxVal;
 end
 function Array:Min(array)
-    if array == nil then
+    if array == nil or array:Size() == 0 then
         return;
     end
     local minVal = array:Get(0);
@@ -68,7 +83,7 @@ function Array:Min(array)
     return minVal;
 end
 function Array:Pop(array)
-    if array == nil then
+    if array == nil or array:Size() == 0 then
         return nil;
     end
     return array:Pop();
