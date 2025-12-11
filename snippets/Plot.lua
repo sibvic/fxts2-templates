@@ -6,7 +6,7 @@ function Plot:SetValueWithColor(plot, period, value, color)
         return nil;
     end
     if Plot:SetValue(plot, period, value) then
-        plot:setColor(plot, clr)
+        plot:setColor(period, clr)
     end
 end
 function Plot:SetValue(plot, period, value)
