@@ -199,3 +199,15 @@ function SafeMathExStdev(source, period, length)
     end
     return mathex.stdev(source, core.rangeTo(period, length));
 end
+function SafeSqrt(value)
+    if value == nil then
+        return nil;
+    end
+    return math.sqrt(value);
+end
+function SafeExp(value)
+    if value == nil then
+        return nil;
+    end
+    return math.exp(value);
+end
