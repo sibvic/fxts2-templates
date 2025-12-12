@@ -5,12 +5,15 @@ function Box:Clear()
     Box.AllBoxs = {};
     Box.AllSeries = {};
 end
+function ToIndicoreTime(pineScriptTime)
+    return pineScriptTime / 86400000.;
+end
 function Box:GetSerial(value, source, xloc)
     if value == nil then
         return nil;
     end
     if xloc == "bar_time" then
-        return value / 86400000.;
+        return ToIndicoreTime(value);
     end
     if value < 0 or value >= source:size() then
         return nil;
@@ -108,6 +111,19 @@ function Box:SetBorderStyle(box, style)
         return;
     end
     box:SetBorderStyle(style);
+end
+function Box:NewCP(source, seriesId, left_top, right_bottom)
+    local id = "";
+    local x1 = left_top.x or left_top.t;
+    local x2 = right_bottom.x or right_bottom.t;
+    if left_top.t ~= nil then
+        id = core.formatDate(ToIndicoreTime(left_top.t));
+    elseif left_top.x ~= nil then
+        id = core.formatDate(source:date(x1));
+    else
+        id = core.formatDate(source:date(0));
+    end
+    return Box:New(id, seriesId, x1, left_top.y, x2, right_bottom.y);
 end
 function Box:New(id, seriesId, left, top, right, bottom)
     local newBox = {};
@@ -217,8 +233,8 @@ function Box:New(id, seriesId, left, top, right, bottom)
             _, x1 = context:positionOfBar(self.Left);
             _, x2 = context:positionOfBar(self.Right);
         else
-            _, x1 = context:positionOfDate(self.Left / 86400000.);
-            _, x2 = context:positionOfDate(self.Right / 86400000.);
+            _, x1 = context:positionOfDate(ToIndicoreTime(self.Left));
+            _, x2 = context:positionOfDate(ToIndicoreTime(self.Right));
         end
         _, y1 = context:pointOfPrice(self.Top);
         _, y2 = context:pointOfPrice(self.Bottom);
