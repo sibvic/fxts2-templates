@@ -2,6 +2,9 @@ SymInfo = {};
 function SymInfo:GetMintick()
     return instance.source:pipSize();
 end
+function SymInfo:GetPointValue()
+    return 1;
+end
 function SymInfo:GetType()
     local offer = core.host:findTable("offers"):find("Instrument", instance.source:instrument());
     if offer == nil then
