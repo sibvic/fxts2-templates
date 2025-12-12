@@ -264,6 +264,22 @@ Pine script-like barstate.* functions
 
 Pine script-like timeframe.* functions
 
+## Session
+
+Session-related utilities. Provides functions to check if a bar is the first bar of a regular trading session.
+
+### function Session:IsFirstBarRegular(source, period)
+
+Checks if the current bar is the first bar of a regular trading session by comparing the current date with the previous bar's date.
+
+## Time
+
+Time-related utilities. Provides functions for time operations.
+
+### function Time:DayOfWeek()
+
+Returns the day of the week.
+
 ## ChartPoint
 
 Pine script-like chart.point.* functions
