@@ -33,6 +33,20 @@ function Linefill:New(line1, line2)
         if self.Line1 == nil or self.Line2 == nil then
             return;
         end
+        local l1_y1 = self.Line1:GetY1();
+        local l1_y2 = self.Line1:GetY2();
+        local l1_x1 = self.Line1:GetX1();
+        local l1_x2 = self.Line1:GetX2();
+        if (l1_y1 == nil or l1_y2 == nil or l1_x1 == nil or l1_x2 == nil) then
+            return;
+        end
+        local l2_y1 = self.Line2:GetY1();
+        local l2_y2 = self.Line2:GetY2();
+        local l2_x1 = self.Line2:GetX1();
+        local l2_x2 = self.Line2:GetX2();
+        if (l2_y1 == nil or l2_y2 == nil or l2_x1 == nil or l2_x2 == nil) then
+            return;
+        end
         if self.PenId == nil then
             self.PenId = Graphics:FindPen(1, self.Color, core.LINE_SOLID, context);
         end
@@ -41,16 +55,16 @@ function Linefill:New(line1, line2)
         end
         
         local points = context:createPoints();
-        _, y1 = context:pointOfPrice(self.Line1:GetY1());
-        _, x1 = context:positionOfBar(self.Line1:GetX1());
-        _, y2 = context:pointOfPrice(self.Line1:GetY2());
-        _, x2 = context:positionOfBar(self.Line1:GetX2());
+        _, y1 = context:pointOfPrice(l1_y1);
+        _, x1 = context:positionOfBar(l1_x1);
+        _, y2 = context:pointOfPrice(l1_y2);
+        _, x2 = context:positionOfBar(l1_x2);
         points:add(x1, y1);
         points:add(x2, y2);
-        _, y1 = context:pointOfPrice(self.Line2:GetY1());
-        _, x1 = context:positionOfBar(self.Line2:GetX1());
-        _, y2 = context:pointOfPrice(self.Line2:GetY2());
-        _, x2 = context:positionOfBar(self.Line2:GetX2());
+        _, y1 = context:pointOfPrice(l2_y1);
+        _, x1 = context:positionOfBar(l2_x1);
+        _, y2 = context:pointOfPrice(l2_y2);
+        _, x2 = context:positionOfBar(l2_x2);
         points:add(x2, y2);
         points:add(x1, y1);
         context:drawPolygon(self.PenId, self.BrushId, points, self.ColorTransparency);
