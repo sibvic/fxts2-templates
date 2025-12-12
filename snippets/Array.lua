@@ -143,7 +143,15 @@ function Array:New(size, initialValue)
     end
     function newArray:ToEnum() return self.arr end
     function newArray:Push(item) self.size = self.size + 1; self.arr[#self.arr + 1] = item; return self; end
-    function newArray:Get(index) return self.arr[index + 1]; end
+    function newArray:Get(index)
+        if index == nil then 
+            return nil; 
+        end 
+        if index < 0 then
+            return self.arr[self:Size() + index]; 
+        end
+        return self.arr[index + 1]; 
+    end
     function newArray:Set(index, value) self.arr[index + 1] = value; end
     function newArray:Max() return Array:Max(self); end
     function newArray:Min() return Array:Min(self); end
