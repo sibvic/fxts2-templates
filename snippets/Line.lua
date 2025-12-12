@@ -1,7 +1,7 @@
 Line = {};
 Line.AllLines = {};
 function Line:GetAll()
-    local array = {};
+    local array = Array:New();
     array.arr = Line.AllLines;
     return array;
 end
