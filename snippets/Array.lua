@@ -56,6 +56,12 @@ function Array:Sum(array)
     end
     return sum;
 end
+function Array:Avg(array)
+    if array == nil or array:Size() == 0 then
+        return;
+    end
+    return Array:Sum(array) / array:Size();
+end
 function Array:Max(array)
     if array == nil or array:Size() == 0 then
         return;
@@ -322,4 +328,16 @@ function Array:NewBool(size, initialValue)
 end
 function Array:NewColor(size, initialValue)
     return Array:New(size, initialValue);
+end
+function Array:Size(arr)
+    if arr == nil then
+        return nil;
+    end
+    return arr:Size();
+end
+function Array:Push(arr, val)
+    if arr == nil then
+        return nil;
+    end
+    return arr:Push(val);
 end
