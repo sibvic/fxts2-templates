@@ -1,5 +1,8 @@
 Plot = {};
 function Plot:SetValueWithColor(plot, period, value, color)
+    if period < 0 then
+        return;
+    end
     local clr, transp = Graphics:SplitColorAndTransparency(color);
     if transp == 100 or clr == nil then
         plot:setNoData(period);
@@ -10,6 +13,9 @@ function Plot:SetValueWithColor(plot, period, value, color)
     end
 end
 function Plot:SetValue(plot, period, value)
+    if period < 0 then
+        return;
+    end
     local clr, transp = Graphics:SplitColorAndTransparency(color);
     if not value then
         plot:setNoData(period);
