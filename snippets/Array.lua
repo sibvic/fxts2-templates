@@ -3,7 +3,7 @@ function Array:Enum(array)
     if array == nil then
         return {};
     end
-    return array.arr;
+    return array:ToEnum();
 end
 function Array:Clear(array)
     if array == nil then
@@ -141,6 +141,7 @@ function Array:New(size, initialValue)
     else
         newArray.size = 0;
     end
+    function newArray:ToEnum() return self.arr end
     function newArray:Push(item) self.size = self.size + 1; self.arr[#self.arr + 1] = item; return self; end
     function newArray:Get(index) return self.arr[index + 1]; end
     function newArray:Set(index, value) self.arr[index + 1] = value; end
@@ -278,6 +279,13 @@ function Array:New(size, initialValue)
         end
         function slice:Min()
             return Array:Min(self);
+        end
+        function slice:ToEnum()
+            local arrCopy = {};
+            for i = 0, self:Size() - 1, 1 do
+                arrCopy[#arrCopy + 1] = self:Get(i);
+            end
+            return arrCopy;
         end
         return slice;
     end
