@@ -107,6 +107,12 @@ function Line:SetXLoc(line, x1, x2, xloc)
     end
     line:SetXLoc(x1, x2, xloc);
 end
+function Line:SetXLocInit(line, xloc)
+    if line == nil then
+        return;
+    end
+    line:SetXLocInit(xloc);
+end
 function Line:Copy(line)
     if line == nil then
         return nil;
@@ -120,7 +126,12 @@ function Line:Copy(line)
     return newLine;
 end
 function Line:NewCP(p1, p2)
-    return Line:New(p1.x, p1.y, p2.x, p2.y);
+    local x1 = p1.x or p1.t;
+    local x2 = p2.x or p2.t;
+    return Line:New(x1, p1.y, x2, p2.y);
+end
+function ToIndicoreTime(pineScriptTime)
+    return pineScriptTime / 86400000.;
 end
 function Line:New(x1, y1, x2, y2)
     local newLine = {};
@@ -150,6 +161,10 @@ function Line:New(x1, y1, x2, y2)
     function newLine:SetXLoc(x1, x2, xloc)
         newLine.X1 = x1;
         newLine.X2 = x2;
+        newLine.XLoc = xloc;
+        return self;
+    end
+    function newLine:SetXLocInit(xloc)
         newLine.XLoc = xloc;
         return self;
     end
@@ -228,8 +243,8 @@ function Line:New(x1, y1, x2, y2)
         local x1;
         local x2;
         if (self.XLoc == "bar_time") then
-            _, x1 = context:positionOfDate(self.X1 / 86400000.0)
-            _, x2 = context:positionOfDate(self.X2 / 86400000.0)
+            _, x1 = context:positionOfDate(ToIndicoreTime(self.X1))
+            _, x2 = context:positionOfDate(ToIndicoreTime(self.X2))
         else
             x1 = self:converXToPoints(context, self.X1);
             x2 = self:converXToPoints(context, self.X2);
