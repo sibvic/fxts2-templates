@@ -26,6 +26,19 @@ function PineStrategy:CreateEntrySignalV5(id)
     end
     return signal;
 end
+function PineStrategy:CreateCloseAllSignalV4()
+    local signal = {};
+    if self.streams["close_all_signal"] == nil then
+        self.streams["close_all_signal"] = instance:addStream("close_all_signal", core.Line, "Close All Signal", "Close All Signal", core.colors().Red, 0, 0);
+    end
+    signal.stream = self.streams["close_all_signal"];
+    function signal:Execute(period, id, when, qty, qty_percent, comment, alert_message)
+        if when then
+            self.stream[period] = 1;
+        end
+    end
+    return signal;
+end
 function PineStrategy:CreateCloseSignalV4(id)
     local signal = {};
     if self.streams["close_signal" .. id] == nil then
