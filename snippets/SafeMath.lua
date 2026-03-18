@@ -211,3 +211,9 @@ function SafeExp(value)
     end
     return math.exp(value);
 end
+function SafeMod(value, div)
+    if value == nil or div == nil or div == 0 then
+        return nil;
+    end
+    return math.fmod(value, div);
+end
