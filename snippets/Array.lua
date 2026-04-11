@@ -17,6 +17,12 @@ function Array:Copy(array)
     end
     return array:Copy();
 end
+function Array:Sort(array, ascending)
+    if array == nil then
+        return;
+    end
+    return array:Sort(ascending);
+end
 function Array:Get(array, index)
     if array == nil then
         return;
@@ -136,6 +142,12 @@ function Array:Last(array, value)
     end
     return array:Last(value);
 end
+function Array:Stdev(array)
+    if array == nil or array:Size() == 0 then
+        return nil;
+    end
+    return array:Stdev();
+end
 function Array:New(size, initialValue)
     local newArray = {};
     newArray.arr = {};
@@ -196,6 +208,17 @@ function Array:New(size, initialValue)
         end
         return false;
     end
+    function newArray:Sort(ascending)
+        if ascending then
+            table.sort(self.arr, function(a, b)
+                return a < b;
+            end);
+        else
+            table.sort(self.arr, function(a, b)
+                return a > b;
+            end);
+        end
+    end
     function newArray:Sum()
         local sum = 0;
         for i, v in ipairs(self.arr) do
@@ -215,6 +238,14 @@ function Array:New(size, initialValue)
         else
             return (items[center] + items[center + 1]) / 2;
         end
+    end
+    function newArray:Stdev()
+        local avg = Array:Avg(self);
+        local sum = 0;
+        for i, v in ipairs(self.arr) do
+            sum = sum + (v - avg)^2;
+        end
+        return math.sqrt(sum / self.size);
     end
     function newArray:First()
         if self.size == 0 then
