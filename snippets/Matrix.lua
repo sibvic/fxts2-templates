@@ -11,13 +11,13 @@ function Matrix:Set(matrix, row, column, value)
     end
     return matrix:Set(row, column, value);
 end
-function Matrix:NewFloat(rows, columns, initial_value)
-    return Matrix:NewMatrix(rows, columns, initial_value);
+function Matrix:Row(matrix, row)
+    if matrix == nil then
+        return nil;
+    end
+    return matrix:Row(row);
 end
-function Matrix:NewTable(rows, columns, initial_value)
-    return Matrix:NewMatrix(rows, columns, initial_value);
-end
-function Matrix:NewMatrix(rows, columns, initial_value)
+function Matrix:New(rows, columns, initial_value)
     local matrix = {};
     matrix.rows = {};
     for i = 1, rows, 1 do
@@ -31,6 +31,18 @@ function Matrix:NewMatrix(rows, columns, initial_value)
     end
     function matrix:Set(row, column, value)
         self.rows[row + 1][column + 1] = value;
+    end
+    function matrix:Row(row)
+        local raw = self.rows[row + 1];
+        if raw == nil then
+            return nil;
+        end
+        local n = #raw;
+        local newArray = Array:New(n, nil);
+        for i = 1, n do
+            newArray.arr[i] = raw[i];
+        end
+        return newArray;
     end
     return matrix;
 end
