@@ -299,3 +299,7 @@ Pine script-like matrix.* functions
 ## PineStrategy
 
 Pine script-like strategy.* functions for indicator
+
+## Polyline
+
+Pine script-like polyline
