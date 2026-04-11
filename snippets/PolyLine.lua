@@ -79,10 +79,30 @@ function PolyLine:Copy(line)
     newLine.X2 = line.X2;
     newLine.Y2 = line.Y2;
     newLine.Extend = line.Extend;
+    if line.Points ~= nil then
+        newLine.Points = Array:New();
+        for i = 0, line.Points:Size() - 1 do
+            local p = line.Points:Get(i);
+            newLine.Points:Push({ t = p.t, x = p.x, y = p.y });
+        end
+    else
+        newLine.Points = nil;
+    end
     return newLine;
 end
-function PolyLine:New()
+function PolyLine:New(points)
     local newLine = {};
+    newLine.Points = nil;
+    if points ~= nil then
+        local enum = points.ToEnum and Array:Enum(points) or points;
+        if enum ~= nil and #enum > 0 then
+            newLine.Points = Array:New();
+            for i = 1, #enum do
+                local p = enum[i];
+                newLine.Points:Push({ t = p.t, x = p.x, y = p.y });
+            end
+        end
+    end
     newLine.XLoc = "bar_index";
     newLine.Color = core.colors().Blue;
     newLine.ColorTransparency = 0;
@@ -154,54 +174,36 @@ function PolyLine:New()
         local _, x1 = context:positionOfBar(x);
         return x1;
     end
+    function newLine:chartPointToScreen(context, cp)
+        local px;
+        if self.XLoc == "bar_time" then
+            _, px = context:positionOfDate(ToIndicoreTime(cp.t));
+        else
+            px = self:converXToPoints(context, cp.x);
+        end
+        local _, py = context:pointOfPrice(cp.y);
+        return px, py;
+    end
     function newLine:Draw(stage, context)
-        if self.Y1 == nil or self.Y2 == nil or self.X1 == nil or self.X2 == nil or self.Width == nil then
+        if self.Width == nil then
             return;
         end
         if self.PenId == nil then
             self.PenId = Graphics:FindPen(self.Width, self.Color, self:getStyleForContext(), context);
         end
-        local x1;
-        local x2;
-        if (self.XLoc == "bar_time") then
-            _, x1 = context:positionOfDate(ToIndicoreTime(self.X1))
-            _, x2 = context:positionOfDate(ToIndicoreTime(self.X2))
-        else
-            x1 = self:converXToPoints(context, self.X1);
-            x2 = self:converXToPoints(context, self.X2);
-        end
-        local _, y1 = context:pointOfPrice(self.Y1);
-        local _, y2 = context:pointOfPrice(self.Y2);
-        context:drawLine(self.PenId, x1, y1, x2, y2, self.ColorTransparency);
-        if self.Extend == "right" or self.Extend == "both" then
-            if x1 == x2 then
-                if y1 >= y2 then
-                    context:drawLine(self.PenId, x1, y1, x1, context:top(), self.ColorTransparency);
-                else
-                    context:drawLine(self.PenId, x1, y1, x1, context:bottom(), self.ColorTransparency);
-                end
-            else
-                local a, c = math2d.lineEquation(x1, y1, x2, y2);
-                if a ~= nil and c ~= nil then
-                    local y3 = a * context:right() + c;
-                    context:drawLine(self.PenId, x2, y2, context:right(), y3, self.ColorTransparency);
-                end
+        if self.Points ~= nil and self.Points:Size() >= 2 then
+            local n = self.Points:Size();
+            for i = 0, n - 2 do
+                local x1, y1 = self:chartPointToScreen(context, self.Points:Get(i));
+                local x2, y2 = self:chartPointToScreen(context, self.Points:Get(i + 1));
+                context:drawLine(self.PenId, x1, y1, x2, y2, self.ColorTransparency);
             end
-        end
-        if self.Extend == "left" or self.Extend == "both" then
-            if x1 == x2 then
-                if y1 >= y2 then
-                    context:drawLine(self.PenId, x1, y2, x1, context:bottom(), self.ColorTransparency);
-                else
-                    context:drawLine(self.PenId, x1, y2, x1, context:top(), self.ColorTransparency);
-                end
-            else
-                local a, c = math2d.lineEquation(x1, y1, x2, y2);
-                if a ~= nil and c ~= nil then
-                    local y3 = a * context:left() + c;
-                    context:drawLine(self.PenId, x1, y1, context:left(), y3, self.ColorTransparency);
-                end
+            if self.Closed and n >= 3 then
+                local x1, y1 = self:chartPointToScreen(context, self.Points:Get(n - 1));
+                local x2, y2 = self:chartPointToScreen(context, self.Points:Get(0));
+                context:drawLine(self.PenId, x1, y1, x2, y2, self.ColorTransparency);
             end
+            return;
         end
     end
     PolyLine:AddNewLine(newLine);
