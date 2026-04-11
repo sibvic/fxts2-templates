@@ -217,3 +217,39 @@ function SafeMod(value, div)
     end
     return math.fmod(value, div);
 end
+function SafeLog(value)
+    if value == nil then
+        return nil;
+    end
+    return math.log(value);
+end
+function SafeLog10(value)
+    if value == nil then
+        return nil;
+    end
+    return math.log10(value);
+end
+function SafeLog2(value)
+    if value == nil then
+        return nil;
+    end
+    return math.log2(value);
+end
+function SafePow(base, exponent)
+    if base == nil or exponent == nil then
+        return nil;
+    end
+    return math.pow(base, exponent);
+end
+function SafeFloor(value)
+    if value == nil then
+        return nil;
+    end
+    return math.floor(value);
+end
+function SafeCeil(value)
+    if value == nil then
+        return nil;
+    end
+    return math.ceil(value);
+end
