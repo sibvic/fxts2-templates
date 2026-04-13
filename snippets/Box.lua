@@ -112,6 +112,24 @@ function Box:SetBorderStyle(box, style)
     end
     box:SetBorderStyle(style);
 end
+function Box:SetBgColor(box, color)
+    if box == nil then
+        return;
+    end
+    box:SetBgColor(color);
+end
+function Box:SetBorderColor(box, color)
+    if box == nil then
+        return;
+    end
+    box:SetBorderColor(color);
+end
+function Box:SetXLoc(box, xloc)
+    if box == nil then
+        return;
+    end
+    box:SetXLoc(xloc);
+end
 function Box:NewCP(source, seriesId, left_top, right_bottom)
     local id = "";
     local x1 = left_top.x or left_top.t;
