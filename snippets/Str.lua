@@ -26,6 +26,9 @@ function Str:doFormat(pattern, values)
         if tokens[2] == "percent" then
             return tostring(math.floor(value + 0.5)) .. "%";
         end
+        if tokens[2] ~= nil and tokens[2] ~= "" then
+            return Str:ToString(value, tokens[2]);
+        end
     end
     return tostring(value);
 end
@@ -63,6 +66,9 @@ function Str:ToString(value, pattern)
     end
     if pattern == "percent" then
         return win32.formatNumber(value, false, 2);
+    end
+    if pattern == "mintick" then
+        return win32.formatNumber(value, false, instance.source:getDisplayPrecision());
     end
     local luaPattern = "";
     local waitNumber = false;
