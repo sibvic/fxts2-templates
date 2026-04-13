@@ -70,6 +70,12 @@ function Str:ToString(value, pattern)
     if pattern == "mintick" then
         return win32.formatNumber(value, false, instance.source:getDisplayPrecision());
     end
+    if pattern == "volume" then
+        return win32.formatNumber(value, false, 0);
+    end
+    if pattern == "$" then
+        return "$" .. win32.formatNumber(value, false, 2);
+    end
     local luaPattern = "";
     local waitNumber = false;
     local afterDot = false;
