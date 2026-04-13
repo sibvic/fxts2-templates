@@ -193,15 +193,15 @@ function PolyLine:New(points)
         end
         if self.Points ~= nil and self.Points:Size() >= 2 then
             local n = self.Points:Size();
-            for i = 0, n - 2 do
-                local x1, y1 = self:chartPointToScreen(context, self.Points:Get(i));
-                local x2, y2 = self:chartPointToScreen(context, self.Points:Get(i + 1));
-                context:drawLine(self.PenId, x1, y1, x2, y2, self.ColorTransparency);
+            local x0, y0 = self:chartPointToScreen(context, self.Points:Get(0));
+            local x_last, y_last = x0, y0;
+            for i = 1, n - 1 do
+                local x2, y2 = self:chartPointToScreen(context, self.Points:Get(i));
+                context:drawLine(self.PenId, x_last, y_last, x2, y2, self.ColorTransparency);
+                x_last, y_last = x2, y2;
             end
             if self.Closed and n >= 3 then
-                local x1, y1 = self:chartPointToScreen(context, self.Points:Get(n - 1));
-                local x2, y2 = self:chartPointToScreen(context, self.Points:Get(0));
-                context:drawLine(self.PenId, x1, y1, x2, y2, self.ColorTransparency);
+                context:drawLine(self.PenId, x_last, y_last, x0, y0, self.ColorTransparency);
             end
             return;
         end
