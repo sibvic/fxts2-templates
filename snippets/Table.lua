@@ -9,6 +9,12 @@ function Table:MergeCells(table, start_column, start_row, end_column, end_row)
     end
     table:MergeCells(start_column, start_row, end_column, end_row);
 end
+function Table:ClearCell(table, column, row)
+    if table == nil then
+        return;
+    end
+    table:ClearCell(column, row);
+end
 function Table:CellText(table, column, row, text)
     if table == nil then
         return;
@@ -87,6 +93,14 @@ function Table:New(id, position, columns, rows)
             cell.cache = {};
             newTable.rows[i][ii] = cell;
         end
+    end
+    function newTable:ClearCell(column, row)
+        self.rows[row + 1][column + 1].text = "";
+        self.rows[row + 1][column + 1].text_color = core.COLOR_LABEL;
+        self.rows[row + 1][column + 1].text_halign = "middle";
+        self.rows[row + 1][column + 1].text_size = "normal";
+        self.rows[row + 1][column + 1].cache = {};
+        return self;
     end
     function newTable:CellText(column, row, text)
         if self.rows[row + 1][column + 1].text ~= text then
@@ -309,7 +323,7 @@ function Table:New(id, position, columns, rows)
             context:drawLine(self.FramePenId, x, yStart, maxX, yStart);
         end
     end
-    self.AllTables[id] = newTable;
+    self.AllTables[#self.AllTables + 1] = newTable;
     return newTable;
 end
 function Table:Draw(stage, context)
