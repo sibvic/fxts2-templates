@@ -48,7 +48,7 @@ function Update(period, mode)
     end
     local buf = {};
     for i = 0, len - 1 do
-        buf[#buf + 1] = source.close:tick(period - i);
+        buf[#buf + 1] = source:tick(period - i);
     end
     local v = percentile_nearest_rank(buf, pct);
     DATA:set(period, v, mode);
