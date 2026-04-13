@@ -56,7 +56,7 @@ function Array:Sum(array)
         local v = array:Get(i);
         if (sum == nil) then
             sum = v;
-        elseif (v ~= nil or sum == nil) then
+        elseif (v ~= nil) then
             sum = sum + v;
         end
     end
