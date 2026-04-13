@@ -126,6 +126,9 @@ end
 function ToLine(line)
     return line;
 end
+function ToLabel(label)
+    return label;
+end
 function ToBox(box)
     return box;
 end
