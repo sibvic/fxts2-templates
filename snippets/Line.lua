@@ -1,15 +1,35 @@
 Line = {};
-Line.AllLines = {};
+Line.AllLinesInOrder = {};
+Line.AllSeries = {};
 function Line:GetAll()
     local array = Array:New();
-    array.arr = Line.AllLines;
+    array.arr = Line.AllLinesInOrder;
     return array;
 end
 function Line:Clear()
-    Line.AllLines = {};
+    Line.AllLinesInOrder = {};
+    Line.AllSeries = {};
+end
+function Line:GetSerial(value, source, xloc)
+    if value == nil then
+        return nil;
+    end
+    if xloc == "bar_time" then
+        return value / 86400000.;
+    end
+    if value < 0 or value >= source:size() then
+        return nil;
+    end
+    return source:date(value);
 end
 function Line:Prepare(max_lines_count)
     Line.max_lines_count = max_lines_count;
+end
+function Line:Get(line, index)
+    if line == nil then
+        return;
+    end
+    return line:Get(index);
 end
 function Line:GetPrice(line, x)
     if line == nil then
@@ -133,12 +153,13 @@ end
 function ToIndicoreTime(pineScriptTime)
     return pineScriptTime / 86400000.;
 end
-function Line:New(x1, y1, x2, y2)
+function Line:New(seriesId, x1, y1, x2, y2)
     local newLine = {};
     newLine.X1 = x1;
     newLine.Y1 = y1;
     newLine.X2 = x2;
     newLine.Y2 = y2;
+    newLine.SeriesId = seriesId;
     function newLine:SetXY1(x, y)
         self.X1 = x;
         self.Y1 = y;
@@ -283,19 +304,23 @@ function Line:New(x1, y1, x2, y2)
             end
         end
     end
-    Line:AddNewLine(newLine);
+    function newLine:Get(index)
+        return Line.AllSeries[self.SeriesId][index + 1];
+    end
+    self.AllLinesInOrder[#self.AllLinesInOrder + 1] = newLine
+    if #self.AllLinesInOrder > self.max_lines_count then
+        Line:Delete(self.AllLinesInOrder[1]);
+    end
+    if self.AllSeries[seriesId] == nil then
+        self.AllSeries[seriesId] = {};
+    end
+    table.insert(self.AllSeries[seriesId], 1, newLine);
     return newLine;
 end
-function Line:AddNewLine(newLine)
-    self.AllLines[#self.AllLines + 1] = newLine;
-    if #self.AllLines > self.max_lines_count then
-        table.remove(self.AllLines, 1);
-    end
-end
 function Line:Delete(line)
-    for i = 1, #self.AllLines do
-        if self.AllLines[i] == line then
-            table.remove(self.AllLines, i);
+    for i = 1, #self.AllLinesInOrder do
+        if self.AllLinesInOrder[i] == line then
+            table.remove(self.AllLinesInOrder, i);
             return;
         end
     end
@@ -304,7 +329,7 @@ function Line:Draw(stage, context)
     if stage ~= 2 then
         return;
     end
-    for i, value in ipairs(self.AllLines) do
+    for i, value in ipairs(self.AllLinesInOrder) do
         value:Draw(stage, context);
     end
 end
