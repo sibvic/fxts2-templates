@@ -72,12 +72,14 @@ function Str:ToString(value, pattern)
     end
     local luaPattern = "";
     local waitNumber = false;
+    local afterDot = false;
     local digits = 0;
     for i = 1, #pattern do
         local char = string.sub(pattern, i, i);
         if not waitNumber then
             if char == "#" then
                 waitNumber = true;
+                afterDot = false;
                 luaPattern = luaPattern .. "%";
             else
                 luaPattern = luaPattern .. char;
@@ -85,11 +87,13 @@ function Str:ToString(value, pattern)
         else
             if char == "." then
                 luaPattern = luaPattern .. ".";
-            elseif char == "#" then
+                afterDot = true;
+            elseif char == "#" or (afterDot and char == "0") then
                 digits = digits + 1;
             else
                 luaPattern = luaPattern .. digits .. "f";
                 waitNumber = false;
+                afterDot = false;
                 digits = 0;
             end
         end
