@@ -1,12 +1,32 @@
 PolyLine = {};
-PolyLine.AllLines = {};
+PolyLine.AllLinesInOrder = {};
+PolyLine.AllSeries = {};
 function PolyLine:GetAll()
     local array = Array:New();
-    array.arr = PolyLine.AllLines;
+    array.arr = PolyLine.AllLinesInOrder;
     return array;
 end
 function PolyLine:Clear()
-    PolyLine.AllLines = {};
+    PolyLine.AllLinesInOrder = {};
+    PolyLine.AllSeries = {};
+end
+function PolyLine:GetSerial(values, source, xloc)
+    if values == nil or #values == 0 then
+        return nil;
+    end
+    if xloc == "bar_time" then
+        return values[1].x / 86400000.;
+    end
+    if values[1].x < 0 or values[1].x >= source:size() then
+        return nil;
+    end
+    return source:date(values[1].x);
+end
+function PolyLine:Get(line, index)
+    if line == nil then
+        return;
+    end
+    return line:Get(index);
 end
 function PolyLine:Prepare(max_lines_count)
     PolyLine.max_lines_count = max_lines_count;
@@ -63,7 +83,7 @@ function PolyLine:Copy(line)
     if line == nil then
         return nil;
     end
-    local newLine = PolyLine:New();
+    local newLine = PolyLine:New(line.SeriesId);
     newLine.XLoc = line.XLoc;
     newLine.Color = line.Color;
     newLine.ColorTransparency = line.ColorTransparency;
@@ -90,18 +110,12 @@ function PolyLine:Copy(line)
     end
     return newLine;
 end
-function PolyLine:New(points)
+function PolyLine:New(seriesId, id, points)
     local newLine = {};
+    newLine.SeriesId = seriesId;
     newLine.Points = nil;
     if points ~= nil then
-        local enum = points.ToEnum and Array:Enum(points) or points;
-        if enum ~= nil and #enum > 0 then
-            newLine.Points = Array:New();
-            for i = 1, #enum do
-                local p = enum[i];
-                newLine.Points:Push({ t = p.t, x = p.x, y = p.y });
-            end
-        end
+        newLine.Points = points:Copy();
     end
     newLine.XLoc = "bar_index";
     newLine.Color = core.colors().Blue;
@@ -206,19 +220,23 @@ function PolyLine:New(points)
             return;
         end
     end
-    PolyLine:AddNewLine(newLine);
+    function newLine:Get(index)
+        return PolyLine.AllSeries[self.SeriesId][index + 1];
+    end
+    self.AllLinesInOrder[#self.AllLinesInOrder + 1] = newLine
+    if #self.AllLinesInOrder > self.max_lines_count then
+        PolyLine:Delete(self.AllLinesInOrder[1]);
+    end
+    if self.AllSeries[seriesId] == nil then
+        self.AllSeries[seriesId] = {};
+    end
+    table.insert(self.AllSeries[seriesId], 1, newLine);
     return newLine;
 end
-function PolyLine:AddNewLine(newLine)
-    self.AllLines[#self.AllLines + 1] = newLine;
-    if #self.AllLines > self.max_lines_count then
-        table.remove(self.AllLines, 1);
-    end
-end
 function PolyLine:Delete(line)
-    for i = 1, #self.AllLines do
-        if self.AllLines[i] == line then
-            table.remove(self.AllLines, i);
+    for i = 1, #self.AllLinesInOrder do
+        if self.AllLinesInOrder[i] == line then
+            table.remove(self.AllLinesInOrder, i);
             return;
         end
     end
@@ -227,7 +245,7 @@ function PolyLine:Draw(stage, context)
     if stage ~= 2 then
         return;
     end
-    for i, value in ipairs(self.AllLines) do
+    for i, value in ipairs(self.AllLinesInOrder) do
         value:Draw(stage, context);
     end
 end
