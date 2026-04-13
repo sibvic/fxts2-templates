@@ -45,6 +45,30 @@ function Table:CellTextHAlign(table, column, row, halign)
     end
     table:CellTextHAlign(column, row, halign)
 end
+function Table:SetBorderColor(table, color)
+    if table == nil then
+        return;
+    end
+    table:SetBorderColor(color)
+end
+function Table:SetBorderWidth(table, width)
+    if table == nil then
+        return;
+    end
+    table:SetBorderWidth(width)
+end
+function Table:SetFrameColor(table, color)
+    if table == nil then
+        return;
+    end
+    table:SetFrameColor(color)
+end
+function Table:SetFrameWidth(table, width)
+    if table == nil then
+        return;
+    end
+    table:SetFrameWidth(width)
+end
 function Table:New(id, position, columns, rows)
     local newTable = {};
     newTable.offset = 5;
@@ -117,6 +141,7 @@ function Table:New(id, position, columns, rows)
     function newTable:CellBGColor(column, row, color)
         local clr, transp = Graphics:SplitColorAndTransparency(color);
         self.rows[row + 1][column + 1].bg_color = clr;
+        self.rows[row + 1][column + 1].bg_color_transparency = transp;
         return self;
     end
     function newTable:CellTextSize(column, row, size)
@@ -263,14 +288,18 @@ function Table:New(id, position, columns, rows)
         text_y1 = text_y1 + self.offset;
         text_y2 = text_y2 - self.offset;
         local bgBrush = self.BgBrushId;
+        local bgTransparency = self.bgcolor_transparency;
         if self.rows[row][column].bg_color ~= nil then
             if self.rows[row][column].bg_brushId == nil then
                 self.rows[row][column].bg_brushId = Graphics:FindBrush(self.rows[row][column].bg_color, context);
             end
             bgBrush = self.rows[row][column].bg_brushId;
         end
+        if self.rows[row][column].bg_color_transparency ~= nil then
+            bgTransparency = self.rows[row][column].bg_color_transparency;
+        end
         if bgBrush ~= nil then
-            context:drawRectangle(self.FramePenId, bgBrush, rectangle_x1, rectangle_y1, rectangle_x2, rectangle_y2, self.bgcolor_transparency)
+            context:drawRectangle(self.FramePenId, bgBrush, rectangle_x1, rectangle_y1, rectangle_x2, rectangle_y2, bgTransparency)
         end
         if self.BorderPenId ~= nil then
             if totalRows ~= row then
