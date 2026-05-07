@@ -372,3 +372,23 @@ function Array:Push(arr, val)
     end
     return arr:Push(val);
 end
+function Array:SortIndices(arr, order)
+    local n = Array:Size(arr)
+    local idx = {}
+    for i = 0, n - 1 do
+        idx[#idx + 1] = i
+    end
+    table.sort(idx, function(ia, ib)
+        local va = Array:Get(arr, ia)
+        local vb = Array:Get(arr, ib)
+        if order == "descending" then
+            return va > vb
+        end
+        return va < vb
+    end)
+    local out = Array:New(n, 0)
+    for i = 1, n do
+        Array:Set(out, i - 1, idx[i])
+    end
+    return out
+end
