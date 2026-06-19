@@ -3,6 +3,17 @@ Table.AllTables = {};
 function Table:Clear()
     Table.AllTables = {};
 end
+function Table:Delete(table)
+    if table == nil then
+        return;
+    end
+    for i = 1, #self.AllTables do
+        if self.AllTables[i] == table then
+            table.remove(self.AllTables, i);
+            return;
+        end
+    end
+end
 function Table:MergeCells(table, start_column, start_row, end_column, end_row)
     if table == nil then
         return;
