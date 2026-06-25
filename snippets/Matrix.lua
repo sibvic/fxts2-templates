@@ -17,6 +17,20 @@ function Matrix:Row(matrix, row)
     end
     return matrix:Row(row);
 end
+function Matrix:Transpose(matrix)
+    if matrix == nil then
+        return nil;
+    end
+    local rowCount = #matrix.rows;
+    local colCount = rowCount > 0 and #matrix.rows[1] or 0;
+    local result = Matrix:New(colCount, rowCount, nil);
+    for r = 1, rowCount do
+        for c = 1, colCount do
+            result:Set(r - 1, c - 1, matrix:Get(r - 1, c - 1));
+        end
+    end
+    return result;
+end
 function Matrix:New(rows, columns, initial_value)
     local matrix = {};
     matrix.rows = {};
