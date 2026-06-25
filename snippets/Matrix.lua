@@ -31,6 +31,72 @@ function Matrix:Transpose(matrix)
     end
     return result;
 end
+function Matrix:Inv(matrix)
+    if matrix == nil then
+        return nil;
+    end
+    local n = #matrix.rows;
+    local colCount = n > 0 and #matrix.rows[1] or 0;
+    if n ~= colCount or n == 0 then
+        return nil;
+    end
+    local a = {};
+    for r = 1, n do
+        a[r] = {};
+        for c = 1, n do
+            a[r][c] = matrix:Get(r - 1, c - 1);
+        end
+    end
+    local inv = {};
+    for r = 1, n do
+        inv[r] = {};
+        for c = 1, n do
+            inv[r][c] = r == c and 1 or 0;
+        end
+    end
+    local pivotEpsilon = 1e-14;
+    for col = 1, n do
+        local pivotRow = col;
+        local maxVal = math.abs(a[col][col]);
+        for r = col + 1, n do
+            local v = math.abs(a[r][col]);
+            if v > maxVal then
+                maxVal = v;
+                pivotRow = r;
+            end
+        end
+        if maxVal < pivotEpsilon then
+            return Matrix:New(n, n, nil);
+        end
+        if pivotRow ~= col then
+            a[col], a[pivotRow] = a[pivotRow], a[col];
+            inv[col], inv[pivotRow] = inv[pivotRow], inv[col];
+        end
+        local pivot = a[col][col];
+        for c = 1, n do
+            a[col][c] = a[col][c] / pivot;
+            inv[col][c] = inv[col][c] / pivot;
+        end
+        for r = 1, n do
+            if r ~= col then
+                local factor = a[r][col];
+                if factor ~= 0 then
+                    for c = 1, n do
+                        a[r][c] = a[r][c] - factor * a[col][c];
+                        inv[r][c] = inv[r][c] - factor * inv[col][c];
+                    end
+                end
+            end
+        end
+    end
+    local result = Matrix:New(n, n, nil);
+    for r = 1, n do
+        for c = 1, n do
+            result:Set(r - 1, c - 1, inv[r][c]);
+        end
+    end
+    return result;
+end
 function Matrix:New(rows, columns, initial_value)
     local matrix = {};
     matrix.rows = {};
