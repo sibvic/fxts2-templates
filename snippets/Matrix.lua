@@ -17,6 +17,83 @@ function Matrix:Row(matrix, row)
     end
     return matrix:Row(row);
 end
+function Matrix:Mult(matrix1, id2)
+    if matrix1 == nil or id2 == nil then
+        return nil;
+    end
+    if id2.rows ~= nil then
+        return Matrix:MultMatrix(matrix1, id2);
+    end
+    if id2.arr ~= nil then
+        return Matrix:MultArray(matrix1, id2);
+    end
+    return Matrix:MultScalar(matrix1, id2);
+end
+function Matrix:MultMatrix(matrix1, matrix2)
+    local rowCount1 = #matrix1.rows;
+    local colCount1 = rowCount1 > 0 and #matrix1.rows[1] or 0;
+    local rowCount2 = #matrix2.rows;
+    if colCount1 ~= rowCount2 then
+        return nil;
+    end
+    local colCount2 = rowCount2 > 0 and #matrix2.rows[1] or 0;
+    local result = Matrix:New(rowCount1, colCount2, nil);
+    for r = 1, rowCount1 do
+        for c = 1, colCount2 do
+            local sum = 0;
+            local ok = true;
+            for k = 1, colCount1 do
+                local v1 = matrix1:Get(r - 1, k - 1);
+                local v2 = matrix2:Get(k - 1, c - 1);
+                if v1 == nil or v2 == nil then
+                    ok = false;
+                    break;
+                end
+                sum = sum + v1 * v2;
+            end
+            if ok then
+                result:Set(r - 1, c - 1, sum);
+            end
+        end
+    end
+    return result;
+end
+function Matrix:MultArray(matrix, array)
+    local rowCount = #matrix.rows;
+    local colCount = rowCount > 0 and #matrix.rows[1] or 0;
+    local result = Array:New(rowCount, nil);
+    for r = 1, rowCount do
+        local sum = 0;
+        local ok = true;
+        for c = 1, colCount do
+            local m = matrix:Get(r - 1, c - 1);
+            local v = array:Get(c - 1);
+            if m == nil or v == nil then
+                ok = false;
+                break;
+            end
+            sum = sum + m * v;
+        end
+        if ok then
+            result:Set(r - 1, sum);
+        end
+    end
+    return result;
+end
+function Matrix:MultScalar(matrix, scalar)
+    local rowCount = #matrix.rows;
+    local colCount = rowCount > 0 and #matrix.rows[1] or 0;
+    local result = Matrix:New(rowCount, colCount, nil);
+    for r = 1, rowCount do
+        for c = 1, colCount do
+            local v = matrix:Get(r - 1, c - 1);
+            if v ~= nil then
+                result:Set(r - 1, c - 1, v * scalar);
+            end
+        end
+    end
+    return result;
+end
 function Matrix:Transpose(matrix)
     if matrix == nil then
         return nil;
