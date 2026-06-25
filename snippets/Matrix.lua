@@ -17,6 +17,12 @@ function Matrix:Row(matrix, row)
     end
     return matrix:Row(row);
 end
+function Matrix:Col(matrix, column)
+    if matrix == nil then
+        return nil;
+    end
+    return matrix:Col(column);
+end
 function Matrix:Mult(matrix1, id2)
     if matrix1 == nil or id2 == nil then
         return nil;
@@ -198,6 +204,21 @@ function Matrix:New(rows, columns, initial_value)
         local newArray = Array:New(n, nil);
         for i = 1, n do
             newArray.arr[i] = raw[i];
+        end
+        return newArray;
+    end
+    function matrix:Col(column)
+        local rowCount = #self.rows;
+        if rowCount == 0 then
+            return Array:New(0, nil);
+        end
+        local colIndex = column + 1;
+        if colIndex < 1 or colIndex > #self.rows[1] then
+            return nil;
+        end
+        local newArray = Array:New(rowCount, nil);
+        for r = 1, rowCount do
+            newArray.arr[r] = self.rows[r][colIndex];
         end
         return newArray;
     end
