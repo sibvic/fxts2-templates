@@ -124,11 +124,46 @@ function Str:ReplaceAll(str, from, to)
     end
     return string.gsub(str, from, to);
 end
+function Str:Replace(str, from, to, occurrence)
+    if str == nil then
+        return nil;
+    end
+    occurrence = occurrence or 0;
+    if occurrence < 0 or from == nil or from == "" then
+        return str;
+    end
+    to = to or "";
+    local searchFrom = 1;
+    local pos = nil;
+    for i = 0, occurrence do
+        pos = string.find(str, from, searchFrom, true);
+        if pos == nil then
+            return str;
+        end
+        searchFrom = pos + 1;
+    end
+    return string.sub(str, 1, pos - 1) .. to .. string.sub(str, pos + #from);
+end
 function Str:Upper(str)
     if str == nil then
         return nil;
     end
     return string.upper(str);
+end
+function Str:Substring(str, begin_pos, end_pos)
+    if str == nil or begin_pos == nil then
+        return nil;
+    end
+    if begin_pos < 0 then
+        begin_pos = 0;
+    end
+    if end_pos == nil then
+        return string.sub(str, begin_pos + 1);
+    end
+    if end_pos < 0 then
+        end_pos = 0;
+    end
+    return string.sub(str, begin_pos + 1, end_pos);
 end
 function Str:StartsWith(str, item)
     if str == nil then
